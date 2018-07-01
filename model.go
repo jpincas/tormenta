@@ -16,3 +16,10 @@ type Model struct {
 func newID() gouuidv6.UUID {
 	return gouuidv6.New()
 }
+
+func newModel() Model {
+	return Model{
+		ID:          gouuidv6.New(),
+		LastUpdated: time.Now(),
+	}
+}

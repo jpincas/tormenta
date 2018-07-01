@@ -16,6 +16,17 @@ func Test_typeToKeyRoot(t *testing.T) {
 		{"test", "test"},
 		{"test.test", "test"},
 		{"test.test.test", "test"},
+		{"*", ""},
+		{"*Test", "test"},
+		{"*test.Test", "test"},
+		{"*Test.Test.test", "test"},
+		{"Test", "test"},
+		{"Test.test", "test"},
+		{"[]test.test.Test", "test"},
+		{"[]*Test.Test.test", "test"},
+		{"[]Test", "test"},
+		{"[]Test.test", "test"},
+		{"[]test.test.Test", "test"},
 	}
 
 	for _, test := range testCases {

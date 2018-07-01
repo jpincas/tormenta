@@ -9,10 +9,14 @@ import (
 )
 
 func typeToKeyRoot(typeSig string) []byte {
-	// Strip off the * (pointer), remove namespace prefixes
-	s := strings.TrimPrefix(typeSig, "*")
-	sp := strings.Split(s, ".")
-	return []byte(sp[len(sp)-1])
+
+	sp := strings.Split(typeSig, ".")
+	s := sp[len(sp)-1]
+	s = strings.TrimPrefix(s, "*")
+	s = strings.TrimPrefix(s, "[]")
+	s = strings.ToLower(s)
+
+	return []byte(s)
 }
 
 func makeKey(root []byte, id gouuidv6.UUID) []byte {
@@ -20,7 +24,7 @@ func makeKey(root []byte, id gouuidv6.UUID) []byte {
 	return bytes.Join([][]byte{root, idBytes}, []byte(":"))
 }
 
-func getKeyRoot(t tormentable) ([]byte, reflect.Value) {
+func getKeyRoot(t interface{}) ([]byte, reflect.Value) {
 	e := reflect.Indirect(reflect.ValueOf(t))
 	return typeToKeyRoot(e.Type().String()), e
 }

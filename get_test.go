@@ -45,3 +45,28 @@ func Test_BasicGet(t *testing.T) {
 	}
 
 }
+
+func Test_GetByID(t *testing.T) {
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+
+	order := Order{}
+	order2 := Order{}
+	db.Save(&order)
+
+	// Attempt to get entity without ID
+	ok, err := db.GetByID(&order2, order.ID)
+
+	if err != nil {
+		t.Errorf("Testing get by id. Got error %v", err)
+	}
+
+	if !ok {
+		t.Error("Testing get by id. Record was not found")
+	}
+
+	if order.ID != order2.ID {
+		t.Error("Testing get by id. Entity retreived by ID was not the same as that saved")
+	}
+
+}
