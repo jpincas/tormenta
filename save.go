@@ -13,17 +13,20 @@ type tormentable interface {
 	UnmarshalMsg([]byte) ([]byte, error)
 }
 
+const (
+	errNoModel = "Cannot save entity %s - it does not have a tormenta model"
+)
+
 func (db DB) Save(entities ...tormentable) (int, error) {
 	err := db.KV.Update(func(txn *badger.Txn) error {
 		for _, entity := range entities {
 			// Build the key root
-			e := reflect.Indirect(reflect.ValueOf(entity))
-			keyRoot := typeToKeyRoot(e.Type().String())
+			keyRoot, e := getKeyRoot(entity)
 
 			// Check that the model field exists
 			modelField := e.FieldByName("Model")
 			if !modelField.IsValid() {
-				return fmt.Errorf("Cannot save entity %s - it does not have a tormenta model", keyRoot)
+				return fmt.Errorf(errNoModel, keyRoot)
 			}
 
 			// Assert the model type

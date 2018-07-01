@@ -1,6 +1,7 @@
 package tormenta
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -12,6 +13,15 @@ func Test_BasicSave(t *testing.T) {
 	defer db.Close()
 
 	// First Save
+
+	// Test struc that has no model
+	noModel := NoModel{}
+	keyRoot, _ := getKeyRoot(&noModel)
+	_, err := db.Save(&noModel)
+
+	if err.Error() != fmt.Sprintf(errNoModel, keyRoot) {
+		t.Error("Testing save entity without model. Should have produced error but didn't")
+	}
 
 	// Create basic order and save
 	order := Order{}
@@ -56,6 +66,36 @@ func Test_BasicSave(t *testing.T) {
 	// should obviously be later
 	if !orderBeforeSecondSave.LastUpdated.Before(order.LastUpdated) {
 		t.Error("Testing 2nd record save. 'Created' time has changed")
+	}
+
+}
+
+func Test_SaveMultiple(t *testing.T) {
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+
+	order1 := Order{}
+	order2 := Order{}
+
+	// Multiple argument syntax
+	n, _ := db.Save(&order1, &order2)
+	if n != 2 {
+		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
+	}
+
+	// Spread syntax
+	// A little akward as you can't just pass in the slice of entities
+	// You have to manually translate to []tormentable
+	var ordersToSave []tormentable
+	orders := []Order{order1, order2}
+
+	for _, order := range orders {
+		ordersToSave = append(ordersToSave, &order)
+	}
+
+	n, _ = db.Save(ordersToSave...)
+	if n != 2 {
+		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
 	}
 
 }

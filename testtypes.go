@@ -14,6 +14,11 @@ func init() {
 
 //go:generate msgp
 
+// NoModel does not include the Tormenta, so cannot be saved
+type NoModel struct {
+	SomeData string
+}
+
 type Product struct {
 	Code          string
 	Name          string
