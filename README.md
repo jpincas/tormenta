@@ -34,4 +34,5 @@ func Example_Main() {
 	ok, _ = db.GetByID(&product, product1ID)
 	log.Println(ok) // true
 
-}```
+}
+```
