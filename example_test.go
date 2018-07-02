@@ -39,5 +39,4 @@ func Example_Main() {
 	var products []Product
 	n, _ = db.Query(&products).Run()
 	log.Println(n) // 2 (-> products)
-
 }

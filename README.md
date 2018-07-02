@@ -32,7 +32,11 @@ func Example_Main() {
 	ok, _ := db.GetByID(&product, nonExistentID)
 	log.Println(ok) // false
 	ok, _ = db.GetByID(&product, product1ID)
-	log.Println(ok) // true
+	log.Println(ok) // true ( -> product)
 
+	// Query
+	var products []Product
+	n, _ = db.Query(&products).Run()
+	log.Println(n) // 2 (-> products)
 }
 ```
