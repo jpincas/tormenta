@@ -1,9 +1,9 @@
 # TormentaDB
 
-Simple object persistence for Go
+Simple embedded object persistence for Go - powered by [BadgerDB](https://github.com/dgraph-io/badger) and [MessagePack](https://github.com/tinylib/msgp) and greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ```go
-unc Example_Main() {
+func Example_Main() {
 	// Open the DB
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
