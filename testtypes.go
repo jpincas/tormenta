@@ -20,6 +20,7 @@ type NoModel struct {
 }
 
 type Product struct {
+	Model
 	Code          string
 	Name          string
 	Price         float32
@@ -44,11 +45,36 @@ const defaultDescription = "On the other hand, we denounce with righteous indign
 
 // Inventory is a simple product catalogue keyed by product code
 var Inventory = map[string]Product{
-	"001": Product{"001", "Computer", 999.99, 50, defaultDescription},
-	"002": Product{"002", "Mousemat", 9.99, 50, defaultDescription},
-	"003": Product{"003", "Mouse", 29.99, 50, defaultDescription},
-	"004": Product{"004", "Plant", 6.99, 50, defaultDescription},
-	"005": Product{"005", "Desk", 299.99, 50, defaultDescription},
+	"001": Product{
+		Code:          "001",
+		Name:          "Computer",
+		Price:         999.99,
+		StartingStock: 50,
+		Description:   defaultDescription},
+	"002": Product{
+		Code:          "002",
+		Name:          "Mouse",
+		Price:         9.99,
+		StartingStock: 50,
+		Description:   defaultDescription},
+	"003": Product{
+		Code:          "003",
+		Name:          "Mousemat",
+		Price:         5.99,
+		StartingStock: 50,
+		Description:   defaultDescription},
+	"004": Product{
+		Code:          "004",
+		Name:          "Desk",
+		Price:         199.99,
+		StartingStock: 50,
+		Description:   defaultDescription},
+	"005": Product{
+		Code:          "005",
+		Name:          "Plant",
+		Price:         4.99,
+		StartingStock: 50,
+		Description:   defaultDescription},
 }
 
 // InventoryList is a list version of the catalogue

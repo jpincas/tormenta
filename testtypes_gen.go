@@ -482,6 +482,11 @@ func (z *Product) DecodeMsg(dc *msgp.Reader) (err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
+		case "Model":
+			err = z.Model.DecodeMsg(dc)
+			if err != nil {
+				return
+			}
 		case "Code":
 			z.Code, err = dc.ReadString()
 			if err != nil {
@@ -519,9 +524,18 @@ func (z *Product) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Product) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 5
+	// map header, size 6
+	// write "Model"
+	err = en.Append(0x86, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	if err != nil {
+		return
+	}
+	err = z.Model.EncodeMsg(en)
+	if err != nil {
+		return
+	}
 	// write "Code"
-	err = en.Append(0x85, 0xa4, 0x43, 0x6f, 0x64, 0x65)
+	err = en.Append(0xa4, 0x43, 0x6f, 0x64, 0x65)
 	if err != nil {
 		return
 	}
@@ -571,9 +585,15 @@ func (z *Product) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Product) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 5
+	// map header, size 6
+	// string "Model"
+	o = append(o, 0x86, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	o, err = z.Model.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "Code"
-	o = append(o, 0x85, 0xa4, 0x43, 0x6f, 0x64, 0x65)
+	o = append(o, 0xa4, 0x43, 0x6f, 0x64, 0x65)
 	o = msgp.AppendString(o, z.Code)
 	// string "Name"
 	o = append(o, 0xa4, 0x4e, 0x61, 0x6d, 0x65)
@@ -606,6 +626,11 @@ func (z *Product) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
+		case "Model":
+			bts, err = z.Model.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
 		case "Code":
 			z.Code, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
@@ -644,6 +669,6 @@ func (z *Product) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Product) Msgsize() (s int) {
-	s = 1 + 5 + msgp.StringPrefixSize + len(z.Code) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Float32Size + 14 + msgp.IntSize + 12 + msgp.StringPrefixSize + len(z.Description)
+	s = 1 + 6 + z.Model.Msgsize() + 5 + msgp.StringPrefixSize + len(z.Code) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Float32Size + 14 + msgp.IntSize + 12 + msgp.StringPrefixSize + len(z.Description)
 	return
 }

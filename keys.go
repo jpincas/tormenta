@@ -24,6 +24,10 @@ func makeKey(root []byte, id gouuidv6.UUID) []byte {
 	return bytes.Join([][]byte{root, idBytes}, []byte(":"))
 }
 
+func makePrefix(root []byte) []byte {
+	return bytes.Join([][]byte{root}, []byte(":"))
+}
+
 func getKeyRoot(t interface{}) ([]byte, reflect.Value) {
 	e := reflect.Indirect(reflect.ValueOf(t))
 	return typeToKeyRoot(e.Type().String()), e
