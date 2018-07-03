@@ -18,38 +18,47 @@ const (
 )
 
 func (db DB) Save(entities ...tormentable) (int, error) {
-	err := db.KV.Update(func(txn *badger.Txn) error {
-		for _, entity := range entities {
-			// Build the key root
-			keyRoot, e := getKeyRoot(entity)
 
-			// Check that the model field exists
-			modelField := e.FieldByName("Model")
-			if !modelField.IsValid() {
-				return fmt.Errorf(errNoModel, keyRoot)
+	noBatches := noBatches(len(entities), batchSize)
+	for i := 0; i < noBatches; i++ {
+
+		err := db.KV.Update(func(txn *badger.Txn) error {
+			a, b := batchStartAndEnd(i, batchSize, len(entities))
+			batch := entities[a:b]
+
+			for _, entity := range batch {
+				// Build the key root
+				keyRoot, e := getKeyRoot(entity)
+
+				// Check that the model field exists
+				modelField := e.FieldByName("Model")
+				if !modelField.IsValid() {
+					return fmt.Errorf(errNoModel, keyRoot)
+				}
+
+				// Assert the model type
+				// Check if there is an idea, if not create one
+				// Update the time last updated
+				model := modelField.Interface().(Model)
+				if model.ID.IsNil() {
+					model.ID = newID()
+				}
+				model.LastUpdated = time.Now().UTC()
+
+				// Set the new model back on the entity
+				modelField.Set(reflect.ValueOf(model))
+
+				entityMsg, _ := entity.MarshalMsg(nil)
+				txn.Set(makeKey(keyRoot, model.ID), entityMsg)
 			}
 
-			// Assert the model type
-			// Check if there is an idea, if not create one
-			// Update the time last updated
-			model := modelField.Interface().(Model)
-			if model.ID.IsNil() {
-				model.ID = newID()
-			}
-			model.LastUpdated = time.Now().UTC()
+			return nil
+		})
 
-			// Set the new model back on the entity
-			modelField.Set(reflect.ValueOf(model))
-
-			entityMsg, _ := entity.MarshalMsg(nil)
-			txn.Set(makeKey(keyRoot, model.ID), entityMsg)
+		if err != nil {
+			return 0, err
 		}
 
-		return nil
-	})
-
-	if err != nil {
-		return 0, err
 	}
 
 	return len(entities), nil

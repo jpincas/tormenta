@@ -99,3 +99,57 @@ func Test_SaveMultiple(t *testing.T) {
 	}
 
 }
+
+func Test_SaveMultipleLarge(t *testing.T) {
+	const noOrders = 100000
+
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+
+	var ordersToSave []tormentable
+
+	for i := 0; i < noOrders; i++ {
+		ordersToSave = append(ordersToSave, &Order{
+			Customer: i,
+		})
+	}
+
+	n, _ := db.Save(ordersToSave...)
+	if n != noOrders {
+		t.Errorf("Testing save large number of entities. Expected %v, got %v", noOrders, n)
+	}
+
+	var orders []Order
+	n, _ = db.Query(&orders).Run()
+	if n != noOrders {
+		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
+	}
+
+}
+
+func Test_SaveMultipleMillion(t *testing.T) {
+	const noOrders = 1000000
+
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+
+	var ordersToSave []tormentable
+
+	for i := 0; i < noOrders; i++ {
+		ordersToSave = append(ordersToSave, &Order{
+			Customer: i,
+		})
+	}
+
+	n, _ := db.Save(ordersToSave...)
+	if n != noOrders {
+		t.Errorf("Testing save large number of entities. Expected %v, got %v", noOrders, n)
+	}
+
+	var orders []Order
+	n, _ = db.Query(&orders).Run()
+	if n != noOrders {
+		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
+	}
+
+}
