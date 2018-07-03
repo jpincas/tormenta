@@ -4,7 +4,7 @@ Simple embedded object persistence for Go - powered by [BadgerDB](https://github
 
 ```go
 func Example_Main() {
-		// Open the DB
+	// Open the DB
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 
@@ -24,13 +24,14 @@ func Example_Main() {
 	n, _ := db.Save(&product1, &product2)
 	log.Println(n) // 2
 
+	// Get by ID
 	nonExistentID := newID()
 	product1ID := product1.ID
 
-	// Get by ID
 	var product Product
 	ok, _ := db.GetByID(&product, nonExistentID)
 	log.Println(ok) // false
+	
 	ok, _ = db.GetByID(&product, product1ID)
 	log.Println(ok) // true ( -> product)
 
