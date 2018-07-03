@@ -11,7 +11,7 @@ const (
 	errNoID = "Cannot get entity %s - ID is nil"
 )
 
-func (db DB) Get(entity tormentable) (bool, error) {
+func (db DB) Get(entity Tormentable) (bool, error) {
 	keyRoot, e := getKeyRoot(entity)
 
 	// Check that the model field exists
@@ -55,7 +55,7 @@ func (db DB) Get(entity tormentable) (bool, error) {
 	return true, nil
 }
 
-func (db DB) GetByID(entity tormentable, id gouuidv6.UUID) (bool, error) {
+func (db DB) GetByID(entity Tormentable, id gouuidv6.UUID) (bool, error) {
 	keyRoot, e := getKeyRoot(entity)
 
 	// Check that the model field exists

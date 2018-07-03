@@ -8,7 +8,7 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-type tormentable interface {
+type Tormentable interface {
 	MarshalMsg([]byte) ([]byte, error)
 	UnmarshalMsg([]byte) ([]byte, error)
 }
@@ -17,7 +17,7 @@ const (
 	errNoModel = "Cannot save entity %s - it does not have a tormenta model"
 )
 
-func (db DB) Save(entities ...tormentable) (int, error) {
+func (db DB) Save(entities ...Tormentable) (int, error) {
 
 	noBatches := noBatches(len(entities), batchSize)
 	for i := 0; i < noBatches; i++ {

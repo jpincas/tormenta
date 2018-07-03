@@ -51,7 +51,7 @@ func Test_BasicQuery(t *testing.T) {
 
 func Test_RangeQuery(t *testing.T) {
 	// Create a list of orders over a date range
-	var orders []tormentable
+	var orders []Tormentable
 	dates := []time.Time{
 		// Now
 		time.Now(),

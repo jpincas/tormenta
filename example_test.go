@@ -47,7 +47,7 @@ func Example_Main() {
 	// Date range query
 
 	// Make some orders with specific creation times
-	var ordersToSave []tormentable
+	var ordersToSave []Tormentable
 	dates := []time.Time{
 		// Specific years
 		time.Date(2009, time.January, 1, 1, 0, 0, 0, time.UTC),
@@ -77,7 +77,10 @@ func Example_Main() {
 	n, _ = db.Query(&orders).From(mid2009).To(mid2012).Run()
 	log.Println(n) // 3 (-> orders )
 
-	// Count only (very fast - uses key only iteration and skips unmarshalling)
+	// Count only
+	// This takes less time than a full query as it:
+	// a) skips unmarshalling
+	// b) uses Badger's key-only iteration
 	count, _ := db.Query(&orders).From(mid2009).To(mid2012).Count()
 	log.Println(count) // 3 (-> orders )
 }

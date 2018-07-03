@@ -85,8 +85,8 @@ func Test_SaveMultiple(t *testing.T) {
 
 	// Spread syntax
 	// A little akward as you can't just pass in the slice of entities
-	// You have to manually translate to []tormentable
-	var ordersToSave []tormentable
+	// You have to manually translate to []Tormentable
+	var ordersToSave []Tormentable
 	orders := []Order{order1, order2}
 
 	for _, order := range orders {
@@ -106,7 +106,7 @@ func Test_SaveMultipleLarge(t *testing.T) {
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormentable
+	var ordersToSave []Tormentable
 
 	for i := 0; i < noOrders; i++ {
 		ordersToSave = append(ordersToSave, &Order{
@@ -133,7 +133,7 @@ func Test_SaveMultipleMillion(t *testing.T) {
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormentable
+	var ordersToSave []Tormentable
 
 	for i := 0; i < noOrders; i++ {
 		ordersToSave = append(ordersToSave, &Order{

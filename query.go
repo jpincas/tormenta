@@ -63,8 +63,8 @@ func (q *Query) Run() (int, error) {
 func (q *Query) Count() (int, error) {
 	options := badger.DefaultIteratorOptions
 	options.PrefetchValues = false
-	return q.execute(options, false)
 
+	return q.execute(options, false)
 }
 
 func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, error) {
@@ -72,25 +72,26 @@ func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, er
 	from, to := q.rangePrefixes()
 	compareKey := compareKey(q.to, to)
 
-	// Cast the 'entity' we have stored on the query to a 'tormentable'
+	// Cast the 'entity' we have stored on the query to a 'Tormentable'
 	// so that it can be unmarshalled
-	entity := q.entity.(tormentable)
+	entity := q.entity.(Tormentable)
 
 	// Set up a slice to accumulate the results
-	results := []tormentable{}
+	results := []Tormentable{}
 	counter := 0
 
 	err := q.db.KV.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		it := txn.NewIterator(options)
 		defer it.Close()
 
 		for it.Seek(from); it.ValidForPrefix(to); it.Next() {
-
 			key := it.Item().Key()
 			if !q.to.IsNil() && !compare(compareKey, key) {
 				break
 			}
 
+			// Only unmarshall and append to results
+			// If we are running a full query, not a count
 			if getValues {
 				val, err := it.Item().Value()
 				if err != nil {
@@ -105,8 +106,9 @@ func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, er
 				results = append(results, entity)
 			}
 
+			// For counts, instead of appending all the results and taking the length
+			// we just use a simple counter
 			counter++
-
 		}
 
 		return nil
@@ -117,9 +119,9 @@ func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, er
 	}
 
 	if getValues {
-		// Now we have a slice of 'tormentables'
+		// Now we have a slice of 'Tormentables'
 
-		// Set up a slice for 'translating' the 'tormentables' into the target slice type
+		// Set up a slice for 'translating' the 'Tormentables' into the target slice type
 		rt := reflect.Indirect(reflect.ValueOf(q.entities))
 
 		// Iterate through the result, using 'reflect.Append' to append to the above slice
