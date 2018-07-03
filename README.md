@@ -8,6 +8,7 @@ Simple embedded object persistence for Go - powered by:
 and greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ```go
+func Example_Main() {
 	// Open the DB
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
