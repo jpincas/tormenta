@@ -1,6 +1,11 @@
 # TormentaDB
 
-Simple embedded object persistence for Go - powered by [BadgerDB](https://github.com/dgraph-io/badger) and [MessagePack](https://github.com/tinylib/msgp) and greatly inspired by [Storm](https://github.com/asdine/storm).
+Simple embedded object persistence for Go - powered by:
+- [BadgerDB](https://github.com/dgraph-io/badger)
+- [TinyLib MessagePack](https://github.com/tinylib/msgp)
+- ['V6' UUIDs](https://github.com/bradleypeabody/gouuidv6)
+ 
+and greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ```go
 	// Open the DB
