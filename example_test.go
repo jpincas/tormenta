@@ -76,4 +76,8 @@ func Example_Main() {
 	var orders []Order
 	n, _ = db.Query(&orders).From(mid2009).To(mid2012).Run()
 	log.Println(n) // 3 (-> orders )
+
+	// Count only (very fast - uses key only iteration and skips unmarshalling)
+	count, _ := db.Query(&orders).From(mid2009).To(mid2012).Count()
+	log.Println(count) // 3 (-> orders )
 }

@@ -26,6 +26,11 @@ func Test_BasicQuery(t *testing.T) {
 		t.Errorf("Testing querying with 1 entity saved. Expecting 1 entity - got %v/%v", len(orders), n)
 	}
 
+	c, err := db.Query(&orders).Count()
+	if c != len(orders) {
+		t.Errorf("Testing count 1 entity saved. Expecting 1 - got %v", c)
+	}
+
 	// 2 orders
 	order2 := Order{}
 	orders = []Order{}
@@ -36,6 +41,12 @@ func Test_BasicQuery(t *testing.T) {
 	if len(orders) != 2 || n != 2 {
 		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v/%v", len(orders), n)
 	}
+
+	c, err = db.Query(&orders).Count()
+	if c != len(orders) {
+		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
+	}
+
 }
 
 func Test_RangeQuery(t *testing.T) {
@@ -118,8 +129,10 @@ func Test_RangeQuery(t *testing.T) {
 		}
 
 		n, _ := query.Run()
-		if n != testCase.expected {
-			t.Errorf("Testing %s. Expected %v - got %v", testCase.testName, testCase.expected, n)
+		c, _ := query.Count()
+
+		if n != testCase.expected || c != testCase.expected {
+			t.Errorf("Testing %s. Expected %v - got %v (count %v)", testCase.testName, testCase.expected, n, c)
 		}
 	}
 }

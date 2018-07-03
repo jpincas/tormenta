@@ -57,6 +57,17 @@ func (q Query) rangePrefixes() (from, to []byte) {
 }
 
 func (q *Query) Run() (int, error) {
+	return q.execute(badger.DefaultIteratorOptions, true)
+}
+
+func (q *Query) Count() (int, error) {
+	options := badger.DefaultIteratorOptions
+	options.PrefetchValues = false
+	return q.execute(options, false)
+
+}
+
+func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, error) {
 	// Work out what prefix to iterate over
 	from, to := q.rangePrefixes()
 	compareKey := compareKey(q.to, to)
@@ -67,6 +78,7 @@ func (q *Query) Run() (int, error) {
 
 	// Set up a slice to accumulate the results
 	results := []tormentable{}
+	counter := 0
 
 	err := q.db.KV.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -79,17 +91,22 @@ func (q *Query) Run() (int, error) {
 				break
 			}
 
-			val, err := it.Item().Value()
-			if err != nil {
-				return err
+			if getValues {
+				val, err := it.Item().Value()
+				if err != nil {
+					return err
+				}
+
+				_, err = entity.UnmarshalMsg(val)
+				if err != nil {
+					return err
+				}
+
+				results = append(results, entity)
 			}
 
-			_, err = entity.UnmarshalMsg(val)
-			if err != nil {
-				return err
-			}
+			counter++
 
-			results = append(results, entity)
 		}
 
 		return nil
@@ -99,25 +116,30 @@ func (q *Query) Run() (int, error) {
 		return 0, err
 	}
 
-	// Now we have a slice of 'tormentables'
+	if getValues {
+		// Now we have a slice of 'tormentables'
 
-	// Set up a slice for 'translating' the 'tormentables' into the target slice type
-	rt := reflect.Indirect(reflect.ValueOf(q.entities))
+		// Set up a slice for 'translating' the 'tormentables' into the target slice type
+		rt := reflect.Indirect(reflect.ValueOf(q.entities))
 
-	// Iterate through the result, using 'reflect.Append' to append to the above slice
-	// the underlying type of the result
-	for _, result := range results {
-		rt = reflect.Append(
-			rt,
-			reflect.Indirect(reflect.ValueOf(result)),
-		)
+		// Iterate through the result, using 'reflect.Append' to append to the above slice
+		// the underlying type of the result
+		for _, result := range results {
+			rt = reflect.Append(
+				rt,
+				reflect.Indirect(reflect.ValueOf(result)),
+			)
+		}
+
+		// Now set the accumulated, translated results on the original, passed in
+		// 'entities'
+		reflect.Indirect(reflect.ValueOf(q.entities)).Set(rt)
+
+		return len(results), nil
 	}
 
-	// Now set the accumulated, translated results on the original, passed in
-	// 'entities'
-	reflect.Indirect(reflect.ValueOf(q.entities)).Set(rt)
+	return counter, nil
 
-	return len(results), nil
 }
 
 // newQuery.entity = reflect.New(reflect.TypeOf(entities).Elem().Elem()).Interface()

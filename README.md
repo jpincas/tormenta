@@ -31,7 +31,7 @@ func Example_Main() {
 	var product Product
 	ok, _ := db.GetByID(&product, nonExistentID)
 	log.Println(ok) // false
-	
+
 	ok, _ = db.GetByID(&product, product1ID)
 	log.Println(ok) // true ( -> product)
 
@@ -72,5 +72,9 @@ func Example_Main() {
 	var orders []Order
 	n, _ = db.Query(&orders).From(mid2009).To(mid2012).Run()
 	log.Println(n) // 3 (-> orders )
+
+	// Count only (very fast - uses key only iteration and skips unmarshalling)
+	count, _ := db.Query(&orders).From(mid2009).To(mid2012).Count()
+	log.Println(count) // 3 (-> orders )
 }
 ```
