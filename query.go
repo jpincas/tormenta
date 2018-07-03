@@ -2,8 +2,10 @@ package tormenta
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/jpincas/gouuidv6"
 )
 
 type Query struct {
@@ -12,9 +14,10 @@ type Query struct {
 	value    reflect.Value
 	entity   interface{}
 	entities interface{}
+	from, to gouuidv6.UUID
 }
 
-func (db DB) Query(entities interface{}) Query {
+func (db DB) Query(entities interface{}) *Query {
 
 	newQuery := Query{}
 	keyRoot, value := getKeyRoot(entities)
@@ -28,12 +31,35 @@ func (db DB) Query(entities interface{}) Query {
 	// This will be used for unmarhsalling
 	newQuery.entity = reflect.New(value.Type().Elem()).Interface()
 
-	return newQuery
+	return &newQuery
 }
 
-func (q Query) Run() (int, error) {
+func (q *Query) From(t time.Time) *Query {
+	q.from = gouuidv6.NewFromTime(t)
+	return q
+}
+
+func (q *Query) To(t time.Time) *Query {
+	q.to = gouuidv6.NewFromTime(t)
+	return q
+}
+
+func (q Query) rangePrefixes() (from, to []byte) {
+	if !q.from.IsNil() {
+		from = makePrefix(q.keyRoot, q.from.Bytes())
+	} else {
+		from = makePrefix(q.keyRoot, []byte{})
+	}
+
+	to = makePrefix(q.keyRoot, []byte{})
+
+	return
+}
+
+func (q *Query) Run() (int, error) {
 	// Work out what prefix to iterate over
-	prefix := makePrefix(q.keyRoot)
+	from, to := q.rangePrefixes()
+	compareKey := compareKey(q.to, to)
 
 	// Cast the 'entity' we have stored on the query to a 'tormentable'
 	// so that it can be unmarshalled
@@ -46,7 +72,13 @@ func (q Query) Run() (int, error) {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		for it.Seek(from); it.ValidForPrefix(to); it.Next() {
+
+			key := it.Item().Key()
+			if !q.to.IsNil() && !compare(compareKey, key) {
+				break
+			}
+
 			val, err := it.Item().Value()
 			if err != nil {
 				return err

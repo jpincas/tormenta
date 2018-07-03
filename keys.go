@@ -24,11 +24,24 @@ func makeKey(root []byte, id gouuidv6.UUID) []byte {
 	return bytes.Join([][]byte{root, idBytes}, []byte(":"))
 }
 
-func makePrefix(root []byte) []byte {
-	return bytes.Join([][]byte{root}, []byte(":"))
+func makePrefix(root, slug []byte) []byte {
+	return bytes.Join([][]byte{root, slug}, []byte(":"))
 }
 
 func getKeyRoot(t interface{}) ([]byte, reflect.Value) {
 	e := reflect.Indirect(reflect.ValueOf(t))
 	return typeToKeyRoot(e.Type().String()), e
+}
+
+func compareKey(id gouuidv6.UUID, root []byte) []byte {
+	return bytes.Join([][]byte{root, id.Bytes()}, []byte{})
+}
+
+func compare(a, b []byte) bool {
+	r := bytes.Compare(a, b)
+	if r > 0 {
+		return true
+	}
+
+	return false
 }

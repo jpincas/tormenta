@@ -2,6 +2,9 @@ package tormenta
 
 import (
 	"log"
+	"time"
+
+	"github.com/jpincas/gouuidv6"
 )
 
 func Example_Main() {
@@ -35,8 +38,41 @@ func Example_Main() {
 	ok, _ = db.GetByID(&product, product1ID)
 	log.Println(ok) // true ( -> product)
 
-	// Query
+	// Basic Query
 	var products []Product
 	n, _ = db.Query(&products).Run()
 	log.Println(n) // 2 (-> products)
+
+	// Date range query
+
+	// Make some orders with specific creation times
+	var ordersToSave []tormentable
+	dates := []time.Time{
+		// Specific years
+		time.Date(2009, time.January, 1, 1, 0, 0, 0, time.UTC),
+		time.Date(2010, time.January, 1, 1, 0, 0, 0, time.UTC),
+		time.Date(2011, time.January, 1, 1, 0, 0, 0, time.UTC),
+		time.Date(2012, time.January, 1, 1, 0, 0, 0, time.UTC),
+		time.Date(2013, time.January, 1, 1, 0, 0, 0, time.UTC),
+	}
+
+	for _, date := range dates {
+		ordersToSave = append(ordersToSave, &Order{
+			// You wouln't normally do this manually
+			// This is just for illustration
+			Model: Model{
+				ID: gouuidv6.NewFromTime(date),
+			},
+		})
+	}
+
+	// Save the orders
+	db.Save(ordersToSave...)
+
+	mid2009 := time.Date(2009, time.June, 1, 1, 0, 0, 0, time.UTC)
+	mid2012 := time.Date(2012, time.June, 1, 1, 0, 0, 0, time.UTC)
+
+	var orders []Order
+	n, _ = db.Query(&orders).From(mid2009).To(mid2012).Run()
+	log.Println(n) // 3 (-> orders )
 }
