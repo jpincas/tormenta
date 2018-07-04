@@ -49,6 +49,37 @@ func Test_Basicquery(t *testing.T) {
 
 }
 
+func Test_First(t *testing.T) {
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+
+	order1 := Order{}
+	order2 := Order{}
+	db.Save(&order1, &order2)
+
+	var order Order
+	n, err := db.First(&order).Run()
+
+	if err != nil {
+		t.Error("Testing first - got error")
+	}
+
+	if n != 1 {
+		t.Errorf("Testing first. Expecting 1 entity - got %v", n)
+	}
+
+	if order.ID != order1.ID {
+		t.Errorf("Testing first. Order IDs are not equal - wrong order retrieved")
+	}
+
+	// Test nothing found (impossible range)
+	n, _ = db.First(&order).From(time.Now()).To(time.Now()).Run()
+	if n != 0 {
+		t.Errorf("Testing first when nothing should be found.  Got n = %v", n)
+	}
+
+}
+
 func Test_Rangequery(t *testing.T) {
 	// Create a list of orders over a date range
 	var orders []Tormentable
