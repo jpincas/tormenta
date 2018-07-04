@@ -9,7 +9,7 @@ and greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ```go
 func Example_Main() {
-	// Open the DB
+		// Open the DB
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 
@@ -42,7 +42,7 @@ func Example_Main() {
 
 	// Basic query
 	var products []Product
-	n, _ = db.query(&products).Run()
+	n, _ = db.Find(&products).Run()
 	log.Println(n) // 2 (-> products)
 
 	// Date range query
@@ -71,18 +71,25 @@ func Example_Main() {
 	// Save the orders
 	db.Save(ordersToSave...)
 
+	var orders []Order
+
 	mid2009 := time.Date(2009, time.June, 1, 1, 0, 0, 0, time.UTC)
 	mid2012 := time.Date(2012, time.June, 1, 1, 0, 0, 0, time.UTC)
 
-	var orders []Order
-	n, _ = db.query(&orders).From(mid2009).To(mid2012).Run()
+	// Basic date range query
+	n, _ = db.Find(&orders).From(mid2009).To(mid2012).Run()
 	log.Println(n) // 3 (-> orders )
 
-	// Count only
-	// This takes less time than a full query as it:
-	// a) skips unmarshalling
-	// b) uses Badger's key-only iteration
-	count, _ := db.query(&orders).From(mid2009).To(mid2012).Count()
-	log.Println(count) // 3 (-> orders )
+	// Count only (fast!)
+	count, _ := db.Find(&orders).From(mid2009).To(mid2012).Count()
+	log.Println(count) // 3
+
+	// Limit
+	count, _ = db.Find(&orders).From(mid2009).To(mid2012).Limit(2).Count()
+	log.Println(count) // 2
+
+	// Reverse (note reversed range)
+	count, _ = db.Find(&orders).Reverse().From(mid2012).To(mid2009).Count()
+	log.Println(count) // 3
 }
 ```
