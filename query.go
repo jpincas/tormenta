@@ -16,6 +16,7 @@ type Query struct {
 	entities interface{}
 	from, to gouuidv6.UUID
 	limit    int
+	reverse  bool
 }
 
 func (db DB) Query(entities interface{}) *Query {
@@ -50,6 +51,11 @@ func (q *Query) Limit(n int) *Query {
 	return q
 }
 
+func (q *Query) Reverse() *Query {
+	q.reverse = true
+	return q
+}
+
 func (q Query) rangePrefixes() (from, to []byte) {
 	if !q.from.IsNil() {
 		from = makePrefix(q.keyRoot, q.from.Bytes())
@@ -63,11 +69,15 @@ func (q Query) rangePrefixes() (from, to []byte) {
 }
 
 func (q *Query) Run() (int, error) {
-	return q.execute(badger.DefaultIteratorOptions, true)
+	options := badger.DefaultIteratorOptions
+	options.Reverse = q.reverse
+
+	return q.execute(options, true)
 }
 
 func (q *Query) Count() (int, error) {
 	options := badger.DefaultIteratorOptions
+	options.Reverse = q.reverse
 	options.PrefetchValues = false
 
 	return q.execute(options, false)
@@ -76,6 +86,7 @@ func (q *Query) Count() (int, error) {
 func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, error) {
 	// Work out what prefix to iterate over
 	from, to := q.rangePrefixes()
+
 	compareKey := compareKey(q.to, to)
 
 	// Cast the 'entity' we have stored on the query to a 'Tormentable'
@@ -96,7 +107,7 @@ func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, er
 			}
 
 			key := it.Item().Key()
-			if !q.to.IsNil() && !compare(compareKey, key) {
+			if !q.to.IsNil() && !compare(compareKey, key, q.reverse) {
 				break
 			}
 
@@ -153,5 +164,3 @@ func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, er
 	return counter, nil
 
 }
-
-// newQuery.entity = reflect.New(reflect.TypeOf(entities).Elem().Elem()).Interface()

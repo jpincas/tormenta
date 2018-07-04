@@ -37,8 +37,15 @@ func compareKey(id gouuidv6.UUID, root []byte) []byte {
 	return bytes.Join([][]byte{root, id.Bytes()}, []byte{})
 }
 
-func compare(a, b []byte) bool {
-	r := bytes.Compare(a, b)
+func compare(a, b []byte, reverse bool) bool {
+	var r int
+
+	if !reverse {
+		r = bytes.Compare(a, b)
+	} else {
+		r = bytes.Compare(b, a)
+	}
+
 	if r > 0 {
 		return true
 	}
