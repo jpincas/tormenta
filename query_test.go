@@ -135,4 +135,13 @@ func Test_RangeQuery(t *testing.T) {
 			t.Errorf("Testing %s. Expected %v - got %v (count %v)", testCase.testName, testCase.expected, n, c)
 		}
 	}
+
+	// Test limit
+	const limit = 10
+	n, _ = db.Query(&results).Limit(limit).Run()
+	c, _ := db.Query(&results).Limit(limit).Count()
+	if n != 10 || c != 10 {
+		t.Errorf("Testing query limit. Expected %v - got %v/%v", limit, c, n)
+	}
+
 }

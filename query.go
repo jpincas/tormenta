@@ -15,6 +15,7 @@ type Query struct {
 	entity   interface{}
 	entities interface{}
 	from, to gouuidv6.UUID
+	limit    int
 }
 
 func (db DB) Query(entities interface{}) *Query {
@@ -41,6 +42,11 @@ func (q *Query) From(t time.Time) *Query {
 
 func (q *Query) To(t time.Time) *Query {
 	q.to = gouuidv6.NewFromTime(t)
+	return q
+}
+
+func (q *Query) Limit(n int) *Query {
+	q.limit = n
 	return q
 }
 
@@ -85,6 +91,10 @@ func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, er
 		defer it.Close()
 
 		for it.Seek(from); it.ValidForPrefix(to); it.Next() {
+			if q.limit > 0 && counter >= q.limit {
+				break
+			}
+
 			key := it.Item().Key()
 			if !q.to.IsNil() && !compare(compareKey, key) {
 				break
