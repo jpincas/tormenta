@@ -7,7 +7,7 @@ import (
 	"github.com/jpincas/gouuidv6"
 )
 
-func Test_BasicQuery(t *testing.T) {
+func Test_Basicquery(t *testing.T) {
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 
@@ -16,7 +16,7 @@ func Test_BasicQuery(t *testing.T) {
 	db.Save(&order1)
 
 	var orders []Order
-	n, err := db.Query(&orders).Run()
+	n, err := db.Find(&orders).Run()
 
 	if err != nil {
 		t.Error("Testing basic querying - got error")
@@ -26,7 +26,7 @@ func Test_BasicQuery(t *testing.T) {
 		t.Errorf("Testing querying with 1 entity saved. Expecting 1 entity - got %v/%v", len(orders), n)
 	}
 
-	c, err := db.Query(&orders).Count()
+	c, err := db.Find(&orders).Count()
 	if c != len(orders) {
 		t.Errorf("Testing count 1 entity saved. Expecting 1 - got %v", c)
 	}
@@ -36,20 +36,20 @@ func Test_BasicQuery(t *testing.T) {
 	orders = []Order{}
 	db.Save(&order2)
 
-	n, _ = db.Query(&orders).Run()
+	n, _ = db.Find(&orders).Run()
 
 	if len(orders) != 2 || n != 2 {
 		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v/%v", len(orders), n)
 	}
 
-	c, err = db.Query(&orders).Count()
+	c, err = db.Find(&orders).Count()
 	if c != len(orders) {
 		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
 	}
 
 }
 
-func Test_RangeQuery(t *testing.T) {
+func Test_Rangequery(t *testing.T) {
 	// Create a list of orders over a date range
 	var orders []Tormentable
 	dates := []time.Time{
@@ -96,7 +96,7 @@ func Test_RangeQuery(t *testing.T) {
 
 	// Quick check that all orders have saved correctly
 	var results []Order
-	n, _ := db.Query(&results).Run()
+	n, _ := db.Find(&results).Run()
 
 	if len(results) != len(orders) || n != len(orders) {
 		t.Errorf("Testing range query. Haven't even got to ranges yet. Just basic query expected %v - got %v/%v", len(orders), len(results), n)
@@ -130,8 +130,8 @@ func Test_RangeQuery(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangeQueryResults := []Order{}
-		query := db.Query(&rangeQueryResults).From(testCase.from)
+		rangequeryResults := []Order{}
+		query := db.Find(&rangequeryResults).From(testCase.from)
 
 		if testCase.includeTo {
 			query = query.To(testCase.to)

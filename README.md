@@ -40,9 +40,9 @@ func Example_Main() {
 	ok, _ = db.GetByID(&product, product1ID)
 	log.Println(ok) // true ( -> product)
 
-	// Basic Query
+	// Basic query
 	var products []Product
-	n, _ = db.Query(&products).Run()
+	n, _ = db.query(&products).Run()
 	log.Println(n) // 2 (-> products)
 
 	// Date range query
@@ -75,14 +75,14 @@ func Example_Main() {
 	mid2012 := time.Date(2012, time.June, 1, 1, 0, 0, 0, time.UTC)
 
 	var orders []Order
-	n, _ = db.Query(&orders).From(mid2009).To(mid2012).Run()
+	n, _ = db.query(&orders).From(mid2009).To(mid2012).Run()
 	log.Println(n) // 3 (-> orders )
 
 	// Count only
 	// This takes less time than a full query as it:
 	// a) skips unmarshalling
 	// b) uses Badger's key-only iteration
-	count, _ := db.Query(&orders).From(mid2009).To(mid2012).Count()
+	count, _ := db.query(&orders).From(mid2009).To(mid2012).Count()
 	log.Println(count) // 3 (-> orders )
 }
 ```

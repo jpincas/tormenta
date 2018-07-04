@@ -29,11 +29,11 @@ func Benchmark_Count1M(b *testing.B) {
 
 	// Run the aggregation
 	for i := 0; i < b.N; i++ {
-		db.Query(&orders).Count()
+		db.query(&orders).Count()
 	}
 }
 
-func Benchmark_QueryRun1M(b *testing.B) {
+func Benchmark_queryRun1M(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
@@ -54,6 +54,6 @@ func Benchmark_QueryRun1M(b *testing.B) {
 
 	// Run the aggregation
 	for i := 0; i < b.N; i++ {
-		db.Query(&orders).Run()
+		db.query(&orders).Run()
 	}
 }

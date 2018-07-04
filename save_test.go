@@ -120,7 +120,7 @@ func Test_SaveMultipleLarge(t *testing.T) {
 	}
 
 	var orders []Order
-	n, _ = db.Query(&orders).Run()
+	n, _ = db.Find(&orders).Run()
 	if n != noOrders {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
 	}
@@ -147,7 +147,7 @@ func Test_SaveMultipleMillion(t *testing.T) {
 	}
 
 	var orders []Order
-	n, _ = db.Query(&orders).Run()
+	n, _ = db.Find(&orders).Run()
 	if n != noOrders {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
 	}

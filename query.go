@@ -8,7 +8,7 @@ import (
 	"github.com/jpincas/gouuidv6"
 )
 
-type Query struct {
+type query struct {
 	db       DB
 	keyRoot  []byte
 	value    reflect.Value
@@ -19,44 +19,44 @@ type Query struct {
 	reverse  bool
 }
 
-func (db DB) Query(entities interface{}) *Query {
+func (db DB) Find(entities interface{}) *query {
 
-	newQuery := Query{}
+	newquery := query{}
 	keyRoot, value := getKeyRoot(entities)
-	newQuery.keyRoot = keyRoot
-	newQuery.value = value
-	newQuery.db = db
-	newQuery.entities = entities
+	newquery.keyRoot = keyRoot
+	newquery.value = value
+	newquery.db = db
+	newquery.entities = entities
 
 	// Get the underlying type of the elements of the 'entities' slice
 	// cast to interface and save on the query.
 	// This will be used for unmarhsalling
-	newQuery.entity = reflect.New(value.Type().Elem()).Interface()
+	newquery.entity = reflect.New(value.Type().Elem()).Interface()
 
-	return &newQuery
+	return &newquery
 }
 
-func (q *Query) From(t time.Time) *Query {
+func (q *query) From(t time.Time) *query {
 	q.from = gouuidv6.NewFromTime(t)
 	return q
 }
 
-func (q *Query) To(t time.Time) *Query {
+func (q *query) To(t time.Time) *query {
 	q.to = gouuidv6.NewFromTime(t)
 	return q
 }
 
-func (q *Query) Limit(n int) *Query {
+func (q *query) Limit(n int) *query {
 	q.limit = n
 	return q
 }
 
-func (q *Query) Reverse() *Query {
+func (q *query) Reverse() *query {
 	q.reverse = true
 	return q
 }
 
-func (q Query) rangePrefixes() (from, to []byte) {
+func (q query) rangePrefixes() (from, to []byte) {
 	if !q.from.IsNil() {
 		from = makePrefix(q.keyRoot, q.from.Bytes())
 	} else {
@@ -68,14 +68,14 @@ func (q Query) rangePrefixes() (from, to []byte) {
 	return
 }
 
-func (q *Query) Run() (int, error) {
+func (q *query) Run() (int, error) {
 	options := badger.DefaultIteratorOptions
 	options.Reverse = q.reverse
 
 	return q.execute(options, true)
 }
 
-func (q *Query) Count() (int, error) {
+func (q *query) Count() (int, error) {
 	options := badger.DefaultIteratorOptions
 	options.Reverse = q.reverse
 	options.PrefetchValues = false
@@ -83,7 +83,7 @@ func (q *Query) Count() (int, error) {
 	return q.execute(options, false)
 }
 
-func (q *Query) execute(options badger.IteratorOptions, getValues bool) (int, error) {
+func (q *query) execute(options badger.IteratorOptions, getValues bool) (int, error) {
 	// Work out what prefix to iterate over
 	from, to := q.rangePrefixes()
 
