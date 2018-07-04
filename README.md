@@ -72,6 +72,7 @@ func Example_Main() {
 	db.Save(ordersToSave...)
 
 	var orders []Order
+	var order Order
 
 	mid2009 := time.Date(2009, time.June, 1, 1, 0, 0, 0, time.UTC)
 	mid2012 := time.Date(2012, time.June, 1, 1, 0, 0, 0, time.UTC)
@@ -79,6 +80,14 @@ func Example_Main() {
 	// Basic date range query
 	n, _ = db.Find(&orders).From(mid2009).To(mid2012).Run()
 	log.Println(n) // 3 (-> orders )
+
+	// First
+	n, _ = db.First(&order).From(mid2009).To(mid2012).Run()
+	log.Println(n) // 1 (-> order )
+
+	// First (not found)
+	n, _ = db.First(&order).From(time.Now()).To(time.Now()).Run()
+	log.Println(n) // 0
 
 	// Count only (fast!)
 	count, _ := db.Find(&orders).From(mid2009).To(mid2012).Count()
