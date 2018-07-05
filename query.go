@@ -198,11 +198,11 @@ func (q *query) execute() (int, error) {
 			counter++
 		}
 
-		// End the iteration
+		// End the transaction
 		return nil
 	})
 
-	// If there was an error from the iterator
+	// If there was an error from the DB transaction
 	if err != nil {
 		return 0, err
 	}

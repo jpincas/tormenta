@@ -13,6 +13,12 @@ import (
 
 // Index format
 // i:indexname:root:indexcontent:entityID
+// i:order:customer:5:324ds-3werwf-234wef-23wef
+
+const (
+	tormentaTag      = "tormenta"
+	tormentaTagIndex = "index"
+)
 
 func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
 	v := reflect.Indirect(reflect.ValueOf(entity))
@@ -21,7 +27,7 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 
 		// Look for the 'tormenta:index' tag
 		fieldType := v.Type().Field(i)
-		if idx := fieldType.Tag.Get("tormenta"); idx == "index" {
+		if idx := fieldType.Tag.Get(tormentaTag); idx == tormentaTagIndex {
 
 			// Create the index key
 			key := makeIndexKey(
@@ -45,8 +51,8 @@ func makeIndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent 
 	return bytes.Join(
 		[][]byte{
 			[]byte(indexKeyPrefix),
-			[]byte(strings.ToLower(indexName)),
 			root,
+			[]byte(strings.ToLower(indexName)),
 			interfaceToBytes(indexContent),
 			id.Bytes(),
 		},
@@ -55,20 +61,27 @@ func makeIndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent 
 }
 
 func interfaceToBytes(value interface{}) []byte {
-	buf := new(bytes.Buffer)
-	var toWrite interface{}
+	// Must use BigEndian for correct sorting
 
-	switch value.(type) {
-	case int:
-		toWrite = value.(int)
-	case string:
-		toWrite = value.(string)
-	case float64:
-		toWrite = value.(float64)
-	default:
-		return []byte(fmt.Sprintf("%v", value))
+	// Empty interface -> empty byte slice
+	if value == nil {
+		return []byte{}
 	}
 
-	binary.Write(buf, binary.LittleEndian, toWrite)
-	return []byte(buf.Bytes())
+	// Set up buffer for writing binary values
+	buf := new(bytes.Buffer)
+
+	switch value.(type) {
+	// For ints, cast the interface to int, convert to uint32 (normal ints don't work)
+	case int:
+		binary.Write(buf, binary.BigEndian, uint32(value.(int)))
+		return buf.Bytes()
+	// For floats, write straight to binary
+	case float64:
+		binary.Write(buf, binary.BigEndian, value.(float64))
+		return buf.Bytes()
+	}
+
+	// Everything else as a string
+	return []byte(fmt.Sprintf("%v", value))
 }

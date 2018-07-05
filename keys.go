@@ -35,6 +35,13 @@ func makePrefix(root, slug []byte) []byte {
 	return bytes.Join([][]byte{c, root, slug}, []byte(":"))
 }
 
+func makeIndexPrefix(root, indexName []byte, indexValue interface{}) []byte {
+	// i:order:customer:5
+	i := []byte(indexKeyPrefix)
+	return bytes.Join([][]byte{i, root, indexName, interfaceToBytes(indexValue)}, []byte(":"))
+
+}
+
 func getKeyRoot(t interface{}) ([]byte, reflect.Value) {
 	e := reflect.Indirect(reflect.ValueOf(t))
 	return typeToKeyRoot(e.Type().String()), e
@@ -42,6 +49,10 @@ func getKeyRoot(t interface{}) ([]byte, reflect.Value) {
 
 func compareKey(id gouuidv6.UUID, root []byte) []byte {
 	return bytes.Join([][]byte{root, id.Bytes()}, []byte{})
+}
+
+func compareIndexKey(i interface{}, root []byte) []byte {
+	return bytes.Join([][]byte{root, interfaceToBytes(i)}, []byte{})
 }
 
 func compare(a, b []byte, reverse bool) bool {
