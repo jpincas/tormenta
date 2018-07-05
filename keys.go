@@ -19,13 +19,20 @@ func typeToKeyRoot(typeSig string) []byte {
 	return []byte(s)
 }
 
+const (
+	contentKeyPrefix = "c"
+	indexKeyPrefix   = "i"
+)
+
 func makeKey(root []byte, id gouuidv6.UUID) []byte {
 	idBytes := id.Bytes()
-	return bytes.Join([][]byte{root, idBytes}, []byte(":"))
+	c := []byte(contentKeyPrefix)
+	return bytes.Join([][]byte{c, root, idBytes}, []byte(":"))
 }
 
 func makePrefix(root, slug []byte) []byte {
-	return bytes.Join([][]byte{root, slug}, []byte(":"))
+	c := []byte(contentKeyPrefix)
+	return bytes.Join([][]byte{c, root, slug}, []byte(":"))
 }
 
 func getKeyRoot(t interface{}) ([]byte, reflect.Value) {

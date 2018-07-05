@@ -48,8 +48,20 @@ func (db DB) Save(entities ...Tormentable) (int, error) {
 				// Set the new model back on the entity
 				modelField.Set(reflect.ValueOf(model))
 
-				entityMsg, _ := entity.MarshalMsg(nil)
-				txn.Set(makeKey(keyRoot, model.ID), entityMsg)
+				entityMsg, err := entity.MarshalMsg(nil)
+				if err != nil {
+					return err
+				}
+
+				if err := txn.Set(makeKey(keyRoot, model.ID), entityMsg); err != nil {
+					return err
+				}
+
+				// indexing
+				if err := index(txn, entity, keyRoot, model.ID); err != nil {
+					return err
+				}
+
 			}
 
 			return nil

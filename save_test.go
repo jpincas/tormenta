@@ -110,7 +110,7 @@ func Test_SaveMultipleLarge(t *testing.T) {
 
 	for i := 0; i < noOrders; i++ {
 		ordersToSave = append(ordersToSave, &Order{
-			Customer: i,
+			Customer: fmt.Sprintf("customer-%v", i),
 		})
 	}
 
@@ -137,7 +137,7 @@ func Test_SaveMultipleMillion(t *testing.T) {
 
 	for i := 0; i < noOrders; i++ {
 		ordersToSave = append(ordersToSave, &Order{
-			Customer: i,
+			Customer: fmt.Sprintf("customer-%v", i),
 		})
 	}
 

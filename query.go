@@ -9,15 +9,16 @@ import (
 )
 
 type query struct {
-	db       DB
-	keyRoot  []byte
-	value    reflect.Value
-	holder   interface{}
-	target   interface{}
-	from, to gouuidv6.UUID
-	limit    int
-	reverse  bool
-	first    bool
+	db        DB
+	keyRoot   []byte
+	value     reflect.Value
+	holder    interface{}
+	target    interface{}
+	from, to  gouuidv6.UUID
+	limit     int
+	reverse   bool
+	first     bool
+	countOnly bool
 }
 
 func (db DB) newQuery(target interface{}, first bool) *query {
@@ -88,12 +89,14 @@ func (q *query) Reverse() *query {
 
 // Run actually executes the query and returns results
 func (q *query) Run() (int, error) {
-	return q.execute(true)
+	return q.execute()
 }
 
 // Count executes the query in fast, count-only mode
 func (q *query) Count() (int, error) {
-	return q.execute(false)
+	// Count never needs the values
+	q.countOnly = true
+	return q.execute()
 }
 
 func (q query) rangePrefixes() (from, to []byte) {
@@ -115,7 +118,7 @@ func (q query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 	return options
 }
 
-func (q *query) execute(getValues bool) (int, error) {
+func (q *query) execute() (int, error) {
 	// Get the from and to prefix for matching in the iterator
 	from, to := q.rangePrefixes()
 
@@ -131,6 +134,12 @@ func (q *query) execute(getValues bool) (int, error) {
 
 	// Initialise the counter, mainly for the count operation
 	counter := 0
+
+	// Do we need to prefetch values or not?
+	getValues := true
+	if q.countOnly {
+		getValues = false
+	}
 
 	err := q.db.KV.View(func(txn *badger.Txn) error {
 
@@ -159,7 +168,8 @@ func (q *query) execute(getValues bool) (int, error) {
 
 			// Only unmarshall and append to results
 			// If we are running a full query, not a count
-			if getValues {
+			// OR we have filters to apply
+			if !q.countOnly {
 				val, err := it.Item().Value()
 				if err != nil {
 					return err
@@ -206,10 +216,8 @@ func (q *query) execute(getValues bool) (int, error) {
 		return counter, nil
 	}
 
-	if getValues {
-
+	if !q.countOnly {
 		// Now we have a slice of 'Tormentables'
-
 		// Set up a slice for 'translating' the 'Tormentables' into the target slice type
 		rt := reflect.Indirect(reflect.ValueOf(q.target))
 
