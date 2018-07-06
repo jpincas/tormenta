@@ -8,54 +8,76 @@ import (
 	"github.com/jpincas/gouuidv6"
 )
 
-func typeToKeyRoot(typeSig string) []byte {
-
-	sp := strings.Split(typeSig, ".")
-	s := sp[len(sp)-1]
-	s = strings.TrimPrefix(s, "*")
-	s = strings.TrimPrefix(s, "[]")
-	s = strings.ToLower(s)
-
-	return []byte(s)
-}
-
 const (
 	contentKeyPrefix = "c"
 	indexKeyPrefix   = "i"
+	keySeparator     = ":"
 )
 
-func makeKey(root []byte, id gouuidv6.UUID) []byte {
-	idBytes := id.Bytes()
-	c := []byte(contentKeyPrefix)
-	return bytes.Join([][]byte{c, root, idBytes}, []byte(":"))
+type key struct {
+	isIndex      bool
+	entityType   []byte
+	id           gouuidv6.UUID
+	indexName    []byte
+	indexContent interface{}
 }
 
-func makePrefix(root, slug []byte) []byte {
-	c := []byte(contentKeyPrefix)
-	return bytes.Join([][]byte{c, root, slug}, []byte(":"))
+// newContentKey returns a key of the correct type
+func newContentKey(root []byte, id ...gouuidv6.UUID) key {
+	k := key{
+		isIndex:    false,
+		entityType: root,
+	}
+
+	// If an ID is specified
+	if len(id) > 0 {
+		k.id = id[0]
+	}
+
+	return k
 }
 
-func makeIndexPrefix(root, indexName []byte, indexValue interface{}) []byte {
-	// i:order:customer:5
-	i := []byte(indexKeyPrefix)
-	return bytes.Join([][]byte{i, root, indexName, interfaceToBytes(indexValue)}, []byte(":"))
+func newIndexKey(root, indexName []byte, indexContent interface{}) key {
+	k := key{
+		isIndex:      true,
+		entityType:   root,
+		indexName:    indexName,
+		indexContent: indexContent,
+	}
 
+	return k
 }
 
-func getKeyRoot(t interface{}) ([]byte, reflect.Value) {
-	e := reflect.Indirect(reflect.ValueOf(t))
-	return typeToKeyRoot(e.Type().String()), e
+func (k key) bytes() []byte {
+	// Use either content/index key prefix
+	identifierPrefix := []byte(contentKeyPrefix)
+	if k.isIndex {
+		identifierPrefix = []byte(indexKeyPrefix)
+	}
+
+	// Always start with identifier prefix and entity type
+	toJoin := [][]byte{identifierPrefix, k.entityType}
+
+	if k.isIndex {
+		// For index keys, now append index name and content
+		toJoin = append(toJoin, k.indexName, interfaceToBytes(k.indexContent))
+	} else {
+		// For content keys, append ID
+		// If the ID is nil (i.e. hasn't been added to the struct),
+		// then use an empty byteslice, rather than a slice full of zero bytes
+		// (which is what id.isNil() means)
+		idBytes := k.id.Bytes()
+		if k.id.IsNil() {
+			idBytes = []byte{}
+		}
+		toJoin = append(toJoin, idBytes)
+	}
+
+	return bytes.Join(toJoin, []byte(keySeparator))
 }
 
-func compareKey(id gouuidv6.UUID, root []byte) []byte {
-	return bytes.Join([][]byte{root, id.Bytes()}, []byte{})
-}
-
-func compareIndexKey(i interface{}, root []byte) []byte {
-	return bytes.Join([][]byte{root, interfaceToBytes(i)}, []byte{})
-}
-
-func compare(a, b []byte, reverse bool) bool {
+// compare compares two key-byte slices
+func compareKeyBytes(a, b []byte, reverse bool) bool {
 	var r int
 
 	if !reverse {
@@ -69,4 +91,21 @@ func compare(a, b []byte, reverse bool) bool {
 	}
 
 	return false
+}
+
+// Key construction helpers
+
+func entityTypeAndValue(t interface{}) ([]byte, reflect.Value) {
+	e := reflect.Indirect(reflect.ValueOf(t))
+	return typeToKeyRoot(e.Type().String()), e
+}
+
+func typeToKeyRoot(typeSig string) []byte {
+	sp := strings.Split(typeSig, ".")
+	s := sp[len(sp)-1]
+	s = strings.TrimPrefix(s, "*")
+	s = strings.TrimPrefix(s, "[]")
+	s = strings.ToLower(s)
+
+	return []byte(s)
 }

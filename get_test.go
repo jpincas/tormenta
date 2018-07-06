@@ -13,7 +13,7 @@ func Test_BasicGet(t *testing.T) {
 
 	// Test struc that has no model
 	noModel := NoModel{}
-	keyRoot, _ := getKeyRoot(&noModel)
+	keyRoot, _ := entityTypeAndValue(&noModel)
 	_, err := db.Get(&noModel)
 
 	if err == nil || err.Error() != fmt.Sprintf(errNoModel, keyRoot) {
@@ -22,7 +22,7 @@ func Test_BasicGet(t *testing.T) {
 
 	// Create basic order and save, then blank the ID
 	order := Order{}
-	keyRoot, _ = getKeyRoot(&order)
+	keyRoot, _ = entityTypeAndValue(&order)
 	db.Save(&order)
 	orderIDBeforeBlanking := order.ID
 	order.ID = gouuidv6.UUID{}

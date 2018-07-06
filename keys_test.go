@@ -41,6 +41,34 @@ func Test_typeToKeyRoot(t *testing.T) {
 	}
 }
 
+func Test_makeContentKey(t *testing.T) {
+	id := newID()
+
+	testCases := []struct {
+		testName  string
+		root      []byte
+		includeID bool
+		id        gouuidv6.UUID
+		expected  []byte
+	}{
+		{"No ID", []byte("myentity"), false, id, []byte("c:myentity:")},
+	}
+
+	for _, testCase := range testCases {
+		var result []byte
+
+		if testCase.includeID {
+			result = newContentKey(testCase.root, testCase.id).bytes()
+		} else {
+			result = newContentKey(testCase.root).bytes()
+		}
+
+		if string(result) != string(testCase.expected) {
+			t.Errorf("Testing content key construction (%s). Expecting %s, got %s", testCase.testName, testCase.expected, result)
+		}
+	}
+}
+
 func Test_makeIndexKey(t *testing.T) {
 
 	id := newID()

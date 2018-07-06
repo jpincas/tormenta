@@ -16,7 +16,7 @@ func Test_BasicSave(t *testing.T) {
 
 	// Test struc that has no model
 	noModel := NoModel{}
-	keyRoot, _ := getKeyRoot(&noModel)
+	keyRoot, _ := entityTypeAndValue(&noModel)
 	_, err := db.Save(&noModel)
 
 	if err.Error() != fmt.Sprintf(errNoModel, keyRoot) {

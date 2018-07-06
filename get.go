@@ -12,7 +12,7 @@ const (
 )
 
 func (db DB) Get(entity Tormentable) (bool, error) {
-	keyRoot, e := getKeyRoot(entity)
+	keyRoot, e := entityTypeAndValue(entity)
 
 	// Check that the model field exists
 	modelField := e.FieldByName("Model")
@@ -27,7 +27,8 @@ func (db DB) Get(entity Tormentable) (bool, error) {
 	}
 
 	err := db.KV.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(makeKey(keyRoot, model.ID))
+		key := newContentKey(keyRoot, model.ID).bytes()
+		item, err := txn.Get(key)
 
 		if err != nil {
 			return err
@@ -56,7 +57,7 @@ func (db DB) Get(entity Tormentable) (bool, error) {
 }
 
 func (db DB) GetByID(entity Tormentable, id gouuidv6.UUID) (bool, error) {
-	keyRoot, e := getKeyRoot(entity)
+	keyRoot, e := entityTypeAndValue(entity)
 
 	// Check that the model field exists
 	modelField := e.FieldByName("Model")
@@ -65,7 +66,8 @@ func (db DB) GetByID(entity Tormentable, id gouuidv6.UUID) (bool, error) {
 	}
 
 	err := db.KV.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(makeKey(keyRoot, id))
+		key := newContentKey(keyRoot, id).bytes()
+		item, err := txn.Get(key)
 
 		if err != nil {
 			return err

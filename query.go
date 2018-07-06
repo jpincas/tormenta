@@ -23,7 +23,7 @@ type query struct {
 
 func (db DB) newQuery(target interface{}, first bool) *query {
 	// Get the key root and cache the value
-	keyRoot, value := getKeyRoot(target)
+	keyRoot, value := entityTypeAndValue(target)
 
 	// Set the 'holder' on the query
 	// This is basically the type of either the single entity passed in (for first only)
@@ -99,18 +99,6 @@ func (q *query) Count() (int, error) {
 	return q.execute()
 }
 
-func (q query) rangePrefixes() (from, to []byte) {
-	if !q.from.IsNil() {
-		from = makePrefix(q.keyRoot, q.from.Bytes())
-	} else {
-		from = makePrefix(q.keyRoot, []byte{})
-	}
-
-	to = makePrefix(q.keyRoot, []byte{})
-
-	return
-}
-
 func (q query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 	options := badger.DefaultIteratorOptions
 	options.Reverse = q.reverse
@@ -120,10 +108,9 @@ func (q query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 
 func (q *query) execute() (int, error) {
 	// Get the from and to prefix for matching in the iterator
-	from, to := q.rangePrefixes()
-
-	// Get the 'to' key for comparison
-	compareKey := compareKey(q.to, to)
+	seekFrom := newContentKey(q.keyRoot, q.from).bytes()
+	validTo := newContentKey(q.keyRoot).bytes()
+	compareTo := newContentKey(q.keyRoot, q.to).bytes()
 
 	// Cast the 'entity' we have stored on the query to a 'Tormentable'
 	// so that it can be unmarshalled
@@ -148,7 +135,7 @@ func (q *query) execute() (int, error) {
 		defer it.Close()
 
 		// Start iteration
-		for it.Seek(from); it.ValidForPrefix(to); it.Next() {
+		for it.Seek(seekFrom); it.ValidForPrefix(validTo); it.Next() {
 
 			// If a limit has been specifed AND
 			// the counter has reached that limit,
@@ -162,7 +149,7 @@ func (q *query) execute() (int, error) {
 			// to the theoretical final key in the range
 			// and break out if we've reached it
 			key := it.Item().Key()
-			if !q.to.IsNil() && !compare(compareKey, key, q.reverse) {
+			if !q.to.IsNil() && !compareKeyBytes(compareTo, key, q.reverse) {
 				return nil
 			}
 

@@ -28,7 +28,7 @@ func (db DB) Save(entities ...Tormentable) (int, error) {
 
 			for _, entity := range batch {
 				// Build the key root
-				keyRoot, e := getKeyRoot(entity)
+				keyRoot, e := entityTypeAndValue(entity)
 
 				// Check that the model field exists
 				modelField := e.FieldByName("Model")
@@ -53,7 +53,8 @@ func (db DB) Save(entities ...Tormentable) (int, error) {
 					return err
 				}
 
-				if err := txn.Set(makeKey(keyRoot, model.ID), entityMsg); err != nil {
+				key := newContentKey(keyRoot, model.ID).bytes()
+				if err := txn.Set(key, entityMsg); err != nil {
 					return err
 				}
 

@@ -22,7 +22,7 @@ type indexQuery struct {
 
 func (db DB) newIndexQuery(target interface{}, first bool, indexName string) *indexQuery {
 	// Get the key root and cache the value
-	keyRoot, value := getKeyRoot(target)
+	keyRoot, value := entityTypeAndValue(target)
 
 	// Set the 'holder' on the query
 	// This is basically the type of either the single entity passed in (for first only)
@@ -80,10 +80,10 @@ func (q indexQuery) getIteratorOptions() badger.IteratorOptions {
 }
 
 func (q *indexQuery) execute() (int, error) {
-	from := makeIndexPrefix(q.keyRoot, q.indexName, q.from)
-	to := makeIndexPrefix(q.keyRoot, q.indexName, nil)
+	seekFrom := newIndexKey(q.keyRoot, q.indexName, q.from).bytes()
+	validTo := newIndexKey(q.keyRoot, q.indexName, nil).bytes()
+	compareTo := newIndexKey(q.keyRoot, q.indexName, q.to).bytes()
 
-	compareKey := compareIndexKey(q.to, to)
 	// entity := q.holder.(Tormentable)
 	keys := [][]byte{}
 	// results := []Tormentable{}
@@ -93,7 +93,7 @@ func (q *indexQuery) execute() (int, error) {
 		it := txn.NewIterator(q.getIteratorOptions())
 		defer it.Close()
 
-		for it.Seek(from); it.ValidForPrefix(to); it.Next() {
+		for it.Seek(seekFrom); it.ValidForPrefix(validTo); it.Next() {
 
 			if q.limit > 0 && counter >= q.limit {
 				return nil
@@ -101,7 +101,7 @@ func (q *indexQuery) execute() (int, error) {
 
 			key := it.Item().Key()
 
-			if q.to != nil && !compare(compareKey, key, q.reverse) {
+			if q.to != nil && !compareKeyBytes(compareTo, key, q.reverse) {
 				return nil
 			}
 
