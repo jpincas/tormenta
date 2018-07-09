@@ -3,8 +3,10 @@ package tormenta
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/jpincas/gouuidv6"
 )
 
 // Index Creation
@@ -95,6 +97,63 @@ func Test_IndexRange_BasicCount(t *testing.T) {
 			Start(testCase.start).
 			End(testCase.end).
 			Run()
+
+		// Check for correct number of returned results
+		if n != testCase.expected {
+			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+		}
+
+	}
+}
+
+func Test_IndexRange_Match(t *testing.T) {
+	var orders []Tormentable
+
+	for i := 1; i <= 30; i++ {
+		order := &Order{
+			Model: Model{
+				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
+			},
+			Department: getDept(i),
+		}
+
+		orders = append(orders, order)
+	}
+
+	randomiseTormentables(orders)
+
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+	db.Save(orders...)
+
+	testCases := []struct {
+		testName       string
+		department     interface{}
+		addFrom, addTo bool
+		from, to       time.Time
+		expected       int
+	}{
+		{"match department 1 - no date restriction", 1, false, false, time.Time{}, time.Time{}, 10},
+		{"match department 1 - from beginning of time", 1, true, false, time.Time{}, time.Now(), 10},
+		{"match department 1 - from beginning of time to now", 1, true, true, time.Time{}, time.Now(), 10},
+		{"match department 1 - from now (no to)", 1, true, false, time.Now(), time.Time{}, 0},
+		{"match department 1 - from 1st Nov", 1, true, false, time.Date(2009, time.November, 1, 23, 0, 0, 0, time.UTC), time.Time{}, 9}, //todo should be 10
+		{"match department 1 - from 5th Nov", 1, true, false, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Time{}, 5}, //todo should be 6
+		{"match department 1 - from 1st-5th Nov", 1, true, true, time.Date(2009, time.November, 1, 23, 0, 0, 0, time.UTC), time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), 4},
+	}
+
+	for _, testCase := range testCases {
+		rangequeryResults := []Order{}
+		query := db.FindIndex(&rangequeryResults, "department").Match(testCase.department)
+		if testCase.addFrom {
+			query = query.From(testCase.from)
+		}
+
+		if testCase.addTo {
+			query = query.To(testCase.to)
+		}
+
+		n, _ := query.Run()
 
 		// Check for correct number of returned results
 		if n != testCase.expected {

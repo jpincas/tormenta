@@ -51,7 +51,7 @@ func Test_makeContentKey(t *testing.T) {
 		id        gouuidv6.UUID
 		expected  []byte
 	}{
-		{"No ID", []byte("myentity"), false, id, []byte("c:myentity:")},
+		{"No ID", []byte("myentity"), false, id, []byte("c" + keySeparator + "myentity")},
 	}
 
 	for _, testCase := range testCases {
@@ -93,22 +93,22 @@ func Test_makeIndexKey(t *testing.T) {
 		{
 			"no index content",
 			[]byte("root"), id, "myindex", nil,
-			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), []byte{}, id.Bytes()}, []byte(":")),
+			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), []byte{}, id.Bytes()}, []byte(keySeparator)),
 		},
 		{
 			"string index content",
 			[]byte("root"), id, "myindex", "indexContent",
-			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), []byte("indexContent"), id.Bytes()}, []byte(":")),
+			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), []byte("indexContent"), id.Bytes()}, []byte(keySeparator)),
 		},
 		{
 			"float index content",
 			[]byte("root"), id, "myindex", 3.14,
-			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), interfaceToBytes(3.14), id.Bytes()}, []byte(":")),
+			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), interfaceToBytes(3.14), id.Bytes()}, []byte(keySeparator)),
 		},
 		{
 			"int index content",
 			[]byte("root"), id, "myindex", 3,
-			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), interfaceToBytes(3), id.Bytes()}, []byte(":")),
+			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), interfaceToBytes(3), id.Bytes()}, []byte(keySeparator)),
 		},
 	}
 

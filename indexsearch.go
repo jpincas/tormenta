@@ -2,8 +2,10 @@ package tormenta
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/jpincas/gouuidv6"
 )
 
 type indexQuery struct {
@@ -16,6 +18,7 @@ type indexQuery struct {
 	reverse    bool
 	first      bool
 	start, end interface{}
+	from, to   gouuidv6.UUID
 	indexName  []byte
 	countOnly  bool
 }
@@ -67,6 +70,18 @@ func (q *indexQuery) End(t interface{}) *indexQuery {
 	return q
 }
 
+// From adds a lower boundary to the date range of the query
+func (q *indexQuery) From(t time.Time) *indexQuery {
+	q.from = gouuidv6.NewFromTime(t)
+	return q
+}
+
+// To adds an upper bound to the date range of the query
+func (q *indexQuery) To(t time.Time) *indexQuery {
+	q.to = gouuidv6.NewFromTime(t)
+	return q
+}
+
 // Match is shorthand for specifying Start() and End()
 func (q *indexQuery) Match(t interface{}) *indexQuery {
 	q.start = t
@@ -86,22 +101,27 @@ func (q indexQuery) getIteratorOptions() badger.IteratorOptions {
 	return options
 }
 
-func (q *indexQuery) execute() (int, error) {
-	seekFrom := newIndexKey(q.keyRoot, q.indexName, q.start).bytes()
+func (q indexQuery) isExactIndexMatchSearch() bool {
+	return q.start == q.end
+}
 
+func (q *indexQuery) execute() (int, error) {
 	// If the end is the same as the start,
 	// we can 'hardcode' the index value into the 'validTo' prefix
 	// and therefore don't need to do any key comparision
-	var validTo []byte
-	endEqualsStart := q.start == q.end
+	var seekFrom, validTo, compareTo []byte
 
-	if endEqualsStart {
-		validTo = newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
+	isExactMatchSearch := q.isExactIndexMatchSearch()
+
+	if isExactMatchSearch {
+		seekFrom = newIndexMatchKey(q.keyRoot, q.indexName, q.start, q.from).bytes()
+		validTo = newIndexMatchKey(q.keyRoot, q.indexName, q.end).bytes()
+		compareTo = newIndexMatchKey(q.keyRoot, q.indexName, q.end, q.to).bytes()
 	} else {
+		seekFrom = newIndexKey(q.keyRoot, q.indexName, q.start).bytes()
 		validTo = newIndexKey(q.keyRoot, q.indexName, nil).bytes()
+		compareTo = newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
 	}
-
-	compareTo := newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
 
 	entity := q.holder.(Tormentable)
 	results := []Tormentable{}
@@ -121,10 +141,14 @@ func (q *indexQuery) execute() (int, error) {
 			// Get the current key
 			key := it.Item().Key()
 
-			// If the endpoint is not the same as the start point AND
-			// Compare the current key to the calculated 'comparison' key
-			// Specify 'true' so that the ID is stripped for comparison
-			if !endEqualsStart && q.end != nil && !compareKeyBytes(compareTo, key, q.reverse, true) {
+			// Normally the final ID will require stripping for index searched
+			// However, in the case of an exact match search, with a To clause, it should be left in
+			stripID := true
+			if isExactMatchSearch && !q.to.IsNil() {
+				stripID = false
+			}
+
+			if q.end != nil && !compareKeyBytes(compareTo, key, q.reverse, stripID) {
 				return nil
 			}
 

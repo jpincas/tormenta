@@ -11,7 +11,7 @@ import (
 const (
 	contentKeyPrefix = "c"
 	indexKeyPrefix   = "i"
-	keySeparator     = ":"
+	keySeparator     = "::"
 )
 
 type key struct {
@@ -20,15 +20,37 @@ type key struct {
 	id           gouuidv6.UUID
 	indexName    []byte
 	indexContent interface{}
+	exactMatch   bool
 }
 
 // newContentKey returns a key of the correct type
 func newContentKey(root []byte, id ...gouuidv6.UUID) key {
-	k := key{
+	return withID(key{
 		isIndex:    false,
 		entityType: root,
-	}
+	}, id)
+}
 
+func newIndexKey(root, indexName []byte, indexContent interface{}, id ...gouuidv6.UUID) key {
+	return withID(key{
+		isIndex:      true,
+		entityType:   root,
+		indexName:    indexName,
+		indexContent: indexContent,
+	}, id)
+}
+
+func newIndexMatchKey(root, indexName []byte, indexContent interface{}, id ...gouuidv6.UUID) key {
+	return withID(key{
+		isIndex:      true,
+		exactMatch:   true,
+		entityType:   root,
+		indexName:    indexName,
+		indexContent: indexContent,
+	}, id)
+}
+
+func withID(k key, id []gouuidv6.UUID) key {
 	// If an ID is specified
 	if len(id) > 0 {
 		k.id = id[0]
@@ -37,15 +59,23 @@ func newContentKey(root []byte, id ...gouuidv6.UUID) key {
 	return k
 }
 
-func newIndexKey(root, indexName []byte, indexContent interface{}) key {
-	k := key{
-		isIndex:      true,
-		entityType:   root,
-		indexName:    indexName,
-		indexContent: indexContent,
+func (k key) shouldAppendIndex() bool {
+	// If index is nil, definite no
+	if k.id.IsNil() {
+		return false
 	}
 
-	return k
+	// For non-index keys, do append
+	if !k.isIndex {
+		return true
+	}
+
+	// For index keys using exact matching, do append
+	if k.exactMatch {
+		return true
+	}
+
+	return false
 }
 
 func (k key) bytes() []byte {
@@ -58,19 +88,13 @@ func (k key) bytes() []byte {
 	// Always start with identifier prefix and entity type
 	toJoin := [][]byte{identifierPrefix, k.entityType}
 
+	// For index keys, now append index name and content
 	if k.isIndex {
-		// For index keys, now append index name and content
 		toJoin = append(toJoin, k.indexName, interfaceToBytes(k.indexContent))
-	} else {
-		// For content keys, append ID
-		// If the ID is nil (i.e. hasn't been added to the struct),
-		// then use an empty byteslice, rather than a slice full of zero bytes
-		// (which is what id.isNil() means)
-		idBytes := k.id.Bytes()
-		if k.id.IsNil() {
-			idBytes = []byte{}
-		}
-		toJoin = append(toJoin, idBytes)
+	}
+
+	if k.shouldAppendIndex() {
+		toJoin = append(toJoin, k.id.Bytes())
 	}
 
 	return bytes.Join(toJoin, []byte(keySeparator))
