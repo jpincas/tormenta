@@ -12,6 +12,7 @@ const (
 )
 
 func (db DB) Get(entity Tormentable) (bool, error) {
+
 	keyRoot, e := entityTypeAndValue(entity)
 
 	// Check that the model field exists

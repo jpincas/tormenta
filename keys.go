@@ -76,6 +76,13 @@ func (k key) bytes() []byte {
 	return bytes.Join(toJoin, []byte(keySeparator))
 }
 
+func extractID(b []byte) (uuid gouuidv6.UUID) {
+	s := bytes.Split(b, []byte(keySeparator))
+	idBytes := s[len(s)-1]
+	copy(uuid[:], idBytes)
+	return
+}
+
 // compare compares two key-byte slices
 func compareKeyBytes(a, b []byte, reverse bool) bool {
 	var r int

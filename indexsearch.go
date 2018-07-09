@@ -84,9 +84,8 @@ func (q *indexQuery) execute() (int, error) {
 	validTo := newIndexKey(q.keyRoot, q.indexName, nil).bytes()
 	compareTo := newIndexKey(q.keyRoot, q.indexName, q.to).bytes()
 
-	// entity := q.holder.(Tormentable)
-	keys := [][]byte{}
-	// results := []Tormentable{}
+	entity := q.holder.(Tormentable)
+	results := []Tormentable{}
 	counter := 0
 
 	err := q.db.KV.View(func(txn *badger.Txn) error {
@@ -100,12 +99,17 @@ func (q *indexQuery) execute() (int, error) {
 			}
 
 			key := it.Item().Key()
+			_, err := q.db.GetByID(entity, extractID(key))
+			if err != nil {
+				return err
+			}
+
+			results = append(results, entity)
 
 			if q.to != nil && !compareKeyBytes(compareTo, key, q.reverse) {
 				return nil
 			}
 
-			keys = append(keys, key)
 			counter++
 		}
 
@@ -116,5 +120,5 @@ func (q *indexQuery) execute() (int, error) {
 		return 0, err
 	}
 
-	return len(keys), nil
+	return len(results), nil
 }
