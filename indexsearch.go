@@ -88,7 +88,19 @@ func (q indexQuery) getIteratorOptions() badger.IteratorOptions {
 
 func (q *indexQuery) execute() (int, error) {
 	seekFrom := newIndexKey(q.keyRoot, q.indexName, q.start).bytes()
-	validTo := newIndexKey(q.keyRoot, q.indexName, nil).bytes()
+
+	// If the end is the same as the start,
+	// we can 'hardcode' the index value into the 'validTo' prefix
+	// and therefore don't need to do any key comparision
+	var validTo []byte
+	endEqualsStart := q.start == q.end
+
+	if endEqualsStart {
+		validTo = newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
+	} else {
+		validTo = newIndexKey(q.keyRoot, q.indexName, nil).bytes()
+	}
+
 	compareTo := newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
 
 	entity := q.holder.(Tormentable)
@@ -109,9 +121,10 @@ func (q *indexQuery) execute() (int, error) {
 			// Get the current key
 			key := it.Item().Key()
 
+			// If the endpoint is not the same as the start point AND
 			// Compare the current key to the calculated 'comparison' key
 			// Specify 'true' so that the ID is stripped for comparison
-			if q.end != nil && !compareKeyBytes(compareTo, key, q.reverse, true) {
+			if !endEqualsStart && q.end != nil && !compareKeyBytes(compareTo, key, q.reverse, true) {
 				return nil
 			}
 
