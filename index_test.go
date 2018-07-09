@@ -46,8 +46,66 @@ func Test_BasicIndexing(t *testing.T) {
 	})
 }
 
+// Helper for making groups of depatments
+func getDept(i int) int {
+	if i <= 10 {
+		return 1
+	} else if i <= 20 {
+		return 2
+	} else {
+		return 3
+	}
+
+}
+
+// This serves to test:
+// - multiple coinciding index values (i.e. 1,2,3 for departments)
+func Test_IndexRange_BasicCount(t *testing.T) {
+	var orders []Tormentable
+
+	for i := 1; i <= 30; i++ {
+		order := &Order{
+			Department: getDept(i),
+		}
+
+		orders = append(orders, order)
+	}
+
+	randomiseTormentables(orders)
+
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+	db.Save(orders...)
+
+	testCases := []struct {
+		testName   string
+		start, end interface{}
+		expected   int
+	}{
+		{"no range", nil, nil, 30},
+		{"all departments", 1, 3, 30},
+		{"departments 0, 1", 1, 2, 20},
+		{"department 0", 1, 1, 10},
+	}
+
+	for _, testCase := range testCases {
+		rangequeryResults := []Order{}
+		n, _ := db.
+			FindIndex(&rangequeryResults, "department").
+			Start(testCase.start).
+			End(testCase.end).
+			Run()
+
+		// Check for correct number of returned results
+		if n != testCase.expected {
+			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+		}
+
+	}
+}
+
 // Index searching
-func Test_IndexRange(t *testing.T) {
+func Test_IndexRange_StartEnd(t *testing.T) {
 	// Set up 100 orders with increasing department, customer and shipping fee
 	// and save
 	var orders []Tormentable
@@ -60,17 +118,20 @@ func Test_IndexRange(t *testing.T) {
 		})
 	}
 
+	// Randomise order before saving,
+	// to ensure save order is not affecting retrieval
+	// in some roundabout way
+	randomiseTormentables(orders)
+
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 	db.Save(orders...)
 
-	// For now we are only testing the number of returned results,
-	// Not the actual returned values
 	testCases := []struct {
-		testName  string
-		indexName string
-		from, to  interface{}
-		expected  int
+		testName   string
+		indexName  string
+		start, end interface{}
+		expected   int
 	}{
 		// Non existent index
 		{"non existent index", "notanindex", nil, nil, 0},
@@ -80,8 +141,9 @@ func Test_IndexRange(t *testing.T) {
 		{"integer - from 1", "department", 1, nil, 100},
 		{"integer - from 2", "department", 2, nil, 99},
 		{"integer - from 50", "department", 50, nil, 51},
+		{"integer - 1 to 2", "department", 1, 2, 2},
 		{"integer - 50 to 59", "department", 50, 59, 10},
-		{"integer - 1 to 101", "department", 0, 100, 100},
+		{"integer - 1 to 100", "department", 1, 100, 100},
 		{"integer - to 50", "department", nil, 50, 50},
 
 		// String
@@ -105,7 +167,11 @@ func Test_IndexRange(t *testing.T) {
 
 	for _, testCase := range testCases {
 		rangequeryResults := []Order{}
-		n, _ := db.FindIndex(&rangequeryResults, testCase.indexName).From(testCase.from).To(testCase.to).Run()
+		n, _ := db.
+			FindIndex(&rangequeryResults, testCase.indexName).
+			Start(testCase.start).
+			End(testCase.end).
+			Run()
 
 		// Check for correct number of returned results
 		if n != testCase.expected {

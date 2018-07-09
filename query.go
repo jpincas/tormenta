@@ -149,7 +149,7 @@ func (q *query) execute() (int, error) {
 			// to the theoretical final key in the range
 			// and break out if we've reached it
 			key := it.Item().Key()
-			if !q.to.IsNil() && !compareKeyBytes(compareTo, key, q.reverse) {
+			if !q.to.IsNil() && !compareKeyBytes(compareTo, key, q.reverse, false) {
 				return nil
 			}
 

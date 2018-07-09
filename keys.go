@@ -83,8 +83,17 @@ func extractID(b []byte) (uuid gouuidv6.UUID) {
 	return
 }
 
+func stripID(b []byte) []byte {
+	s := bytes.Split(b, []byte(keySeparator))
+	return bytes.Join(s[:len(s)-1], []byte(keySeparator))
+}
+
 // compare compares two key-byte slices
-func compareKeyBytes(a, b []byte, reverse bool) bool {
+func compareKeyBytes(a, b []byte, reverse bool, removeID bool) bool {
+	if removeID {
+		b = stripID(b)
+	}
+
 	var r int
 
 	if !reverse {
@@ -93,7 +102,7 @@ func compareKeyBytes(a, b []byte, reverse bool) bool {
 		r = bytes.Compare(b, a)
 	}
 
-	if r > 0 {
+	if r >= 0 {
 		return true
 	}
 

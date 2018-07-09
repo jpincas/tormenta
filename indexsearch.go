@@ -7,17 +7,17 @@ import (
 )
 
 type indexQuery struct {
-	db        DB
-	keyRoot   []byte
-	value     reflect.Value
-	holder    interface{}
-	target    interface{}
-	limit     int
-	reverse   bool
-	first     bool
-	from, to  interface{}
-	indexName []byte
-	countOnly bool
+	db         DB
+	keyRoot    []byte
+	value      reflect.Value
+	holder     interface{}
+	target     interface{}
+	limit      int
+	reverse    bool
+	first      bool
+	start, end interface{}
+	indexName  []byte
+	countOnly  bool
 }
 
 func (db DB) newIndexQuery(target interface{}, first bool, indexName string) *indexQuery {
@@ -57,13 +57,20 @@ func (db DB) FindIndex(entities interface{}, indexName string) *indexQuery {
 	return db.newIndexQuery(entities, false, indexName)
 }
 
-func (q *indexQuery) From(t interface{}) *indexQuery {
-	q.from = t
+func (q *indexQuery) Start(t interface{}) *indexQuery {
+	q.start = t
 	return q
 }
 
-func (q *indexQuery) To(t interface{}) *indexQuery {
-	q.to = t
+func (q *indexQuery) End(t interface{}) *indexQuery {
+	q.end = t
+	return q
+}
+
+// Match is shorthand for specifying Start() and End()
+func (q *indexQuery) Match(t interface{}) *indexQuery {
+	q.start = t
+	q.end = t
 	return q
 }
 
@@ -80,9 +87,9 @@ func (q indexQuery) getIteratorOptions() badger.IteratorOptions {
 }
 
 func (q *indexQuery) execute() (int, error) {
-	seekFrom := newIndexKey(q.keyRoot, q.indexName, q.from).bytes()
+	seekFrom := newIndexKey(q.keyRoot, q.indexName, q.start).bytes()
 	validTo := newIndexKey(q.keyRoot, q.indexName, nil).bytes()
-	compareTo := newIndexKey(q.keyRoot, q.indexName, q.to).bytes()
+	compareTo := newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
 
 	entity := q.holder.(Tormentable)
 	results := []Tormentable{}
@@ -94,22 +101,30 @@ func (q *indexQuery) execute() (int, error) {
 
 		for it.Seek(seekFrom); it.ValidForPrefix(validTo); it.Next() {
 
+			// If a limit clause has been specified AND met, stop here
 			if q.limit > 0 && counter >= q.limit {
 				return nil
 			}
 
+			// Get the current key
 			key := it.Item().Key()
+
+			// Compare the current key to the calculated 'comparison' key
+			// Specify 'true' so that the ID is stripped for comparison
+			if q.end != nil && !compareKeyBytes(compareTo, key, q.reverse, true) {
+				return nil
+			}
+
+			// Extract the ID from the key, and use to get the record by ID
 			_, err := q.db.GetByID(entity, extractID(key))
 			if err != nil {
 				return err
 			}
 
+			// Append the retrieved record to the list of results
 			results = append(results, entity)
 
-			if q.to != nil && !compareKeyBytes(compareTo, key, q.reverse) {
-				return nil
-			}
-
+			// Increment the counter
 			counter++
 		}
 
