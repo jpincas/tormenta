@@ -59,7 +59,7 @@ func withID(k key, id []gouuidv6.UUID) key {
 	return k
 }
 
-func (k key) shouldAppendIndex() bool {
+func (k key) shouldAppendID() bool {
 	// If index is nil, definite no
 	if k.id.IsNil() {
 		return false
@@ -78,6 +78,10 @@ func (k key) shouldAppendIndex() bool {
 	return false
 }
 
+// c:orders:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
+// i:orders:department:3
+// i:orders:department:3:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
+
 func (k key) bytes() []byte {
 	// Use either content/index key prefix
 	identifierPrefix := []byte(contentKeyPrefix)
@@ -93,7 +97,7 @@ func (k key) bytes() []byte {
 		toJoin = append(toJoin, k.indexName, interfaceToBytes(k.indexContent))
 	}
 
-	if k.shouldAppendIndex() {
+	if k.shouldAppendID() {
 		toJoin = append(toJoin, k.id.Bytes())
 	}
 
@@ -126,7 +130,7 @@ func compareKeyBytes(a, b []byte, reverse bool, removeID bool) bool {
 		r = bytes.Compare(b, a)
 	}
 
-	if r >= 0 {
+	if r < 0 {
 		return true
 	}
 

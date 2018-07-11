@@ -52,6 +52,10 @@ func (q *query) Where(indexName string, params ...interface{}) *query {
 
 // From adds a lower boundary to the date range of the query
 func (q *query) From(t time.Time) *query {
+	// Subtract 1 nanosecond form the specified time
+	// Leads to an inclusive date search
+	t = t.Add(-1 * time.Nanosecond)
+
 	q.from = gouuidv6.NewFromTime(t)
 	return q
 }

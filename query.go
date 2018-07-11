@@ -136,10 +136,10 @@ func (q query) isEndOfRange(it *badger.Iterator) bool {
 	key := it.Item().Key()
 
 	if q.isIndexQuery {
-		return q.end != nil && !compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
+		return q.end != nil && compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
 	}
 
-	return !q.to.IsNil() && !compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
+	return !q.to.IsNil() && compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
 }
 
 func (q query) isLimitMet() bool {
