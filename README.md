@@ -1,4 +1,4 @@
-# TormentaDB
+# TormentaDB (WIP)
 
 Tormenta is a thin functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some limited data querying capabilities.  It uses date-ordered UUIDs so is particuarly good for data sets that are natually chronological, like financial transactions, soical media posts etc. Powered by:
 
@@ -20,11 +20,12 @@ import (
 	"github.com/jpincas/tormenta"
 )
 
-//go:generate msgp
+// go:generate msgp
+// Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
+
 // Define your data.
 // Include tormenta.Model to get date ordered IDs, last updated field etc
 // Tag with 'tormenta:"index"' to create secondary indexes
-// Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
 type Product struct {
 	tormenta.Model
 	Code          string
@@ -41,7 +42,6 @@ type Order struct {
 }
 
 func Example_Main() {
-
 	// Open the DB
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
