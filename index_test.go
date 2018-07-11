@@ -93,9 +93,8 @@ func Test_IndexRange_BasicCount(t *testing.T) {
 	for _, testCase := range testCases {
 		rangequeryResults := []Order{}
 		n, _ := db.
-			FindIndex(&rangequeryResults, "department").
-			Start(testCase.start).
-			End(testCase.end).
+			Find(&rangequeryResults).
+			Where("department", testCase.start, testCase.end).
 			Run()
 
 		// Check for correct number of returned results
@@ -144,7 +143,7 @@ func Test_IndexRange_Match(t *testing.T) {
 
 	for _, testCase := range testCases {
 		rangequeryResults := []Order{}
-		query := db.FindIndex(&rangequeryResults, "department").Match(testCase.department)
+		query := db.Find(&rangequeryResults).Where("department", testCase.department)
 		if testCase.addFrom {
 			query = query.From(testCase.from)
 		}
@@ -227,9 +226,8 @@ func Test_IndexRange_StartEnd(t *testing.T) {
 	for _, testCase := range testCases {
 		rangequeryResults := []Order{}
 		n, _ := db.
-			FindIndex(&rangequeryResults, testCase.indexName).
-			Start(testCase.start).
-			End(testCase.end).
+			Find(&rangequeryResults).
+			Where(testCase.indexName, testCase.start, testCase.end).
 			Run()
 
 		// Check for correct number of returned results
@@ -254,9 +252,7 @@ func Test_IndexRange_StartEnd(t *testing.T) {
 			if order.ShippingFee == 0.0 {
 				t.Errorf("Testing %s.  Order no %v has 0 shipping fee", testCase.testName, i)
 			}
-
 		}
-
 	}
 
 }

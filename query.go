@@ -2,23 +2,68 @@ package tormenta
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
 
 type query struct {
-	db        DB
-	keyRoot   []byte
-	value     reflect.Value
-	holder    interface{}
-	target    interface{}
-	from, to  gouuidv6.UUID
-	limit     int
-	reverse   bool
-	first     bool
+	// Connection to BadgerDB
+	db DB
+
+	// The entity type being searched
+	keyRoot []byte
+
+	// The Go 'value' for the entity type being searched
+	value reflect.Value
+
+	// The 'holder' is basically the type of either the single entity passed in (for first only)
+	// or the underlying element type for the slice (regular query).
+	// During query execution this will be cast to a 'tormentable'
+	// which will be used as a 'holder' for each unmarshalling operation
+	holder interface{}
+
+	// Target is the pointer passed into the query where results will be set
+	target interface{}
+
+	// Limit number of returned results
+	limit int
+
+	// Reverse order of searching and returned results
+	reverse bool
+
+	// Is this a 'first only' search
+	first bool
+
+	// The start and end points of the index range search
+	start, end interface{}
+
+	// From and To dates for the search
+	from, to gouuidv6.UUID
+
+	// If this is an index search, this is the name of the index
+	indexName []byte
+
+	// Is this an index query
+	isIndexQuery bool
+
+	// Is this a count only search
 	countOnly bool
+
+	// A placeholders for errors to be passed down through the query
+	err error
+
+	// Ranges and comparision key
+	seekFrom, validTo, compareTo []byte
+
+	// Entity placeholder
+	entity Tormentable
+
+	// Results holder
+	results []Tormentable
+
+	// Counter
+	counter int
 }
 
 func (db DB) newQuery(target interface{}, first bool) *query {
@@ -26,10 +71,6 @@ func (db DB) newQuery(target interface{}, first bool) *query {
 	keyRoot, value := entityTypeAndValue(target)
 
 	// Set the 'holder' on the query
-	// This is basically the type of either the single entity passed in (for first only)
-	// or the underlying element type for the slice (regular query)
-	// During query execution this will be cast to a 'tormentable'
-	// which will be used as a 'holder' for each unmarshalling operation
 	var holder interface{}
 	if first {
 		holder = reflect.New(value.Type()).Interface()
@@ -37,66 +78,23 @@ func (db DB) newQuery(target interface{}, first bool) *query {
 		holder = reflect.New(value.Type().Elem()).Interface()
 	}
 
+	// Create the base query
 	q := &query{
 		db:      db,
 		keyRoot: keyRoot,
 		value:   value,
 		holder:  holder,
 		target:  target,
+		entity:  holder.(Tormentable),
 	}
 
+	// If this is a 'first only' query
 	if first {
 		q.limit = 1
 		q.first = true
 	}
 
 	return q
-}
-
-// Find kicks off a DB query returning a slice of entities
-func (db DB) Find(entities interface{}) *query {
-	return db.newQuery(entities, false)
-}
-
-// First kicks off a DB query returning the first entity that matches the criteria
-func (db DB) First(entity interface{}) *query {
-	return db.newQuery(entity, true)
-}
-
-// From adds a lower boundary to the date range of the query
-func (q *query) From(t time.Time) *query {
-	q.from = gouuidv6.NewFromTime(t)
-	return q
-}
-
-// To adds an upper bound to the date range of the query
-func (q *query) To(t time.Time) *query {
-	q.to = gouuidv6.NewFromTime(t)
-	return q
-}
-
-// Limit limits the number of results a query will return to n
-func (q *query) Limit(n int) *query {
-	q.limit = n
-	return q
-}
-
-// Reverse reverses the order of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
-func (q *query) Reverse() *query {
-	q.reverse = true
-	return q
-}
-
-// Run actually executes the query and returns results
-func (q *query) Run() (int, error) {
-	return q.execute()
-}
-
-// Count executes the query in fast, count-only mode
-func (q *query) Count() (int, error) {
-	// Count never needs the values
-	q.countOnly = true
-	return q.execute()
 }
 
 func (q query) getIteratorOptions(getValues bool) badger.IteratorOptions {
@@ -106,111 +104,197 @@ func (q query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 	return options
 }
 
-func (q *query) execute() (int, error) {
-	// Get the from and to prefix for matching in the iterator
-	seekFrom := newContentKey(q.keyRoot, q.from).bytes()
-	validTo := newContentKey(q.keyRoot).bytes()
-	compareTo := newContentKey(q.keyRoot, q.to).bytes()
+func (q query) isExactIndexMatchSearch() bool {
+	return q.start == q.end
+}
 
-	// Cast the 'entity' we have stored on the query to a 'Tormentable'
-	// so that it can be unmarshalled
-	entity := q.holder.(Tormentable)
-
-	// Set up a slice to accumulate the results
-	results := []Tormentable{}
-
-	// Initialise the counter, mainly for the count operation
-	counter := 0
-
-	// Do we need to prefetch values or not?
-	getValues := true
-	if q.countOnly {
-		getValues = false
+func (q query) shouldGetValues() bool {
+	// For index queries or count only queries, don't get values
+	if q.isIndexQuery || q.countOnly {
+		return false
 	}
 
-	err := q.db.KV.View(func(txn *badger.Txn) error {
+	return true
+}
 
-		// Initialise the iterator, either with or without value pre-fetch
-		it := txn.NewIterator(q.getIteratorOptions(getValues))
+func (q query) shouldStripKeyID() bool {
+	// Regular queries never need to have ID stripped
+	if !q.isIndexQuery {
+		return false
+	}
+
+	// Index queries which are exact match AND have a 'to' clause
+	// also never need to have ID stripped
+	if q.isExactIndexMatchSearch() && !q.to.IsNil() {
+		return false
+	}
+
+	return true
+}
+
+func (q query) isEndOfRange(it *badger.Iterator) bool {
+	key := it.Item().Key()
+
+	if q.isIndexQuery {
+		return q.end != nil && !compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
+	}
+
+	return !q.to.IsNil() && !compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
+}
+
+func (q query) isLimitMet() bool {
+	return q.limit > 0 && q.counter >= q.limit
+}
+
+func (q query) endIteration(it *badger.Iterator) bool {
+	if it.ValidForPrefix(q.validTo) {
+		if q.isLimitMet() || q.isEndOfRange(it) {
+			return false
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (q *query) setRanges() {
+	var seekFrom, validTo, compareTo []byte
+
+	if q.isIndexQuery && q.isExactIndexMatchSearch() {
+		// For index searches with exact match
+		seekFrom = newIndexMatchKey(q.keyRoot, q.indexName, q.start, q.from).bytes()
+		validTo = newIndexMatchKey(q.keyRoot, q.indexName, q.end).bytes()
+		compareTo = newIndexMatchKey(q.keyRoot, q.indexName, q.end, q.to).bytes()
+	} else if q.isIndexQuery {
+		// For regular index searches
+		seekFrom = newIndexKey(q.keyRoot, q.indexName, q.start).bytes()
+		validTo = newIndexKey(q.keyRoot, q.indexName, nil).bytes()
+		compareTo = newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
+	} else {
+		seekFrom = newContentKey(q.keyRoot, q.from).bytes()
+		validTo = newContentKey(q.keyRoot).bytes()
+		compareTo = newContentKey(q.keyRoot, q.to).bytes()
+	}
+
+	q.seekFrom = seekFrom
+	q.validTo = validTo
+	q.compareTo = compareTo
+}
+
+func (q *query) resetQuery() {
+	// Counter should always be reset before executing a query.
+	// Just in case a query is built then executed twice.
+	q.counter = 0
+	q.results = []Tormentable{}
+}
+
+func (q *query) prepareQuery() {
+	q.setRanges()
+	q.resetQuery()
+}
+
+func (q *query) fetchIndexedRecord(it *badger.Iterator) error {
+	_, err := q.db.GetByID(q.entity, extractID(it.Item().Key()))
+	if err != nil {
+		return err
+	}
+
+	// Append the retrieved record to the list of results
+	q.results = append(q.results, q.entity)
+
+	return nil
+}
+
+func (q *query) setFirst() {
+	// The unmarhsalled entity will currently be on the query's 'entity' placeholder
+	// So all we need to do now is set it on the target
+	if q.isIndexQuery {
+		q.target = q.entity
+	}
+
+	// For a regular query, the unmarhsalled entity will be on entity
+	reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(q.entity)))
+}
+
+func (q *query) fetchRecord(it *badger.Iterator) error {
+	val, err := it.Item().Value()
+	if err != nil {
+		return err
+	}
+
+	_, err = q.entity.UnmarshalMsg(val)
+	if err != nil {
+		return err
+	}
+
+	q.results = append(q.results, q.entity)
+	return nil
+}
+
+func (q *query) execute() (int, error) {
+	// Do the work of calculating and setting initial values for the query
+	q.prepareQuery()
+
+	// Iterate through records according to calcuted range limits
+	err := q.db.KV.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(q.getIteratorOptions(q.shouldGetValues()))
 		defer it.Close()
 
 		// Start iteration
-		for it.Seek(seekFrom); it.ValidForPrefix(validTo); it.Next() {
+		for it.Seek(q.seekFrom); q.endIteration(it); it.Next() {
 
-			// If a limit has been specifed AND
-			// the counter has reached that limit,
-			// then break out by returning 'nil' from the iteration
-			if q.limit > 0 && counter >= q.limit {
-				return nil
-			}
-
-			// If a 'to' clause has been added to the range
-			// then compare the current key of the iterator
-			// to the theoretical final key in the range
-			// and break out if we've reached it
-			key := it.Item().Key()
-			if !q.to.IsNil() && !compareKeyBytes(compareTo, key, q.reverse, false) {
-				return nil
-			}
-
-			// Only unmarshall and append to results
-			// If we are running a full query, not a count
-			// OR we have filters to apply
+			// For non-count-only queries, we'll actually get the record
+			// How this is done depends on whether this is an index-based search or not
 			if !q.countOnly {
-				val, err := it.Item().Value()
-				if err != nil {
-					return err
+				if q.isIndexQuery {
+					q.fetchIndexedRecord(it)
+				} else {
+					q.fetchRecord(it)
 				}
-
-				_, err = entity.UnmarshalMsg(val)
-				if err != nil {
-					return err
-				}
-
-				// If this is a 'first only' query
-				// then we can break out at this point
-				// Set the counter to 1 to show we actually found it
-				if q.first {
-					counter = 1
-					return nil
-				}
-
-				// Otherwise we append the unmarshalled result
-				// and carry on iterating
-				results = append(results, entity)
 			}
 
-			// For counts, instead of appending all the results and taking the length
-			// we just use a simple counter
-			counter++
+			q.counter++
+
+			// If this is a first-only search, break out of the iteration now
+			// The counter has been incremented, so will read 1
+			if q.first {
+				return nil
+			}
 		}
 
-		// End the transaction
 		return nil
 	})
 
-	// If there was an error from the DB transaction
+	// If there was an error from the DB transaction, return 0 now
 	if err != nil {
 		return 0, err
 	}
 
-	// For a first only query,
-	// we just need to set the value of the single result
-	// If nothing was found, then the counter will not have been set to 1
-	// so it will still be 0
-	if q.first {
-		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
-		return counter, nil
+	// For count-only queries, there's nothing more to do
+	if q.countOnly {
+		return q.counter, nil
 	}
 
-	if !q.countOnly {
+	// If this was a first-only query, set the entity to the target
+	// and return the counter value.
+	// If no entity was found, the set will basically do nothing
+	// and the counter will read 0
+	if q.first {
+		q.setFirst()
+		return q.counter, nil
+	}
+
+	// If this was a non-count-only and non-index query
+	// we now need to set the results on the target
+	if !q.isIndexQuery && !q.countOnly {
 		// Now we have a slice of 'Tormentables'
 		// Set up a slice for 'translating' the 'Tormentables' into the target slice type
 		rt := reflect.Indirect(reflect.ValueOf(q.target))
 
 		// Iterate through the result, using 'reflect.Append' to append to the above slice
 		// the underlying type of the result
-		for _, result := range results {
+		for _, result := range q.results {
 			rt = reflect.Append(
 				rt,
 				reflect.Indirect(reflect.ValueOf(result)),
@@ -220,10 +304,8 @@ func (q *query) execute() (int, error) {
 		// Now set the accumulated, translated results on the original, passed in
 		// 'entities'
 		reflect.Indirect(reflect.ValueOf(q.target)).Set(rt)
-
-		return len(results), nil
 	}
 
-	return counter, nil
-
+	// Finally, return the numbrer of records found
+	return len(q.results), nil
 }
