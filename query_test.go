@@ -432,12 +432,31 @@ func Test_Aggregation(t *testing.T) {
 	db.Save(products...)
 
 	results := []Product{}
-	var sum int32
+	var intSum int32
+	var floatSum float64
+	expected := 465
 
-	_, err := db.Find(&results).Where("startingstock", 1, 30).Aggregate(&sum)
+	// Int32
+
+	_, err := db.Find(&results).Where("startingstock", 1, 30).Sum(&intSum)
 	if err != nil {
-		t.Error("Testing agreggation.  Got error")
+		t.Error("Testing int32 agreggation.  Got error")
 	}
 
-	t.Fail()
+	expectedIntSum := int32(expected)
+	if intSum != expectedIntSum {
+		t.Errorf("Testing int32 agreggation. Expteced %v, got %v", expectedIntSum, intSum)
+	}
+
+	// Float64
+
+	_, err = db.Find(&results).Where("price", 1.00, 30.00).Sum(&floatSum)
+	if err != nil {
+		t.Error("Testing float64 agreggation.  Got error")
+	}
+
+	expectedFloatSum := float64(expected)
+	if floatSum != expectedFloatSum {
+		t.Errorf("Testing float64 agreggation. Expteced %v, got %v", expectedFloatSum, floatSum)
+	}
 }

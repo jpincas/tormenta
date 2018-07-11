@@ -1,7 +1,6 @@
 package tormenta
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/dgraph-io/badger"
@@ -169,17 +168,17 @@ func (q query) endIteration(it *badger.Iterator) bool {
 }
 
 func (q query) aggregate(it *badger.Iterator) {
-	// aggregation
 	// TODO: super inefficient to do this every time
-	extractIndexValue(it.Item().Key(), q.aggTarget)
-	fmt.Printf("results: %v", *q.aggTarget.(*int32))
-
-	// t := *q.aggTarget.(type)
-	// switch q.aggTarget.(type) {
-	// case int:
-	// 	fmt.Printf("results: %v", q.aggTarget)
-	// }
-
+	switch q.aggTarget.(type) {
+	case *int32:
+		acc := *q.aggTarget.(*int32)
+		extractIndexValue(it.Item().Key(), q.aggTarget)
+		*q.aggTarget.(*int32) = acc + *q.aggTarget.(*int32)
+	case *float64:
+		acc := *q.aggTarget.(*float64)
+		extractIndexValue(it.Item().Key(), q.aggTarget)
+		*q.aggTarget.(*float64) = acc + *q.aggTarget.(*float64)
+	}
 }
 
 func (q *query) setRanges() {
