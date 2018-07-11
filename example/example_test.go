@@ -116,8 +116,12 @@ func Example_Main() {
 	log.Println(count) // 3
 
 	// Limit
-	count, _ = db.Find(&orders).From(mid2009).To(mid2012).Limit(2).Count()
-	log.Println(count) // 2
+	n, _ = db.Find(&orders).From(mid2009).To(mid2012).Limit(2).Run()
+	log.Println(n) // 2
+
+	// Offset
+	n, _ = db.Find(&orders).From(mid2009).To(mid2012).Limit(2).Offset(1).Run()
+	log.Println(n) // 2 (same count, different results)
 
 	// Reverse (note reversed range)
 	count, _ = db.Find(&orders).Reverse().From(mid2012).To(mid2009).Count()

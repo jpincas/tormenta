@@ -9,9 +9,52 @@ import (
 
 // User API
 
+type QueryOptions struct {
+	First, Reverse bool
+	Limit, Offset  int
+	Start, End     interface{}
+	From, To       time.Time
+	IndexName      string
+	IndexParams    []interface{}
+}
+
 // Find is the basic way to kick off a query
 func (db DB) Find(entities interface{}) *query {
 	return db.newQuery(entities, false)
+}
+
+// Query is another way of specifying a query, using a struct of options instead of method chaining
+func (db DB) Query(entities interface{}, options QueryOptions) *query {
+	q := db.newQuery(entities, options.First)
+
+	// Overwrite limit if this is not a first-only search
+	if !options.First {
+		q.limit = options.Limit
+	}
+
+	if options.Offset > 0 {
+		q.Offset(options.Offset)
+	}
+
+	// Apply reverse if speficied
+	// Default is false, so can be left off
+	q.reverse = options.Reverse
+
+	// Apply date range if specified
+	if !options.From.IsZero() {
+		q.From(options.From)
+	}
+
+	if !options.To.IsZero() {
+		q.To(options.To)
+	}
+
+	// Apply index if required
+	if options.IndexName != "" {
+		q.Where(options.IndexName, options.IndexParams...)
+	}
+
+	return q
 }
 
 // First kicks off a DB query returning the first entity that matches the criteria
@@ -22,6 +65,13 @@ func (db DB) First(entity interface{}) *query {
 // Limit limits the number of results a query will return to n
 func (q *query) Limit(n int) *query {
 	q.limit = n
+	return q
+}
+
+// Offset starts N entities from the beginning
+func (q *query) Offset(n int) *query {
+	q.offset = n
+	q.offsetCounter = n
 	return q
 }
 

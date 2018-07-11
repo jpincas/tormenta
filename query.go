@@ -29,6 +29,9 @@ type query struct {
 	// Limit number of returned results
 	limit int
 
+	// Offet - start returning results N entities from the beginning
+	offset, offsetCounter int
+
 	// Reverse order of searching and returned results
 	reverse bool
 
@@ -186,6 +189,7 @@ func (q *query) resetQuery() {
 	// Counter should always be reset before executing a query.
 	// Just in case a query is built then executed twice.
 	q.counter = 0
+	q.offsetCounter = q.offset
 	q.results = []Tormentable{}
 }
 
@@ -243,6 +247,13 @@ func (q *query) execute() (int, error) {
 
 		// Start iteration
 		for it.Seek(q.seekFrom); q.endIteration(it); it.Next() {
+			// Skip the first N entities according to the specified offset
+			if q.offsetCounter > 0 {
+				q.offsetCounter--
+				continue
+			}
+
+			q.counter++
 
 			// For non-count-only queries, we'll actually get the record
 			// How this is done depends on whether this is an index-based search or not
@@ -253,8 +264,6 @@ func (q *query) execute() (int, error) {
 					q.fetchRecord(it)
 				}
 			}
-
-			q.counter++
 
 			// If this is a first-only search, break out of the iteration now
 			// The counter has been incremented, so will read 1

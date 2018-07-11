@@ -144,21 +144,25 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 		includeTo bool
 		limit     int
 		reverse   bool
+		offset    int
 	}{
-		{"from right now - no orders expected, no 'to'", time.Now(), time.Time{}, 0, false, 0, false},
-		{"from beginning of time - all orders should be included, no 'to'", time.Time{}, time.Time{}, len(orders), false, 0, false},
-		{"from 2014, no 'to'", time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), time.Time{}, 8, false, 0, false},
-		{"from 1 hour ago, no 'to'", time.Now().Add(-1 * time.Hour), time.Time{}, 1, false, 0, false},
-		{"from beginning of time to now - expect all", time.Time{}, time.Now(), len(orders), true, 0, false},
-		{"from beginning of time to 2014 - expect 5", time.Time{}, time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), 5, true, 0, false},
-		{"from beginning of time to an hour ago - expect all but 1", time.Time{}, time.Now().Add(-1 * time.Hour), len(orders) - 1, true, 0, false},
-		{"from beginning of time - limit 1", time.Time{}, time.Time{}, 1, false, 1, false},
-		{"from beginning of time - limit 10", time.Time{}, time.Time{}, 10, false, 10, false},
-
-		{"reversed - from beginning of time", time.Time{}, time.Time{}, 0, false, 0, true},
-		{"reverse - from now - no to", time.Now(), time.Time{}, len(orders), false, 0, true},
-		{"reverse - from now to 2014 - expect 8", time.Now(), time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), 8, true, 0, true},
-		{"reverse - from now to 2014 - limit 5 - expect 5", time.Now(), time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), 5, true, 5, true},
+		{"from right now - no orders expected, no 'to'", time.Now(), time.Time{}, 0, false, 0, false, 0},
+		{"from beginning of time - all orders should be included, no 'to'", time.Time{}, time.Time{}, len(orders), false, 0, false, 0},
+		{"from beginning of time - offset 1", time.Time{}, time.Time{}, len(orders) - 1, false, 0, false, 1},
+		{"from beginning of time - offset 2", time.Time{}, time.Time{}, len(orders) - 2, false, 0, false, 2},
+		{"from 2014, no 'to'", time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), time.Time{}, 8, false, 0, false, 0},
+		{"from 1 hour ago, no 'to'", time.Now().Add(-1 * time.Hour), time.Time{}, 1, false, 0, false, 0},
+		{"from beginning of time to now - expect all", time.Time{}, time.Now(), len(orders), true, 0, false, 0},
+		{"from beginning of time to 2014 - expect 5", time.Time{}, time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), 5, true, 0, false, 0},
+		{"from beginning of time to an hour ago - expect all but 1", time.Time{}, time.Now().Add(-1 * time.Hour), len(orders) - 1, true, 0, false, 0},
+		{"from beginning of time - limit 1", time.Time{}, time.Time{}, 1, false, 1, false, 0},
+		{"from beginning of time - limit 10", time.Time{}, time.Time{}, 10, false, 10, false, 0},
+		{"from beginning of time - limit 10 - offset 2 (shouldnt affect number of results)", time.Time{}, time.Time{}, 10, false, 10, false, 2},
+		{"from beginning of time - limit more than there are", time.Time{}, time.Time{}, len(orders), false, 0, false, 0},
+		{"reversed - from beginning of time", time.Time{}, time.Time{}, 0, false, 0, true, 0},
+		{"reverse - from now - no to", time.Now(), time.Time{}, len(orders), false, 0, true, 0},
+		{"reverse - from now to 2014 - expect 8", time.Now(), time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), 8, true, 0, true, 0},
+		{"reverse - from now to 2014 - limit 5 - expect 5", time.Now(), time.Date(2014, time.January, 1, 1, 0, 0, 0, time.UTC), 5, true, 5, true, 0},
 	}
 
 	for _, testCase := range testCases {
@@ -175,6 +179,10 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 		if testCase.reverse {
 			query = query.Reverse()
+		}
+
+		if testCase.offset > 0 {
+			query = query.Offset(testCase.offset)
 		}
 
 		n, _ := query.Run()
