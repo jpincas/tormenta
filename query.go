@@ -1,6 +1,7 @@
 package tormenta
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/dgraph-io/badger"
@@ -30,6 +31,7 @@ type query struct {
 	limit int
 
 	// Offet - start returning results N entities from the beginning
+	// offsetCounter used to track the offset
 	offset, offsetCounter int
 
 	// Reverse order of searching and returned results
@@ -67,6 +69,11 @@ type query struct {
 
 	// Counter
 	counter int
+
+	isAggQuery bool
+	sumInt     int
+	sumFloat   float64
+	aggTarget  interface{}
 }
 
 func (db DB) newQuery(target interface{}, first bool) *query {
@@ -159,6 +166,20 @@ func (q query) endIteration(it *badger.Iterator) bool {
 	}
 
 	return false
+}
+
+func (q query) aggregate(it *badger.Iterator) {
+	// aggregation
+	// TODO: super inefficient to do this every time
+	extractIndexValue(it.Item().Key(), q.aggTarget)
+	fmt.Printf("results: %v", *q.aggTarget.(*int32))
+
+	// t := *q.aggTarget.(type)
+	// switch q.aggTarget.(type) {
+	// case int:
+	// 	fmt.Printf("results: %v", q.aggTarget)
+	// }
+
 }
 
 func (q *query) setRanges() {
@@ -257,12 +278,16 @@ func (q *query) execute() (int, error) {
 
 			// For non-count-only queries, we'll actually get the record
 			// How this is done depends on whether this is an index-based search or not
-			if !q.countOnly {
+			if !q.countOnly && !q.isAggQuery {
 				if q.isIndexQuery {
 					q.fetchIndexedRecord(it)
 				} else {
 					q.fetchRecord(it)
 				}
+			}
+
+			if q.isAggQuery {
+				q.aggregate(it)
 			}
 
 			// If this is a first-only search, break out of the iteration now

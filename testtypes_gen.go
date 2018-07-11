@@ -542,7 +542,7 @@ func (z *Product) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 		case "Price":
-			z.Price, err = dc.ReadFloat32()
+			z.Price, err = dc.ReadFloat64()
 			if err != nil {
 				return
 			}
@@ -601,7 +601,7 @@ func (z *Product) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteFloat32(z.Price)
+	err = en.WriteFloat64(z.Price)
 	if err != nil {
 		return
 	}
@@ -644,7 +644,7 @@ func (z *Product) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.AppendString(o, z.Name)
 	// string "Price"
 	o = append(o, 0xa5, 0x50, 0x72, 0x69, 0x63, 0x65)
-	o = msgp.AppendFloat32(o, z.Price)
+	o = msgp.AppendFloat64(o, z.Price)
 	// string "StartingStock"
 	o = append(o, 0xad, 0x53, 0x74, 0x61, 0x72, 0x74, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x6f, 0x63, 0x6b)
 	o = msgp.AppendInt(o, z.StartingStock)
@@ -686,7 +686,7 @@ func (z *Product) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "Price":
-			z.Price, bts, err = msgp.ReadFloat32Bytes(bts)
+			z.Price, bts, err = msgp.ReadFloat64Bytes(bts)
 			if err != nil {
 				return
 			}
@@ -713,6 +713,6 @@ func (z *Product) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Product) Msgsize() (s int) {
-	s = 1 + 6 + z.Model.Msgsize() + 5 + msgp.StringPrefixSize + len(z.Code) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Float32Size + 14 + msgp.IntSize + 12 + msgp.StringPrefixSize + len(z.Description)
+	s = 1 + 6 + z.Model.Msgsize() + 5 + msgp.StringPrefixSize + len(z.Code) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Float64Size + 14 + msgp.IntSize + 12 + msgp.StringPrefixSize + len(z.Description)
 	return
 }

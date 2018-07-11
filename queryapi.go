@@ -126,3 +126,13 @@ func (q *query) Count() (int, error) {
 	q.countOnly = true
 	return q.execute()
 }
+
+func (q *query) Aggregate(a interface{}) (int, error) {
+	if !q.isIndexQuery || len(q.indexName) == 0 {
+		return 0, errors.New("Aggregation must use an index query")
+	}
+
+	q.aggTarget = a
+	q.isAggQuery = true
+	return q.execute()
+}

@@ -412,3 +412,32 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 		}
 	}
 }
+
+func Test_Aggregation(t *testing.T) {
+	var products []Tormentable
+
+	for i := 1; i <= 30; i++ {
+		product := &Product{
+			Price:         float64(i),
+			StartingStock: i,
+		}
+
+		products = append(products, product)
+	}
+
+	randomiseTormentables(products)
+
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+	db.Save(products...)
+
+	results := []Product{}
+	var sum int32
+
+	_, err := db.Find(&results).Where("startingstock", 1, 30).Aggregate(&sum)
+	if err != nil {
+		t.Error("Testing agreggation.  Got error")
+	}
+
+	t.Fail()
+}

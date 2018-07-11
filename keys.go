@@ -2,6 +2,7 @@ package tormenta
 
 import (
 	"bytes"
+	"encoding/binary"
 	"reflect"
 	"strings"
 
@@ -109,6 +110,14 @@ func extractID(b []byte) (uuid gouuidv6.UUID) {
 	idBytes := s[len(s)-1]
 	copy(uuid[:], idBytes)
 	return
+}
+
+func extractIndexValue(b []byte, i interface{}) {
+	s := bytes.Split(b, []byte(keySeparator))
+	indexValueBytes := s[3]
+
+	buf := bytes.NewBuffer(indexValueBytes)
+	binary.Read(buf, binary.BigEndian, i) //TODO: error handling
 }
 
 func stripID(b []byte) []byte {

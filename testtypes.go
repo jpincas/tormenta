@@ -22,9 +22,9 @@ type NoModel struct {
 type Product struct {
 	Model
 	Code          string
-	Name          string `tormenta:"index"`
-	Price         float32
-	StartingStock int
+	Name          string  `tormenta:"index"`
+	Price         float64 `tormenta:"index"`
+	StartingStock int     `tormenta:"index"`
 
 	// For a bit more realism and to pad out the serialised data
 	Description string
