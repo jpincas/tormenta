@@ -1,15 +1,38 @@
-package tormenta
+package example
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/jpincas/gouuidv6"
+	"github.com/jpincas/tormenta"
 )
 
+//go:generate msgp
+// Define your data.
+// Include tormenta.Model to get date ordered IDs, last updated field etc
+// Tag with 'tormenta:"index"' to create secondary indexes
+// Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
+type Product struct {
+	tormenta.Model
+	Code          string
+	Name          string `tormenta:"index"`
+	Price         float32
+	StartingStock int
+}
+
+type Order struct {
+	tormenta.Model
+	Customer    string  `tormenta:"index"`
+	Department  int     `tormenta:"index"`
+	ShippingFee float64 `tormenta:"index"`
+}
+
 func Example_Main() {
+
 	// Open the DB
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
 	// Create some products
@@ -29,7 +52,7 @@ func Example_Main() {
 	log.Println(n) // 2
 
 	// Get by ID
-	nonExistentID := newID()
+	var nonExistentID gouuidv6.UUID
 	product1ID := product1.ID
 
 	var product Product
@@ -45,9 +68,8 @@ func Example_Main() {
 	log.Println(n) // 2 (-> products)
 
 	// Date range query
-
 	// Make some orders with specific creation times
-	var ordersToSave []Tormentable
+	var ordersToSave []tormenta.Tormentable
 	dates := []time.Time{
 		// Specific years
 		time.Date(2009, time.January, 1, 1, 0, 0, 0, time.UTC),
@@ -57,13 +79,14 @@ func Example_Main() {
 		time.Date(2013, time.January, 1, 1, 0, 0, 0, time.UTC),
 	}
 
-	for _, date := range dates {
+	for i, date := range dates {
 		ordersToSave = append(ordersToSave, &Order{
 			// You wouln't normally do this manually
 			// This is just for illustration
-			Model: Model{
+			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(date),
 			},
+			Customer: fmt.Sprintf("customer-%v", i), // "customer-0", "customer-1"
 		})
 	}
 
@@ -99,4 +122,19 @@ func Example_Main() {
 	// Reverse (note reversed range)
 	count, _ = db.Find(&orders).Reverse().From(mid2012).To(mid2009).Count()
 	log.Println(count) // 3
+
+	// Secondary index on 'customer' - exact index match
+	n, _ = db.First(&order).Where("customer", "customer-2").Run()
+	log.Println(n) // 1 (-> order )
+
+	// Secondary index on 'customer' - index range and count
+	count, _ = db.Find(&orders).Where("customer", "customer-1", "customer-3").Count()
+	log.Println(count) // 3
+
+	// Secondary index on 'customer' - exact index match, count and date range
+	count, _ = db.Find(&orders).Where("customer", "customer-3").From(mid2009).To(time.Now()).Count()
+	log.Println(count) // 3
+
+	// Secondary index on 'customer' - index range AND date range
+	// Coming soon!
 }

@@ -201,17 +201,6 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 // Index Queries
 
-// Helper for making groups of depatments
-func getDept(i int) int {
-	if i <= 10 {
-		return 1
-	} else if i <= 20 {
-		return 2
-	} else {
-		return 3
-	}
-}
-
 func Test_IndexQuery_ExactMatch_DateRange(t *testing.T) {
 	var orders []Tormentable
 
@@ -364,7 +353,17 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 }
 
-func Test_IndexQuery_Range_Plus_DateRange(t *testing.T) {
+// Helper for making groups of depatments
+func getDept(i int) int {
+	if i <= 10 {
+		return 1
+	} else if i <= 20 {
+		return 2
+	} else {
+		return 3
+	}
+}
+func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 	var orders []Tormentable
 
 	for i := 1; i <= 30; i++ {
@@ -388,8 +387,8 @@ func Test_IndexQuery_Range_Plus_DateRange(t *testing.T) {
 	}{
 		{"no range", nil, nil, 30},
 		{"all departments", 1, 3, 30},
-		{"departments 0, 1", 1, 2, 20},
-		{"department 0", 1, 1, 10},
+		{"departments 1, 2", 1, 2, 20},
+		{"department 1", 1, 1, 10},
 	}
 
 	for _, testCase := range testCases {
