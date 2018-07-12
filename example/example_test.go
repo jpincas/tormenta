@@ -9,7 +9,7 @@ import (
 	"github.com/jpincas/tormenta"
 )
 
-// go:generate msgp
+//go:generate msgp
 // Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
 
 // Define your data.
@@ -47,20 +47,25 @@ func Example_Main() {
 		Price:         2.00,
 		StartingStock: 100}
 
-	// Save them
+	// Save
 	n, _ := db.Save(&product1, &product2)
 	log.Println("Saved: ", n) // 2
 
-	// Get by ID
+	// Get
 	var nonExistentID gouuidv6.UUID
-	product1ID := product1.ID
-
 	var product Product
-	ok, _ := db.GetByID(&product, nonExistentID)
+
+	// No such record
+	ok, _ := db.Get(&product, nonExistentID)
 	log.Println("Get: ", ok) // false
 
-	ok, _ = db.GetByID(&product, product1ID)
-	log.Println("Get: ", ok) // true ( -> product)
+	// Get by entity ID
+	ok, _ = db.Get(&product1)
+	log.Println("Get entity: ", ok) // true ( -> product 1)
+
+	// Get with optional separately specified ID
+	ok, _ = db.Get(&product, product1.ID)
+	log.Println("Get by entity ID: ", ok) // true ( -> product 1)
 
 	// Basic query
 	var products []Product

@@ -54,8 +54,8 @@ func Test_GetByID(t *testing.T) {
 	order2 := Order{}
 	db.Save(&order)
 
-	// Attempt to get entity without ID
-	ok, err := db.GetByID(&order2, order.ID)
+	// Overwite ID
+	ok, err := db.Get(&order2, order.ID)
 
 	if err != nil {
 		t.Errorf("Testing get by id. Got error %v", err)

@@ -221,7 +221,7 @@ func (q *query) fetchIndexedRecord(it *badger.Iterator) error {
 	key := extractID(it.Item().Key())
 
 	// Get the record
-	_, err := q.db.GetByID(q.entity, key)
+	_, err := q.db.Get(q.entity, key)
 	if err != nil {
 		return err
 	}
