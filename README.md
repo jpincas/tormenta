@@ -190,10 +190,12 @@ func Example_Main() {
 
 ## To Do
 
-- [] Easy joins
-- [] Filter functions for easily applying arbitrary criteria to returned results
-- [] Better error reporting from query construction
-- [] Better protection against unsupported types being passed around as interfaces
-- [] Fully benchmarked simulation of a real-world use case
-- [] Optional TTL on save
-- [] Slices as indexes -> multiple index entries
+- [x] Delete
+- [ ] Easy joins
+- [ ] Filter functions for easily applying arbitrary criteria to returned results
+- [ ] Better error reporting from query construction
+- [ ] Better protection against unsupported types being passed around as interfaces
+- [ ] Fully benchmarked simulation of a real-world use case
+- [ ] Optional TTL on save
+- [ ] Slices as indexes -> multiple index entries
+- [ ] Generic GUI for connecting to and editing database entries
