@@ -23,6 +23,14 @@ func Open(dir string) (*DB, error) {
 		return nil, errors.New("No valid data directory provided")
 	}
 
+	// Create directory if does not exist
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.MkdirAll(dir, os.ModePerm)
+		if err != nil {
+			return nil, errors.New("Could not create data directory")
+		}
+	}
+
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir

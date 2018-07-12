@@ -146,6 +146,21 @@ func compareKeyBytes(a, b []byte, reverse bool, removeID bool) bool {
 	return false
 }
 
+func keyIsOutsideDateRange(key, start, end gouuidv6.UUID) bool {
+	// No dates at all? Then its definitely not outside the range
+	if start.IsNil() && end.IsNil() {
+		return false
+	}
+
+	// For start date only
+	if end.IsNil() {
+		return key.Compare(start)
+	}
+
+	// For both start and end
+	return key.Compare(start) || !key.Compare(end)
+}
+
 // Key construction helpers
 
 func entityTypeAndValue(t interface{}) ([]byte, reflect.Value) {

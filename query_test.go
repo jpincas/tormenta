@@ -209,64 +209,6 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 // Index Queries
 
-func Test_IndexQuery_ExactMatch_DateRange(t *testing.T) {
-	var orders []Tormentable
-
-	for i := 1; i <= 30; i++ {
-		order := &Order{
-			Model: Model{
-				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
-			},
-			Department: getDept(i),
-		}
-
-		orders = append(orders, order)
-	}
-
-	randomiseTormentables(orders)
-
-	db, _ := OpenTest("data/tests")
-	defer db.Close()
-	db.Save(orders...)
-
-	testCases := []struct {
-		testName       string
-		department     interface{}
-		addFrom, addTo bool
-		from, to       time.Time
-		expected       int
-	}{
-		{"match department 1 - no date restriction", 1, false, false, time.Time{}, time.Time{}, 10},
-		{"match department 1 - from beginning of time", 1, true, false, time.Time{}, time.Now(), 10},
-		{"match department 1 - from beginning of time to now", 1, true, true, time.Time{}, time.Now(), 10},
-		{"match department 1 - from now (no to)", 1, true, false, time.Now(), time.Time{}, 0},
-		{"match department 1 - from 1st Nov (no to)", 1, true, false, time.Date(2009, time.November, 1, 23, 0, 0, 0, time.UTC), time.Time{}, 10},
-		{"match department 1 - from 5th Nov", 1, true, false, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Time{}, 6},
-		{"match department 1 - from 1st-5th Nov", 1, true, true, time.Date(2009, time.November, 1, 23, 0, 0, 0, time.UTC), time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), 5},
-	}
-
-	for _, testCase := range testCases {
-		rangequeryResults := []Order{}
-		query := db.Find(&rangequeryResults).Where("department", testCase.department)
-		if testCase.addFrom {
-			query = query.From(testCase.from)
-		}
-
-		if testCase.addTo {
-			query = query.To(testCase.to)
-		}
-
-		n, _ := query.Run()
-
-		// Check for correct number of returned results
-		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
-		}
-
-	}
-}
-
-// Index searching
 func Test_IndexQuery_Range(t *testing.T) {
 	// Set up 100 orders with increasing department, customer and shipping fee
 	// and save
@@ -458,5 +400,82 @@ func Test_Aggregation(t *testing.T) {
 	expectedFloatSum := float64(expected)
 	if floatSum != expectedFloatSum {
 		t.Errorf("Testing float64 agreggation. Expteced %v, got %v", expectedFloatSum, floatSum)
+	}
+}
+
+func Test_IndexQuery_DateRange(t *testing.T) {
+	var orders []Tormentable
+
+	for i := 1; i <= 30; i++ {
+		order := &Order{
+			Model: Model{
+				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
+			},
+			Department: getDept(i),
+		}
+
+		orders = append(orders, order)
+	}
+
+	randomiseTormentables(orders)
+
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+	db.Save(orders...)
+
+	testCases := []struct {
+		testName        string
+		indexRangeStart interface{}
+		addFrom, addTo  bool
+		from, to        time.Time
+		expected        int
+		indexRangeEnd   interface{}
+	}{
+		// Exact match tests (indexRangeEnd is nil)
+		{"match department 1 - no date restriction", 1, false, false, time.Time{}, time.Time{}, 10, nil},
+		{"match department 1 - from beginning of time", 1, true, false, time.Time{}, time.Now(), 10, nil},
+		{"match department 1 - from beginning of time to now", 1, true, true, time.Time{}, time.Now(), 10, nil},
+		{"match department 1 - from now (no to)", 1, true, false, time.Now(), time.Time{}, 0, nil},
+		{"match department 1 - from 1st Nov (no to)", 1, true, false, time.Date(2009, time.November, 1, 23, 0, 0, 0, time.UTC), time.Time{}, 10, nil},
+		{"match department 1 - from 5th Nov", 1, true, false, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Time{}, 6, nil},
+		{"match department 1 - from 1st-5th Nov", 1, true, true, time.Date(2009, time.November, 1, 23, 0, 0, 0, time.UTC), time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), 5, nil},
+
+		// Range match tests
+		{"departments 1-3 - no date restriction", 1, false, false, time.Time{}, time.Time{}, 30, 3},
+		{"departments 1-3 - from beginning of time", 1, true, false, time.Time{}, time.Time{}, 30, 3},
+		{"departments 1-3 - from beginning of time to now", 1, true, true, time.Time{}, time.Now(), 30, 3},
+		{"departments 1-3 - from now (no to)", 1, true, false, time.Now(), time.Time{}, 0, 3},
+		{"departments 1-3 - from 5th Nov", 1, true, false, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Time{}, 26, 3},
+		{"departments 1-3 - from 5th Nov - 15th Nov", 1, true, true, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Date(2009, time.November, 15, 23, 0, 0, 0, time.UTC), 11, 3},
+		{"departments 1-2 - from 5th Nov - 15th Nov", 1, true, true, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Date(2009, time.November, 15, 23, 0, 0, 0, time.UTC), 11, 2},
+		{"departments 1-2 - from 5th Nov - 9th Nov", 1, true, true, time.Date(2009, time.November, 5, 23, 0, 0, 0, time.UTC), time.Date(2009, time.November, 9, 23, 0, 0, 0, time.UTC), 5, 2},
+	}
+
+	for _, testCase := range testCases {
+		rangequeryResults := []Order{}
+
+		// If only indexRangeStart is specified then its an exact match search
+		query := db.Find(&rangequeryResults)
+		if testCase.indexRangeEnd == nil {
+			query = query.Where("department", testCase.indexRangeStart)
+		} else {
+			query = query.Where("department", testCase.indexRangeStart, testCase.indexRangeEnd)
+		}
+
+		if testCase.addFrom {
+			query = query.From(testCase.from)
+		}
+
+		if testCase.addTo {
+			query = query.To(testCase.to)
+		}
+
+		n, _ := query.Run()
+
+		// Check for correct number of returned results
+		if n != testCase.expected {
+			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+		}
+
 	}
 }

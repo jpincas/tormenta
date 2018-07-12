@@ -69,9 +69,8 @@ type query struct {
 	// Counter
 	counter int
 
+	// Is this an aggregation query?
 	isAggQuery bool
-	sumInt     int
-	sumFloat   float64
 	aggTarget  interface{}
 }
 
@@ -219,7 +218,10 @@ func (q *query) prepareQuery() {
 }
 
 func (q *query) fetchIndexedRecord(it *badger.Iterator) error {
-	_, err := q.db.GetByID(q.entity, extractID(it.Item().Key()))
+	key := extractID(it.Item().Key())
+
+	// Get the record
+	_, err := q.db.GetByID(q.entity, key)
 	if err != nil {
 		return err
 	}
@@ -267,6 +269,18 @@ func (q *query) execute() (int, error) {
 
 		// Start iteration
 		for it.Seek(q.seekFrom); q.endIteration(it); it.Next() {
+			// If this is a 'range index' type query
+			// that ALSO has a date range, the procedure is a little more complicated
+			// compared to an exact index match.
+			// Since the start/end points of the iteration focus on the index, e.g. E-J (alphabetical index)
+			// we need to manually check all the keys and reject those that don't fit the date range
+			if q.isIndexQuery && !q.isExactIndexMatchSearch() {
+				key := extractID(it.Item().Key())
+				if keyIsOutsideDateRange(key, q.from, q.to) {
+					continue
+				}
+			}
+
 			// Skip the first N entities according to the specified offset
 			if q.offsetCounter > 0 {
 				q.offsetCounter--
