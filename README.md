@@ -74,20 +74,29 @@ func Example_Main() {
 		Price:         2.00,
 		StartingStock: 100}
 
-	// Save them
+	// Save
 	n, _ := db.Save(&product1, &product2)
 	log.Println("Saved: ", n) // 2
 
-	// Get by ID
+	// Get
 	var nonExistentID gouuidv6.UUID
-	product1ID := product1.ID
-
 	var product Product
-	ok, _ := db.GetByID(&product, nonExistentID)
+
+	// No such record
+	ok, _ := db.Get(&product, nonExistentID)
 	log.Println("Get: ", ok) // false
 
-	ok, _ = db.GetByID(&product, product1ID)
-	log.Println("Get: ", ok) // true ( -> product)
+	// Get by entity ID
+	ok, _ = db.Get(&product1)
+	log.Println("Get entity: ", ok) // true ( -> product 1)
+
+	// Get with optional separately specified ID
+	ok, _ = db.Get(&product, product1.ID)
+	log.Println("Get by entity ID: ", ok) // true ( -> product 1)
+
+	// Delete
+	n, _ = db.Delete("product", product1.ID)
+	log.Println("Delete: ", n) // 1
 
 	// Basic query
 	var products []Product
@@ -176,12 +185,15 @@ func Example_Main() {
 	// Secondary index on 'customer' - index range AND date range
 	c, _ = db.Find(&orders).Where("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
 	log.Println("Index - range and date range", c) // 1
+}
 ```
 
 ## To Do
 
-[] Easy joins
-[] Filter functions for easily applying arbitrary criteria to returned results
-[] Better error reporting from query construction
-[] Better protection against unsupported types being passed around as interfaces
-[] Fully benchmarked simulation of a real-world use case
+- [] Easy joins
+- [] Filter functions for easily applying arbitrary criteria to returned results
+- [] Better error reporting from query construction
+- [] Better protection against unsupported types being passed around as interfaces
+- [] Fully benchmarked simulation of a real-world use case
+- [] Optional TTL on save
+- [] Slices as indexes -> multiple index entries
