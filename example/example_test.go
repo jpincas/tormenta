@@ -67,6 +67,10 @@ func Example_Main() {
 	ok, _ = db.Get(&product, product1.ID)
 	log.Println("Get by entity ID: ", ok) // true ( -> product 1)
 
+	// Delete
+	n, _ = db.Delete("product", product1.ID)
+	log.Println("Delete: ", n) // 1
+
 	// Basic query
 	var products []Product
 	n, _ = db.Find(&products).Run()
