@@ -177,3 +177,11 @@ func Example_Main() {
 	c, _ = db.Find(&orders).Where("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
 	log.Println("Index - range and date range", c) // 1
 ```
+
+## To Do
+
+[] Easy joins
+[] Filter functions for easily applying arbitrary criteria to returned results
+[] Better error reporting from query construction
+[] Better protection against unsupported types being passed around as interfaces
+[] Fully benchmarked simulation of a real-world use case
