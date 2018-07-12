@@ -1,6 +1,6 @@
 # TormentaDB (WIP)
 
-Tormenta is a thin functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some limited data querying capabilities and ORM like features.  It uses date-ordered UUIDs so is particuarly good for data sets that are natually chronological, like financial transactions, soical media posts etc. Powered by:
+Tormenta is a thin functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some limited data querying capabilities and ORM-like features.  It uses date-ordered IDs so is particuarly good for data sets that are natually chronological, like financial transactions, soical media posts etc. Powered by:
 
 - [BadgerDB](https://github.com/dgraph-io/badger)
 - [TinyLib MessagePack](https://github.com/tinylib/msgp)
@@ -10,7 +10,7 @@ and greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ## Quick How To
 
-Add `tormenta.Model` to structs you want to persist, install [TinyLib MessagePack codegen tool](https://github.com/tinylib/msgp), add `//go:generate msgp` to the top of your type definition files and run `go generate` whenever you change your structs.
+Add `tormenta.Model` to structs you want to persist and `tormenta:"index"` to fields you want to create secondary indexes for, install [TinyLib MessagePack codegen tool](https://github.com/tinylib/msgp), add `//go:generate msgp` to the top of your type definition files and run `go generate` whenever you change your structs.
 
 Open a DB connection with `db, err := tormenta.Open("mydatadirectory")` (dont forget to `defer db.Close()`).
 
@@ -18,7 +18,7 @@ Save a single entity with `db.Save(&MyEntity)` or multiple entities with `db.Sav
 
 Get a single entity by ID with `db.GetByID(&MyEntity, entityID)`.
 
-Construct a query to find single or mutliple entities with `db.Find(&MyEntities)` and `db.First(&MyEntity)`. Build up the query by chaining methods: `.From()/.To()` to add a date range, `.Where("indexName", indexStartOrExactMatch, optionalIndexEnd)` to add an index clause (exact match or range), `.Reverse()` to reverse the order of searching/results and `.Limit()/.Offset()` to limit the number of results.
+Construct a query to find single or mutliple entities with `db.First(&MyEntity)` or `db.Find(&MyEntities)` respectively. Build up the query by chaining methods: `.From()/.To()` to add a date range, `.Where("indexName", indexStartOrExactMatch, optionalIndexEnd)` to add an index clause (exact match or range), `.Reverse()` to reverse the order of searching/results and `.Limit()/.Offset()` to limit the number of results.
 
 Kick off the query with `.Run()`, or `.Count()` if you just need the count.  `.Sum()` is also available for float/int index searches.
 	
