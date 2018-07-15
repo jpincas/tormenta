@@ -29,6 +29,9 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 		fieldType := v.Type().Field(i)
 		if idx := fieldType.Tag.Get(tormentaTag); idx == tormentaTagIndex {
 
+			// TODO: test here whether the index field is a slice
+			// If so, make an index entry for every member
+
 			// Create the index key
 			key := makeIndexKey(
 				keyRoot,

@@ -8,11 +8,6 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-type Tormentable interface {
-	MarshalMsg([]byte) ([]byte, error)
-	UnmarshalMsg([]byte) ([]byte, error)
-}
-
 const (
 	errNoModel = "Cannot save entity %s - it does not have a tormenta model"
 )
@@ -27,6 +22,11 @@ func (db DB) Save(entities ...Tormentable) (int, error) {
 			batch := entities[a:b]
 
 			for _, entity := range batch {
+				// Presave trigger
+				if err := entity.PreSave(); err != nil {
+					return err
+				}
+
 				// Build the key root
 				keyRoot, e := entityTypeAndValue(entity)
 
@@ -57,6 +57,9 @@ func (db DB) Save(entities ...Tormentable) (int, error) {
 				if err := txn.Set(key, entityMsg); err != nil {
 					return err
 				}
+
+				// Post save trigger
+				entity.PostSave()
 
 				// indexing
 				if err := index(txn, entity, keyRoot, model.ID); err != nil {

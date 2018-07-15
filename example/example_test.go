@@ -21,6 +21,7 @@ type Product struct {
 	Name          string `tormenta:"index"`
 	Price         float32
 	StartingStock int
+	Tags          []string `tormenta:"index"`
 }
 
 type Order struct {

@@ -12,17 +12,6 @@ func Test_BasicSave(t *testing.T) {
 	db, _ := OpenTest("data/tests")
 	defer db.Close()
 
-	// First Save
-
-	// Test struc that has no model
-	noModel := NoModel{}
-	keyRoot, _ := entityTypeAndValue(&noModel)
-	_, err := db.Save(&noModel)
-
-	if err.Error() != fmt.Sprintf(errNoModel, keyRoot) {
-		t.Error("Testing save entity without model. Should have produced error but didn't")
-	}
-
 	// Create basic order and save
 	order := Order{}
 	n, err := db.Save(&order)
@@ -66,6 +55,29 @@ func Test_BasicSave(t *testing.T) {
 	// should obviously be later
 	if !orderBeforeSecondSave.LastUpdated.Before(order.LastUpdated) {
 		t.Error("Testing 2nd record save. 'Created' time has changed")
+	}
+}
+
+func Test_SaveTrigger(t *testing.T) {
+	db, _ := OpenTest("data/tests")
+	defer db.Close()
+
+	// Create basic order and save
+	order := Order{}
+	db.Save(&order)
+
+	// Test postsave trigger
+	if !order.OrderSaved {
+		t.Error("Testing postsave trigger.  OrderSaved should be true but was not")
+	}
+
+	// Set up a condition that will cause the order not to save
+	order.ContainsProhibitedItems = true
+
+	// Test presave trigger
+	n, err := db.Save(&order)
+	if n != 0 || err == nil {
+		t.Error("Testing presave trigger.  This record should not have saved, but it did and no error returned")
 	}
 
 }

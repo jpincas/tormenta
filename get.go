@@ -54,6 +54,9 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
 			return err
 		}
 
+		// Post Get trigger
+		entity.PostGet()
+
 		return nil
 	})
 
@@ -65,42 +68,3 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
 
 	return true, nil
 }
-
-// func (db DB) GetByID(entity Tormentable, id gouuidv6.UUID) (bool, error) {
-// 	keyRoot, e := entityTypeAndValue(entity)
-
-// 	// Check that the model field exists
-// 	modelField := e.FieldByName("Model")
-// 	if !modelField.IsValid() {
-// 		return false, fmt.Errorf(errNoModel, keyRoot)
-// 	}
-
-// 	err := db.KV.View(func(txn *badger.Txn) error {
-// 		key := newContentKey(keyRoot, id).bytes()
-// 		item, err := txn.Get(key)
-
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		val, err := item.Value()
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		_, err = entity.UnmarshalMsg(val)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-
-// 	if err == badger.ErrKeyNotFound {
-// 		return false, nil
-// 	} else if err != nil {
-// 		return false, err
-// 	}
-
-// 	return true, nil
-// }
