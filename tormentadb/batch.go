@@ -1,4 +1,4 @@
-package tormenta
+package tormentadb
 
 const (
 	batchSize = 10000

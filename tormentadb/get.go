@@ -1,4 +1,4 @@
-package tormenta
+package tormentadb
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	errNoID = "Cannot get entity %s - ID is nil"
+	ErrNoID = "Cannot get entity %s - ID is nil"
 )
 
 // Get retrieves an entity, either according to the ID set on the entity,
@@ -31,7 +31,7 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
 		id = ids[0]
 	} else {
 		if model.ID.IsNil() {
-			return false, fmt.Errorf(errNoID, keyRoot)
+			return false, fmt.Errorf(ErrNoID, keyRoot)
 		}
 		id = model.ID
 	}

@@ -1,4 +1,4 @@
-package tormenta
+package tormentadb
 
 import (
 	"bytes"
@@ -166,6 +166,11 @@ func keyIsOutsideDateRange(key, start, end gouuidv6.UUID) bool {
 func entityTypeAndValue(t interface{}) ([]byte, reflect.Value) {
 	e := reflect.Indirect(reflect.ValueOf(t))
 	return typeToKeyRoot(e.Type().String()), e
+}
+
+func KeyRoot(t interface{}) []byte {
+	k, _ := entityTypeAndValue(t)
+	return k
 }
 
 func typeToKeyRoot(typeSig string) []byte {

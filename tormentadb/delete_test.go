@@ -1,18 +1,22 @@
-package tormenta
+package tormentadb_test
 
 import (
 	"testing"
+
+	"github.com/jpincas/tormenta/demo"
+	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
 func Test_Delete(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order := Order{}
+	order := demo.Order{}
+
 	db.Save(&order)
 
 	// Test the the order has been saved
-	retrievedOrder := Order{}
+	retrievedOrder := demo.Order{}
 	ok, _ := db.Get(&retrievedOrder, order.ID)
 	if !ok || order.ID != retrievedOrder.ID {
 		t.Error("Testing delete. Test order not saved correctly")
@@ -37,12 +41,12 @@ func Test_Delete(t *testing.T) {
 }
 
 func Test_Delete_Multiple(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order1 := Order{}
-	order2 := Order{}
-	order3 := Order{}
+	order1 := demo.Order{}
+	order2 := demo.Order{}
+	order3 := demo.Order{}
 
 	db.Save(&order1, &order2, &order3)
 
@@ -57,7 +61,7 @@ func Test_Delete_Multiple(t *testing.T) {
 		t.Errorf("Testing multiple delete. Expected n = %v, got n = %v", 3, n)
 	}
 
-	var orders []Order
+	var orders []demo.Order
 	c, _ := db.Find(&orders).Count()
 	if c > 0 {
 		t.Errorf("Testing delete. Should have found any orders, but found %v", c)

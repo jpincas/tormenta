@@ -1,26 +1,28 @@
-package tormenta
+package tormentadb_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/jpincas/gouuidv6"
+	"github.com/jpincas/tormenta/demo"
+	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
 func Test_BasicGet(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
 	// Create basic order and save, then blank the ID
-	order := Order{}
-	keyRoot, _ := entityTypeAndValue(&order)
+	order := demo.Order{}
+	keyRoot := tormenta.KeyRoot(&order)
 	db.Save(&order)
 	orderIDBeforeBlanking := order.ID
 	order.ID = gouuidv6.UUID{}
 
 	// Attempt to get entity without ID
 	_, err := db.Get(&order)
-	if err == nil || err.Error() != fmt.Sprintf(errNoID, keyRoot) {
+	if err == nil || err.Error() != fmt.Sprintf(tormenta.ErrNoID, keyRoot) {
 		t.Error("Testing get entity without ID. Produced wrong error or no error")
 	}
 
@@ -38,11 +40,11 @@ func Test_BasicGet(t *testing.T) {
 }
 
 func Test_GetByID(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order := Order{}
-	order2 := Order{}
+	order := demo.Order{}
+	order2 := demo.Order{}
 	db.Save(&order)
 
 	// Overwite ID
@@ -62,10 +64,10 @@ func Test_GetByID(t *testing.T) {
 }
 
 func Test_GetTriggers(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order := Order{}
+	order := demo.Order{}
 	db.Save(&order)
 	ok, err := db.Get(&order)
 

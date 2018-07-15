@@ -1,19 +1,22 @@
-package tormenta
+package tormentadb_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/jpincas/tormenta/demo"
+	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
 var zeroValueTime time.Time
 
 func Test_BasicSave(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
 	// Create basic order and save
-	order := Order{}
+	order := demo.Order{}
 	n, err := db.Save(&order)
 
 	// Test any error
@@ -59,11 +62,11 @@ func Test_BasicSave(t *testing.T) {
 }
 
 func Test_SaveTrigger(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
 	// Create basic order and save
-	order := Order{}
+	order := demo.Order{}
 	db.Save(&order)
 
 	// Test postsave trigger
@@ -83,11 +86,11 @@ func Test_SaveTrigger(t *testing.T) {
 }
 
 func Test_SaveMultiple(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order1 := Order{}
-	order2 := Order{}
+	order1 := demo.Order{}
+	order2 := demo.Order{}
 
 	// Multiple argument syntax
 	n, _ := db.Save(&order1, &order2)
@@ -98,8 +101,8 @@ func Test_SaveMultiple(t *testing.T) {
 	// Spread syntax
 	// A little akward as you can't just pass in the slice of entities
 	// You have to manually translate to []Tormentable
-	var ordersToSave []Tormentable
-	orders := []Order{order1, order2}
+	var ordersToSave []tormenta.Tormentable
+	orders := []demo.Order{order1, order2}
 
 	for _, order := range orders {
 		ordersToSave = append(ordersToSave, &order)
@@ -115,13 +118,13 @@ func Test_SaveMultiple(t *testing.T) {
 func Test_SaveMultipleLarge(t *testing.T) {
 	const noOrders = 100000
 
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []Tormentable
+	var ordersToSave []tormenta.Tormentable
 
 	for i := 0; i < noOrders; i++ {
-		ordersToSave = append(ordersToSave, &Order{
+		ordersToSave = append(ordersToSave, &demo.Order{
 			Customer: fmt.Sprintf("customer-%v", i),
 		})
 	}
@@ -131,7 +134,7 @@ func Test_SaveMultipleLarge(t *testing.T) {
 		t.Errorf("Testing save large number of entities. Expected %v, got %v", noOrders, n)
 	}
 
-	var orders []Order
+	var orders []demo.Order
 	n, _ = db.Find(&orders).Run()
 	if n != noOrders {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
@@ -142,13 +145,13 @@ func Test_SaveMultipleLarge(t *testing.T) {
 func Test_SaveMultipleMillion(t *testing.T) {
 	const noOrders = 1000000
 
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []Tormentable
+	var ordersToSave []tormenta.Tormentable
 
 	for i := 0; i < noOrders; i++ {
-		ordersToSave = append(ordersToSave, &Order{
+		ordersToSave = append(ordersToSave, &demo.Order{
 			Customer: fmt.Sprintf("customer-%v", i),
 		})
 	}
@@ -158,7 +161,7 @@ func Test_SaveMultipleMillion(t *testing.T) {
 		t.Errorf("Testing save large number of entities. Expected %v, got %v", noOrders, n)
 	}
 
-	var orders []Order
+	var orders []demo.Order
 	n, _ = db.Find(&orders).Run()
 	if n != noOrders {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)

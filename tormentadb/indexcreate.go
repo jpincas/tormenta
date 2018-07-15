@@ -1,4 +1,4 @@
-package tormenta
+package tormentadb
 
 import (
 	"bytes"
@@ -48,6 +48,11 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 	}
 
 	return nil
+}
+
+// IndexKey returns the bytes of an index key constructed for a particular root, id, index name and index content
+func IndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent interface{}) []byte {
+	return makeIndexKey(root, id, indexName, indexContent)
 }
 
 func makeIndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent interface{}) []byte {

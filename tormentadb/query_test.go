@@ -1,4 +1,4 @@
-package tormenta
+package tormentadb_test
 
 import (
 	"fmt"
@@ -6,19 +6,21 @@ import (
 	"time"
 
 	"github.com/jpincas/gouuidv6"
+	"github.com/jpincas/tormenta/demo"
+	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
 // Basic Queries
 
 func Test_BasicQuery(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
 	// 1 order
-	order1 := Order{}
+	order1 := demo.Order{}
 	db.Save(&order1)
 
-	var orders []Order
+	var orders []demo.Order
 	n, err := db.Find(&orders).Run()
 
 	if err != nil {
@@ -35,8 +37,8 @@ func Test_BasicQuery(t *testing.T) {
 	}
 
 	// 2 orders
-	order2 := Order{}
-	orders = []Order{}
+	order2 := demo.Order{}
+	orders = []demo.Order{}
 	db.Save(&order2)
 
 	n, _ = db.Find(&orders).Run()
@@ -53,14 +55,14 @@ func Test_BasicQuery(t *testing.T) {
 }
 
 func Test_BasicQuery_First(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order1 := Order{}
-	order2 := Order{}
+	order1 := demo.Order{}
+	order2 := demo.Order{}
 	db.Save(&order1, &order2)
 
-	var order Order
+	var order demo.Order
 	n, err := db.First(&order).Run()
 
 	if err != nil {
@@ -84,7 +86,7 @@ func Test_BasicQuery_First(t *testing.T) {
 
 func Test_BasicQuery_DateRange(t *testing.T) {
 	// Create a list of orders over a date range
-	var orders []Tormentable
+	var orders []tormenta.Tormentable
 	dates := []time.Time{
 		// Now
 		time.Now(),
@@ -107,28 +109,28 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 	}
 
 	for _, date := range dates {
-		orders = append(orders, &Order{
-			Model: Model{
+		orders = append(orders, &demo.Order{
+			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(date),
 			},
 		})
 	}
 
 	// Save the orders
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 	db.Save(orders...)
 
 	// Also another entity, to make sure there is no crosstalk
-	db.Save(&Product{
+	db.Save(&demo.Product{
 		Code:          "001",
 		Name:          "Computer",
 		Price:         999.99,
 		StartingStock: 50,
-		Description:   defaultDescription})
+		Description:   demo.DefaultDescription})
 
 	// Quick check that all orders have saved correctly
-	var results []Order
+	var results []demo.Order
 	n, _ := db.Find(&results).Run()
 
 	if len(results) != len(orders) || n != len(orders) {
@@ -166,7 +168,7 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []Order{}
+		rangequeryResults := []demo.Order{}
 		query := db.Find(&rangequeryResults).From(testCase.from)
 
 		if testCase.includeTo {
@@ -212,10 +214,10 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 func Test_IndexQuery_Range(t *testing.T) {
 	// Set up 100 orders with increasing department, customer and shipping fee
 	// and save
-	var orders []Tormentable
+	var orders []tormenta.Tormentable
 
 	for i := 0; i < 100; i++ {
-		orders = append(orders, &Order{
+		orders = append(orders, &demo.Order{
 			Department:  i + 1,
 			Customer:    fmt.Sprintf("customer-%v", string(i+65)),
 			ShippingFee: float64(i) + 0.99,
@@ -225,9 +227,9 @@ func Test_IndexQuery_Range(t *testing.T) {
 	// Randomise order before saving,
 	// to ensure save order is not affecting retrieval
 	// in some roundabout way
-	randomiseTormentables(orders)
+	tormenta.RandomiseTormentables(orders)
 
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 	db.Save(orders...)
 
@@ -270,7 +272,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []Order{}
+		rangequeryResults := []demo.Order{}
 		n, _ := db.
 			Find(&rangequeryResults).
 			Where(testCase.indexName, testCase.start, testCase.end).
@@ -314,19 +316,19 @@ func getDept(i int) int {
 	}
 }
 func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
-	var orders []Tormentable
+	var orders []tormenta.Tormentable
 
 	for i := 1; i <= 30; i++ {
-		order := &Order{
+		order := &demo.Order{
 			Department: getDept(i),
 		}
 
 		orders = append(orders, order)
 	}
 
-	randomiseTormentables(orders)
+	tormenta.RandomiseTormentables(orders)
 
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 	db.Save(orders...)
 
@@ -342,7 +344,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []Order{}
+		rangequeryResults := []demo.Order{}
 		n, _ := db.
 			Find(&rangequeryResults).
 			Where("department", testCase.start, testCase.end).
@@ -356,10 +358,10 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 }
 
 func Test_Aggregation(t *testing.T) {
-	var products []Tormentable
+	var products []tormenta.Tormentable
 
 	for i := 1; i <= 30; i++ {
-		product := &Product{
+		product := &demo.Product{
 			Price:         float64(i),
 			StartingStock: i,
 		}
@@ -367,13 +369,13 @@ func Test_Aggregation(t *testing.T) {
 		products = append(products, product)
 	}
 
-	randomiseTormentables(products)
+	tormenta.RandomiseTormentables(products)
 
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 	db.Save(products...)
 
-	results := []Product{}
+	results := []demo.Product{}
 	var intSum int32
 	var floatSum float64
 	expected := 465
@@ -404,11 +406,11 @@ func Test_Aggregation(t *testing.T) {
 }
 
 func Test_IndexQuery_DateRange(t *testing.T) {
-	var orders []Tormentable
+	var orders []tormenta.Tormentable
 
 	for i := 1; i <= 30; i++ {
-		order := &Order{
-			Model: Model{
+		order := &demo.Order{
+			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
 			},
 			Department: getDept(i),
@@ -417,9 +419,9 @@ func Test_IndexQuery_DateRange(t *testing.T) {
 		orders = append(orders, order)
 	}
 
-	randomiseTormentables(orders)
+	tormenta.RandomiseTormentables(orders)
 
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 	db.Save(orders...)
 
@@ -452,7 +454,7 @@ func Test_IndexQuery_DateRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []Order{}
+		rangequeryResults := []demo.Order{}
 
 		// If only indexRangeStart is specified then its an exact match search
 		query := db.Find(&rangequeryResults)

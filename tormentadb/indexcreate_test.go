@@ -1,19 +1,21 @@
-package tormenta
+package tormentadb_test
 
 import (
 	"testing"
 
 	"github.com/dgraph-io/badger"
+	"github.com/jpincas/tormenta/demo"
+	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
 // Index Creation
 func Test_CreateIndexKeys(t *testing.T) {
-	db, _ := OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
 	// Create basic order and save
 	// Orders have an 'index' on Customer field
-	order := Order{
+	order := demo.Order{
 		Department:  99,
 		Customer:    "jon",
 		ShippingFee: 5.99,
@@ -22,9 +24,9 @@ func Test_CreateIndexKeys(t *testing.T) {
 	db.Save(&order)
 
 	db.KV.View(func(txn *badger.Txn) error {
-		customerIndex := makeIndexKey([]byte("order"), order.ID, "customer", "jon")
-		departmentIndex := makeIndexKey([]byte("order"), order.ID, "department", 99)
-		shippingFeeIndex := makeIndexKey([]byte("order"), order.ID, "shippingfee", 5.99)
+		customerIndex := tormenta.IndexKey([]byte("order"), order.ID, "customer", "jon")
+		departmentIndex := tormenta.IndexKey([]byte("order"), order.ID, "department", 99)
+		shippingFeeIndex := tormenta.IndexKey([]byte("order"), order.ID, "shippingfee", 5.99)
 
 		_, err := txn.Get(customerIndex)
 		if err == badger.ErrKeyNotFound {

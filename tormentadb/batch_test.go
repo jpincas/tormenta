@@ -1,4 +1,4 @@
-package tormenta
+package tormentadb
 
 import "testing"
 
