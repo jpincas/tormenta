@@ -8,6 +8,18 @@ Tormenta is a thin functionality layer over BadgerDB key/value store.  It provid
  
 and greatly inspired by [Storm](https://github.com/asdine/storm).
 
+## Features
+
+- Fast serialisation/de-serialisation with MessagePack
+- Date-ordered unique IDs - get date range querying and created at field 'for free'
+- Simple basic API for saving and retrieving your objects - `db.Get(&MyEntity)` and `db.Save(&MyEntity)`
+- Secondary indexing with `tormenta:"index"` tag
+- Simple queries with `db.First(&MyEntity)` and `db.Find(&MyEntities)`
+- Create more complex queries by chaining `From()`, `To()`, `Where()`, `Reverse()`, `Limit()` and `Offset()`
+- Fast counts and sums using Badger's 'key only' iteration
+- Easily add business logic using 'triggers' on save and get
+
+
 ## Quick How To
 
 Add `tormenta.Model` to structs you want to persist and `tormenta:"index"` to fields you want to create secondary indexes for, install [TinyLib MessagePack codegen tool](https://github.com/tinylib/msgp), add `//go:generate msgp` to the top of your type definition files and run `go generate` whenever you change your structs.
@@ -16,11 +28,13 @@ Open a DB connection with `db, err := tormenta.Open("mydatadirectory")` (dont fo
 
 Save a single entity with `db.Save(&MyEntity)` or multiple entities with `db.Save(&MyEntity1, &MyEntity2)`.
 
-Get a single entity by ID with `db.GetByID(&MyEntity, entityID)`.
+Get a single entity by ID with `db.Get(&MyEntity, entityID)`.
 
 Construct a query to find single or mutliple entities with `db.First(&MyEntity)` or `db.Find(&MyEntities)` respectively. Build up the query by chaining methods: `.From()/.To()` to add a date range, `.Where("indexName", indexStartOrExactMatch, optionalIndexEnd)` to add an index clause (exact match or range), `.Reverse()` to reverse the order of searching/results and `.Limit()/.Offset()` to limit the number of results.
 
 Kick off the query with `.Run()`, or `.Count()` if you just need the count.  `.Sum()` is also available for float/int index searches.
+
+Add business logic by specifying `.PreSave()`, `.PostSave()` and `.PostGet()` methods on your structs.
 	
 ## Example
 
@@ -191,6 +205,7 @@ func Example_Main() {
 ## To Do
 
 - [x] Delete
+- [x] Logic triggers (preSave, postSave, postGet)
 - [ ] Easy joins
 - [ ] Filter functions for easily applying arbitrary criteria to returned results
 - [ ] Better error reporting from query construction
@@ -198,4 +213,5 @@ func Example_Main() {
 - [ ] Fully benchmarked simulation of a real-world use case
 - [ ] Optional TTL on save
 - [ ] Slices as indexes -> multiple index entries
+- [ ] Generic REST API persisted by Tormenta
 - [ ] Generic GUI for connecting to and editing database entries
