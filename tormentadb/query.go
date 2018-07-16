@@ -325,21 +325,13 @@ func (q *query) execute() (int, error) {
 		return 0, err
 	}
 
-	// For count-only queries, there's nothing more to do
-	if q.countOnly {
+	// For count-only or first-only queries, there's nothing more to do
+	if q.countOnly || q.first {
 		return q.counter, nil
 	}
 
-	// If this was a first-only query
-	if q.first {
-		return q.counter, nil
-	}
-
-	// If this was a non-count-only and non-index query
-	// we now need to set the results on the target
-	if !q.isIndexQuery && !q.countOnly {
-		reflect.Indirect(reflect.ValueOf(q.target)).Set(q.rt)
-	}
+	// Set the results on the target
+	reflect.Indirect(reflect.ValueOf(q.target)).Set(q.rt)
 
 	// Finally, return the numbrer of records found
 	return q.counter, nil
