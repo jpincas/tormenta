@@ -25,9 +25,11 @@ type NoModel struct {
 type Product struct {
 	tormenta.Model
 	Code          string
-	Name          string  `tormenta:"index"`
-	Price         float64 `tormenta:"index"`
-	StartingStock int     `tormenta:"index"`
+	Name          string   `tormenta:"index"`
+	Price         float64  `tormenta:"index"`
+	StartingStock int      `tormenta:"index"`
+	Tags          []string `tormenta:"index"`
+	Departments   []int    `tormenta:"index"`
 
 	// For a bit more realism and to pad out the serialised data
 	Description string

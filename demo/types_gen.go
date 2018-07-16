@@ -551,6 +551,40 @@ func (z *Product) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
+		case "Tags":
+			var zb0002 uint32
+			zb0002, err = dc.ReadArrayHeader()
+			if err != nil {
+				return
+			}
+			if cap(z.Tags) >= int(zb0002) {
+				z.Tags = (z.Tags)[:zb0002]
+			} else {
+				z.Tags = make([]string, zb0002)
+			}
+			for za0001 := range z.Tags {
+				z.Tags[za0001], err = dc.ReadString()
+				if err != nil {
+					return
+				}
+			}
+		case "Departments":
+			var zb0003 uint32
+			zb0003, err = dc.ReadArrayHeader()
+			if err != nil {
+				return
+			}
+			if cap(z.Departments) >= int(zb0003) {
+				z.Departments = (z.Departments)[:zb0003]
+			} else {
+				z.Departments = make([]int, zb0003)
+			}
+			for za0002 := range z.Departments {
+				z.Departments[za0002], err = dc.ReadInt()
+				if err != nil {
+					return
+				}
+			}
 		case "Description":
 			z.Description, err = dc.ReadString()
 			if err != nil {
@@ -568,9 +602,9 @@ func (z *Product) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Product) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 6
+	// map header, size 8
 	// write "Model"
-	err = en.Append(0x86, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	err = en.Append(0x88, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	if err != nil {
 		return
 	}
@@ -614,6 +648,36 @@ func (z *Product) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
+	// write "Tags"
+	err = en.Append(0xa4, 0x54, 0x61, 0x67, 0x73)
+	if err != nil {
+		return
+	}
+	err = en.WriteArrayHeader(uint32(len(z.Tags)))
+	if err != nil {
+		return
+	}
+	for za0001 := range z.Tags {
+		err = en.WriteString(z.Tags[za0001])
+		if err != nil {
+			return
+		}
+	}
+	// write "Departments"
+	err = en.Append(0xab, 0x44, 0x65, 0x70, 0x61, 0x72, 0x74, 0x6d, 0x65, 0x6e, 0x74, 0x73)
+	if err != nil {
+		return
+	}
+	err = en.WriteArrayHeader(uint32(len(z.Departments)))
+	if err != nil {
+		return
+	}
+	for za0002 := range z.Departments {
+		err = en.WriteInt(z.Departments[za0002])
+		if err != nil {
+			return
+		}
+	}
 	// write "Description"
 	err = en.Append(0xab, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e)
 	if err != nil {
@@ -629,9 +693,9 @@ func (z *Product) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Product) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 6
+	// map header, size 8
 	// string "Model"
-	o = append(o, 0x86, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	o = append(o, 0x88, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	o, err = z.Model.MarshalMsg(o)
 	if err != nil {
 		return
@@ -648,6 +712,18 @@ func (z *Product) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "StartingStock"
 	o = append(o, 0xad, 0x53, 0x74, 0x61, 0x72, 0x74, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x6f, 0x63, 0x6b)
 	o = msgp.AppendInt(o, z.StartingStock)
+	// string "Tags"
+	o = append(o, 0xa4, 0x54, 0x61, 0x67, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Tags)))
+	for za0001 := range z.Tags {
+		o = msgp.AppendString(o, z.Tags[za0001])
+	}
+	// string "Departments"
+	o = append(o, 0xab, 0x44, 0x65, 0x70, 0x61, 0x72, 0x74, 0x6d, 0x65, 0x6e, 0x74, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Departments)))
+	for za0002 := range z.Departments {
+		o = msgp.AppendInt(o, z.Departments[za0002])
+	}
 	// string "Description"
 	o = append(o, 0xab, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e)
 	o = msgp.AppendString(o, z.Description)
@@ -695,6 +771,40 @@ func (z *Product) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "Tags":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				return
+			}
+			if cap(z.Tags) >= int(zb0002) {
+				z.Tags = (z.Tags)[:zb0002]
+			} else {
+				z.Tags = make([]string, zb0002)
+			}
+			for za0001 := range z.Tags {
+				z.Tags[za0001], bts, err = msgp.ReadStringBytes(bts)
+				if err != nil {
+					return
+				}
+			}
+		case "Departments":
+			var zb0003 uint32
+			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				return
+			}
+			if cap(z.Departments) >= int(zb0003) {
+				z.Departments = (z.Departments)[:zb0003]
+			} else {
+				z.Departments = make([]int, zb0003)
+			}
+			for za0002 := range z.Departments {
+				z.Departments[za0002], bts, err = msgp.ReadIntBytes(bts)
+				if err != nil {
+					return
+				}
+			}
 		case "Description":
 			z.Description, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
@@ -713,6 +823,10 @@ func (z *Product) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Product) Msgsize() (s int) {
-	s = 1 + 6 + z.Model.Msgsize() + 5 + msgp.StringPrefixSize + len(z.Code) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Float64Size + 14 + msgp.IntSize + 12 + msgp.StringPrefixSize + len(z.Description)
+	s = 1 + 6 + z.Model.Msgsize() + 5 + msgp.StringPrefixSize + len(z.Code) + 5 + msgp.StringPrefixSize + len(z.Name) + 6 + msgp.Float64Size + 14 + msgp.IntSize + 5 + msgp.ArrayHeaderSize
+	for za0001 := range z.Tags {
+		s += msgp.StringPrefixSize + len(z.Tags[za0001])
+	}
+	s += 12 + msgp.ArrayHeaderSize + (len(z.Departments) * (msgp.IntSize)) + 12 + msgp.StringPrefixSize + len(z.Description)
 	return
 }

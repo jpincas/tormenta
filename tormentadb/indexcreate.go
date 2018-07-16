@@ -29,25 +29,42 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 		fieldType := v.Type().Field(i)
 		if idx := fieldType.Tag.Get(tormentaTag); idx == tormentaTagIndex {
 
-			// TODO: test here whether the index field is a slice
-			// If so, make an index entry for every member
-
-			// Create the index key
-			key := makeIndexKey(
-				keyRoot,
-				id,
-				fieldType.Name,
-				v.Field(i).Interface(),
-			)
-
-			// Set the index key with no content
-			if err := txn.Set(key, []byte{}); err != nil {
-				return err
+			switch fieldType.Type.Kind() {
+			case reflect.Slice:
+				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
+					return err
+				}
+			case reflect.Array:
+				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
+					return err
+				}
+			default:
+				if err := setIndexKey(txn, keyRoot, id, fieldType.Name, v.Field(i).Interface()); err != nil {
+					return err
+				}
 			}
+
 		}
 	}
 
 	return nil
+}
+
+func setMultipleIndexes(txn *badger.Txn, v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) error {
+	for i := 0; i < v.Len(); i++ {
+		if err := setIndexKey(txn, root, id, indexName, v.Index(i).Interface()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setIndexKey(txn *badger.Txn, root []byte, id gouuidv6.UUID, indexName string, indexContent interface{}) error {
+	key := makeIndexKey(root, id, indexName, indexContent)
+
+	// Set the index key with no content
+	return txn.Set(key, []byte{})
 }
 
 // IndexKey returns the bytes of an index key constructed for a particular root, id, index name and index content

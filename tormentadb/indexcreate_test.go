@@ -46,3 +46,36 @@ func Test_CreateIndexKeys(t *testing.T) {
 		return nil
 	})
 }
+
+func Test_CreateIndexKeys_Slice(t *testing.T) {
+	db, _ := tormenta.OpenTest("data/tests")
+	defer db.Close()
+
+	// Create basic order and save
+	// Orders have an 'index' on Customer field
+	product := demo.Product{
+		Tags:        []string{"tag1", "tag2"},
+		Departments: []int{1, 2, 3},
+	}
+
+	db.Save(&product)
+
+	expectedKeys := [][]byte{
+		tormenta.IndexKey([]byte("product"), product.ID, "tags", "tag1"),
+		tormenta.IndexKey([]byte("product"), product.ID, "tags", "tag2"),
+		tormenta.IndexKey([]byte("product"), product.ID, "departments", 1),
+		tormenta.IndexKey([]byte("product"), product.ID, "departments", 2),
+		tormenta.IndexKey([]byte("product"), product.ID, "departments", 3),
+	}
+
+	db.KV.View(func(txn *badger.Txn) error {
+		for _, key := range expectedKeys {
+			_, err := txn.Get(key)
+			if err == badger.ErrKeyNotFound {
+				t.Errorf("Testing index creation from slices.  Key [%v] should have been created but could not be retrieved", key)
+			}
+		}
+
+		return nil
+	})
+}
