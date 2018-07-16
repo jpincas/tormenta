@@ -52,6 +52,14 @@ func Test_BasicQuery(t *testing.T) {
 		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
 	}
 
+	if order1.ID == order2.ID {
+		t.Errorf("Testing querying with 2 entities saved. 2 entities saved both have same ID")
+	}
+
+	if orders[0].ID == orders[1].ID {
+		t.Errorf("Testing querying with 2 entities saved. 2 results returned. Both have same ID")
+	}
+
 }
 
 func Test_BasicQuery_First(t *testing.T) {
@@ -71,6 +79,10 @@ func Test_BasicQuery_First(t *testing.T) {
 
 	if n != 1 {
 		t.Errorf("Testing first. Expecting 1 entity - got %v", n)
+	}
+
+	if order.ID.IsNil() {
+		t.Errorf("Testing first. Nil ID retrieved")
 	}
 
 	if order.ID != order1.ID {

@@ -98,6 +98,10 @@ func Test_SaveMultiple(t *testing.T) {
 		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
 	}
 
+	if order1.ID == order2.ID {
+		t.Errorf("Testing multiple save. 2 orders have same ID")
+	}
+
 	// Spread syntax
 	// A little akward as you can't just pass in the slice of entities
 	// You have to manually translate to []Tormentable

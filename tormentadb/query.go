@@ -17,12 +17,6 @@ type query struct {
 	// The Go 'value' for the entity type being searched
 	value reflect.Value
 
-	// The 'holder' is basically the type of either the single entity passed in (for first only)
-	// or the underlying element type for the slice (regular query).
-	// During query execution this will be cast to a 'tormentable'
-	// which will be used as a 'holder' for each unmarshalling operation
-	holder interface{}
-
 	// Target is the pointer passed into the query where results will be set
 	target interface{}
 
@@ -63,8 +57,8 @@ type query struct {
 	// Entity placeholder
 	entity Tormentable
 
-	// Results holder
-	results []Tormentable
+	// List results placeholder
+	rt reflect.Value
 
 	// Counter
 	counter int
@@ -78,23 +72,23 @@ func (db DB) newQuery(target interface{}, first bool) *query {
 	// Get the key root and cache the value
 	keyRoot, value := entityTypeAndValue(target)
 
-	// Set the 'holder' on the query
-	var holder interface{}
-	if first {
-		holder = reflect.New(value.Type()).Interface()
-	} else {
-		holder = reflect.New(value.Type().Elem()).Interface()
-	}
-
 	// Create the base query
 	q := &query{
 		db:      db,
 		keyRoot: keyRoot,
 		value:   value,
-		holder:  holder,
 		target:  target,
-		entity:  holder.(Tormentable),
 	}
+
+	// Set the entity placeholder
+	if first {
+		q.entity = reflect.New(value.Type()).Interface().(Tormentable)
+	} else {
+		q.entity = reflect.New(value.Type().Elem()).Interface().(Tormentable)
+	}
+
+	// and list results placeholder
+	q.rt = reflect.Indirect(reflect.ValueOf(q.target))
 
 	// If this is a 'first only' query
 	if first {
@@ -166,16 +160,16 @@ func (q query) endIteration(it *badger.Iterator) bool {
 	return false
 }
 
-func (q query) aggregate(it *badger.Iterator) {
+func (q query) aggregate(item *badger.Item) {
 	// TODO: super inefficient to do this every time
 	switch q.aggTarget.(type) {
 	case *int32:
 		acc := *q.aggTarget.(*int32)
-		extractIndexValue(it.Item().Key(), q.aggTarget)
+		extractIndexValue(item.Key(), q.aggTarget)
 		*q.aggTarget.(*int32) = acc + *q.aggTarget.(*int32)
 	case *float64:
 		acc := *q.aggTarget.(*float64)
-		extractIndexValue(it.Item().Key(), q.aggTarget)
+		extractIndexValue(item.Key(), q.aggTarget)
 		*q.aggTarget.(*float64) = acc + *q.aggTarget.(*float64)
 	}
 }
@@ -209,27 +203,12 @@ func (q *query) resetQuery() {
 	// Just in case a query is built then executed twice.
 	q.counter = 0
 	q.offsetCounter = q.offset
-	q.results = []Tormentable{}
+
 }
 
 func (q *query) prepareQuery() {
 	q.setRanges()
 	q.resetQuery()
-}
-
-func (q *query) fetchIndexedRecord(it *badger.Iterator) error {
-	key := extractID(it.Item().Key())
-
-	// Get the record
-	_, err := q.db.Get(q.entity, key)
-	if err != nil {
-		return err
-	}
-
-	// Append the retrieved record to the list of results
-	q.results = append(q.results, q.entity)
-
-	return nil
 }
 
 func (q *query) setFirst() {
@@ -243,8 +222,30 @@ func (q *query) setFirst() {
 	reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(q.entity)))
 }
 
-func (q *query) fetchRecord(it *badger.Iterator) error {
-	val, err := it.Item().Value()
+func (q *query) fetchIndexedRecord(item *badger.Item) error {
+	key := extractID(item.Key())
+
+	// Get the record
+	_, err := q.db.Get(q.entity, key)
+	if err != nil {
+		return err
+	}
+
+	// Append the retrieved record to the list of results
+	// if this is a non-first query
+	if !q.first {
+		q.rt = reflect.Append(
+			q.rt,
+			reflect.Indirect(reflect.ValueOf(q.entity)),
+		)
+	}
+
+	return nil
+}
+
+func (q *query) fetchRecord(item *badger.Item) error {
+
+	val, err := item.Value()
 	if err != nil {
 		return err
 	}
@@ -254,7 +255,14 @@ func (q *query) fetchRecord(it *badger.Iterator) error {
 		return err
 	}
 
-	q.results = append(q.results, q.entity)
+	// Append results
+	if !q.first {
+		q.rt = reflect.Append(
+			q.rt,
+			reflect.Indirect(reflect.ValueOf(q.entity)),
+		)
+	}
+
 	return nil
 }
 
@@ -291,16 +299,17 @@ func (q *query) execute() (int, error) {
 
 			// For non-count-only queries, we'll actually get the record
 			// How this is done depends on whether this is an index-based search or not
+			item := it.Item()
 			if !q.countOnly && !q.isAggQuery {
 				if q.isIndexQuery {
-					q.fetchIndexedRecord(it)
+					q.fetchIndexedRecord(item)
 				} else {
-					q.fetchRecord(it)
+					q.fetchRecord(item)
 				}
 			}
 
 			if q.isAggQuery {
-				q.aggregate(it)
+				q.aggregate(item)
 			}
 
 			// If this is a first-only search, break out of the iteration now
@@ -335,24 +344,9 @@ func (q *query) execute() (int, error) {
 	// If this was a non-count-only and non-index query
 	// we now need to set the results on the target
 	if !q.isIndexQuery && !q.countOnly {
-		// Now we have a slice of 'Tormentables'
-		// Set up a slice for 'translating' the 'Tormentables' into the target slice type
-		rt := reflect.Indirect(reflect.ValueOf(q.target))
-
-		// Iterate through the result, using 'reflect.Append' to append to the above slice
-		// the underlying type of the result
-		for _, result := range q.results {
-			rt = reflect.Append(
-				rt,
-				reflect.Indirect(reflect.ValueOf(result)),
-			)
-		}
-
-		// Now set the accumulated, translated results on the original, passed in
-		// 'entities'
-		reflect.Indirect(reflect.ValueOf(q.target)).Set(rt)
+		reflect.Indirect(reflect.ValueOf(q.target)).Set(q.rt)
 	}
 
 	// Finally, return the numbrer of records found
-	return len(q.results), nil
+	return q.counter, nil
 }

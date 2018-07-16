@@ -212,6 +212,9 @@ func Example_Main() {
 - [ ] Better protection against unsupported types being passed around as interfaces
 - [ ] Fully benchmarked simulation of a real-world use case
 - [ ] Optional TTL on save
-- [ ] Slices as indexes -> multiple index entries
+- [x] Slices as indexes -> multiple index entries
 - [ ] Generic REST API persisted by Tormenta
 - [ ] Generic GUI for connecting to and editing database entries
+- [ ] Rebuild indices command
+- [ ] Stack multiple queries, execute as AND/OR, execute in parallel
+- [ ] For large iterations, how could we run parts in parallel? Would have to specify with a tag?
