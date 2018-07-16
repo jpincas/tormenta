@@ -54,9 +54,6 @@ type query struct {
 	// Ranges and comparision key
 	seekFrom, validTo, compareTo []byte
 
-	// Entity placeholder
-	entity Tormentable
-
 	// List results placeholder
 	rt reflect.Value
 
@@ -80,14 +77,7 @@ func (db DB) newQuery(target interface{}, first bool) *query {
 		target:  target,
 	}
 
-	// Set the entity placeholder
-	if first {
-		q.entity = reflect.New(value.Type()).Interface().(Tormentable)
-	} else {
-		q.entity = reflect.New(value.Type().Elem()).Interface().(Tormentable)
-	}
-
-	// and list results placeholder
+	// Set up list results placeholder
 	q.rt = reflect.Indirect(reflect.ValueOf(q.target))
 
 	// If this is a 'first only' query
@@ -211,32 +201,30 @@ func (q *query) prepareQuery() {
 	q.resetQuery()
 }
 
-func (q *query) setFirst() {
-	// The unmarhsalled entity will currently be on the query's 'entity' placeholder
-	// So all we need to do now is set it on the target
-	if q.isIndexQuery {
-		q.target = q.entity
-	}
-
-	// For a regular query, the unmarhsalled entity will be on entity
-	reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(q.entity)))
-}
-
 func (q *query) fetchIndexedRecord(item *badger.Item) error {
 	key := extractID(item.Key())
 
+	var entity Tormentable
+	if q.first {
+		entity = reflect.New(q.value.Type()).Interface().(Tormentable)
+	} else {
+		entity = reflect.New(q.value.Type().Elem()).Interface().(Tormentable)
+	}
+
 	// Get the record
-	_, err := q.db.Get(q.entity, key)
+	_, err := q.db.Get(entity, key)
 	if err != nil {
 		return err
 	}
 
-	// Append the retrieved record to the list of results
-	// if this is a non-first query
-	if !q.first {
+	// If this is a 'first' query - then just set the unmarshalled entity on the target
+	// Otherwise, build up the results slice - we'll set on the target later!
+	if q.first {
+		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
+	} else {
 		q.rt = reflect.Append(
 			q.rt,
-			reflect.Indirect(reflect.ValueOf(q.entity)),
+			reflect.Indirect(reflect.ValueOf(entity)),
 		)
 	}
 
@@ -244,22 +232,32 @@ func (q *query) fetchIndexedRecord(item *badger.Item) error {
 }
 
 func (q *query) fetchRecord(item *badger.Item) error {
+	// Set up the entity for unmarshalling
+	var entity Tormentable
+	if q.first {
+		entity = reflect.New(q.value.Type()).Interface().(Tormentable)
+	} else {
+		entity = reflect.New(q.value.Type().Elem()).Interface().(Tormentable)
+	}
 
 	val, err := item.Value()
 	if err != nil {
 		return err
 	}
 
-	_, err = q.entity.UnmarshalMsg(val)
+	_, err = entity.UnmarshalMsg(val)
 	if err != nil {
 		return err
 	}
 
-	// Append results
-	if !q.first {
+	// If this is a 'first' query - then just set the unmarshalled entity on the target
+	// Otherwise, build up the results slice - we'll set on the target later!
+	if q.first {
+		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
+	} else {
 		q.rt = reflect.Append(
 			q.rt,
-			reflect.Indirect(reflect.ValueOf(q.entity)),
+			reflect.Indirect(reflect.ValueOf(entity)),
 		)
 	}
 
@@ -332,12 +330,8 @@ func (q *query) execute() (int, error) {
 		return q.counter, nil
 	}
 
-	// If this was a first-only query, set the entity to the target
-	// and return the counter value.
-	// If no entity was found, the set will basically do nothing
-	// and the counter will read 0
+	// If this was a first-only query
 	if q.first {
-		q.setFirst()
 		return q.counter, nil
 	}
 
