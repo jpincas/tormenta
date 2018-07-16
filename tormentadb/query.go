@@ -1,6 +1,7 @@
 package tormentadb
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/dgraph-io/badger"
@@ -212,9 +213,12 @@ func (q *query) fetchIndexedRecord(item *badger.Item) error {
 	}
 
 	// Get the record
-	_, err := q.db.Get(entity, key)
+	ok, err := q.db.Get(entity, key)
 	if err != nil {
 		return err
+	}
+	if !ok {
+		return fmt.Errorf("Could not retrieve entity %s", key)
 	}
 
 	// If this is a 'first' query - then just set the unmarshalled entity on the target
@@ -300,9 +304,14 @@ func (q *query) execute() (int, error) {
 			item := it.Item()
 			if !q.countOnly && !q.isAggQuery {
 				if q.isIndexQuery {
-					q.fetchIndexedRecord(item)
+					if err := q.fetchIndexedRecord(item); err != nil {
+						return err
+					}
+
 				} else {
-					q.fetchRecord(item)
+					if err := q.fetchRecord(item); err != nil {
+						return err
+					}
 				}
 			}
 

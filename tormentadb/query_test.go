@@ -231,7 +231,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		orders = append(orders, &demo.Order{
 			Department:  i + 1,
-			Customer:    fmt.Sprintf("customer-%v", string(i+65)),
+			Customer:    fmt.Sprintf("customer-%v", string((i%26)+65)),
 			ShippingFee: float64(i) + 0.99,
 		})
 	}
@@ -268,10 +268,10 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"string", "customer", nil, nil, 100},
 		{"string", "customer", "customer", nil, 100},
 		{"string - from A", "customer", "customer-A", nil, 100},
-		{"string - from B", "customer", "customer-B", nil, 99},
-		{"string - from Z", "customer", "customer-Z", nil, 75},
-		{"string - from A to Z", "customer", "customer-A", "customer-Z", 26},
-		{"string - to Z", "customer", nil, "customer-Z", 26},
+		{"string - from B", "customer", "customer-B", nil, 96},
+		{"string - from Z", "customer", "customer-Z", nil, 3},
+		{"string - from A to Z", "customer", "customer-A", "customer-Z", 100},
+		{"string - to Z", "customer", nil, "customer-Z", 100},
 
 		// Float
 		{"float", "shippingfee", nil, nil, 100},

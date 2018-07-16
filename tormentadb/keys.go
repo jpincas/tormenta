@@ -12,7 +12,7 @@ import (
 const (
 	contentKeyPrefix = "c"
 	indexKeyPrefix   = "i"
-	keySeparator     = "::"
+	keySeparator     = ":?:"
 )
 
 type key struct {
