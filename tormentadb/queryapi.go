@@ -18,13 +18,13 @@ type QueryOptions struct {
 	IndexParams    []interface{}
 }
 
-// Find is the basic way to kick off a query
-func (db DB) Find(entities interface{}) *query {
+// Find is the basic way to kick off a Query
+func (db DB) Find(entities interface{}) *Query {
 	return db.newQuery(entities, false)
 }
 
-// Query is another way of specifying a query, using a struct of options instead of method chaining
-func (db DB) Query(entities interface{}, options QueryOptions) *query {
+// Query is another way of specifying a Query, using a struct of options instead of method chaining
+func (db DB) Query(entities interface{}, options QueryOptions) *Query {
 	q := db.newQuery(entities, options.First)
 
 	// Overwrite limit if this is not a first-only search
@@ -57,26 +57,26 @@ func (db DB) Query(entities interface{}, options QueryOptions) *query {
 	return q
 }
 
-// First kicks off a DB query returning the first entity that matches the criteria
-func (db DB) First(entity interface{}) *query {
+// First kicks off a DB Query returning the first entity that matches the criteria
+func (db DB) First(entity interface{}) *Query {
 	return db.newQuery(entity, true)
 }
 
-// Limit limits the number of results a query will return to n
-func (q *query) Limit(n int) *query {
+// Limit limits the number of results a Query will return to n
+func (q *Query) Limit(n int) *Query {
 	q.limit = n
 	return q
 }
 
 // Offset starts N entities from the beginning
-func (q *query) Offset(n int) *query {
+func (q *Query) Offset(n int) *Query {
 	q.offset = n
 	q.offsetCounter = n
 	return q
 }
 
 // Reverse reverses the order of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
-func (q *query) Reverse() *query {
+func (q *Query) Reverse() *Query {
 	q.reverse = true
 	return q
 }
@@ -84,7 +84,7 @@ func (q *query) Reverse() *query {
 // Where takes an index name and up to 2 paramaters.
 // If one parameter is supplied, the search is an exact match search
 // If 2 parameters are supplied, it is a range search
-func (q *query) Where(indexName string, params ...interface{}) *query {
+func (q *Query) Where(indexName string, params ...interface{}) *Query {
 	if len(params) == 1 {
 		q.start = params[0]
 		q.end = params[0]
@@ -92,7 +92,7 @@ func (q *query) Where(indexName string, params ...interface{}) *query {
 		q.start = params[0]
 		q.end = params[1]
 	} else {
-		q.err = errors.New("Index query Where clause requires either 1 (exact match) or 2 (range) parameters")
+		q.err = errors.New("Index Query Where clause requires either 1 (exact match) or 2 (range) parameters")
 	}
 
 	q.isIndexQuery = true
@@ -100,8 +100,8 @@ func (q *query) Where(indexName string, params ...interface{}) *query {
 	return q
 }
 
-// From adds a lower boundary to the date range of the query
-func (q *query) From(t time.Time) *query {
+// From adds a lower boundary to the date range of the Query
+func (q *Query) From(t time.Time) *Query {
 	// Subtract 1 nanosecond form the specified time
 	// Leads to an inclusive date search
 	t = t.Add(-1 * time.Nanosecond)
@@ -110,27 +110,27 @@ func (q *query) From(t time.Time) *query {
 	return q
 }
 
-// To adds an upper bound to the date range of the query
-func (q *query) To(t time.Time) *query {
+// To adds an upper bound to the date range of the Query
+func (q *Query) To(t time.Time) *Query {
 
 	q.to = gouuidv6.NewFromTime(t)
 	return q
 }
 
-// Run actually executes the query
-func (q *query) Run() (int, error) {
+// Run actually executes the Query
+func (q *Query) Run() (int, error) {
 	return q.execute()
 }
 
-// Count executes the query in fast, count-only mode
-func (q *query) Count() (int, error) {
+// Count executes the Query in fast, count-only mode
+func (q *Query) Count() (int, error) {
 	q.countOnly = true
 	return q.execute()
 }
 
-func (q *query) Sum(a interface{}) (int, error) {
+func (q *Query) Sum(a interface{}) (int, error) {
 	if !q.isIndexQuery || len(q.indexName) == 0 {
-		return 0, errors.New("Aggregation must use an index query")
+		return 0, errors.New("Aggregation must use an index Query")
 	}
 
 	q.aggTarget = a

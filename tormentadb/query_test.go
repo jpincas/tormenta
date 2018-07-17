@@ -31,33 +31,47 @@ func Test_BasicQuery(t *testing.T) {
 		t.Errorf("Testing querying with 1 entity saved. Expecting 1 entity - got %v/%v", len(orders), n)
 	}
 
+	orders = []demo.Order{}
 	c, err := db.Find(&orders).Count()
-	if c != len(orders) {
+	if c != 1 {
 		t.Errorf("Testing count 1 entity saved. Expecting 1 - got %v", c)
 	}
 
 	// 2 orders
 	order2 := demo.Order{}
-	orders = []demo.Order{}
 	db.Save(&order2)
 
-	n, _ = db.Find(&orders).Run()
-
-	if len(orders) != 2 || n != 2 {
-		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v/%v", len(orders), n)
+	orders = []demo.Order{}
+	if n, _ := db.Find(&orders).Run(); n != 2 {
+		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v", n)
 	}
 
-	c, err = db.Find(&orders).Count()
-	if c != len(orders) {
+	if c, _ := db.Find(&orders).Count(); c != 2 {
 		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
 	}
-
 	if order1.ID == order2.ID {
 		t.Errorf("Testing querying with 2 entities saved. 2 entities saved both have same ID")
 	}
-
 	if orders[0].ID == orders[1].ID {
 		t.Errorf("Testing querying with 2 entities saved. 2 results returned. Both have same ID")
+	}
+
+	// Limit
+	orders = []demo.Order{}
+	if n, _ := db.Find(&orders).Limit(1).Run(); n != 1 {
+		t.Errorf("Testing querying with 2 entities saved + limit. Wrong number of results received")
+	}
+
+	// Reverse - simple, only tests number received
+	orders = []demo.Order{}
+	if n, _ := db.Find(&orders).Reverse().Run(); n != 2 {
+		t.Errorf("Testing querying with 2 entities saved + reverse. Expected %v, got %v", 2, n)
+	}
+
+	// Reverse + Limit - simple, only tests number received
+	orders = []demo.Order{}
+	if n, _ := db.Find(&orders).Reverse().Limit(1).Run(); n != 1 {
+		t.Errorf("Testing querying with 2 entities saved + reverse + limit. Expected %v, got %v", 1, n)
 	}
 
 }

@@ -3,12 +3,13 @@ package tormentadb
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
 
-type query struct {
+type Query struct {
 	// Connection to BadgerDB
 	db DB
 
@@ -18,7 +19,7 @@ type query struct {
 	// The Go 'value' for the entity type being searched
 	value reflect.Value
 
-	// Target is the pointer passed into the query where results will be set
+	// Target is the pointer passed into the Query where results will be set
 	target interface{}
 
 	// Limit number of returned results
@@ -43,13 +44,13 @@ type query struct {
 	// If this is an index search, this is the name of the index
 	indexName []byte
 
-	// Is this an index query
+	// Is this an index Query
 	isIndexQuery bool
 
 	// Is this a count only search
 	countOnly bool
 
-	// A placeholders for errors to be passed down through the query
+	// A placeholders for errors to be passed down through the Query
 	err error
 
 	// Ranges and comparision key
@@ -61,17 +62,17 @@ type query struct {
 	// Counter
 	counter int
 
-	// Is this an aggregation query?
+	// Is this an aggregation Query?
 	isAggQuery bool
 	aggTarget  interface{}
 }
 
-func (db DB) newQuery(target interface{}, first bool) *query {
+func (db DB) newQuery(target interface{}, first bool) *Query {
 	// Get the key root and cache the value
 	keyRoot, value := entityTypeAndValue(target)
 
-	// Create the base query
-	q := &query{
+	// Create the base Query
+	q := &Query{
 		db:      db,
 		keyRoot: keyRoot,
 		value:   value,
@@ -81,7 +82,7 @@ func (db DB) newQuery(target interface{}, first bool) *query {
 	// Set up list results placeholder
 	q.rt = reflect.Indirect(reflect.ValueOf(q.target))
 
-	// If this is a 'first only' query
+	// If this is a 'first only' Query
 	if first {
 		q.limit = 1
 		q.first = true
@@ -90,18 +91,18 @@ func (db DB) newQuery(target interface{}, first bool) *query {
 	return q
 }
 
-func (q query) getIteratorOptions(getValues bool) badger.IteratorOptions {
+func (q Query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 	options := badger.DefaultIteratorOptions
 	options.Reverse = q.reverse
 	options.PrefetchValues = getValues
 	return options
 }
 
-func (q query) isExactIndexMatchSearch() bool {
+func (q Query) isExactIndexMatchSearch() bool {
 	return q.start == q.end
 }
 
-func (q query) shouldGetValues() bool {
+func (q Query) shouldGetValues() bool {
 	// For index queries or count only queries, don't get values
 	if q.isIndexQuery || q.countOnly {
 		return false
@@ -110,7 +111,7 @@ func (q query) shouldGetValues() bool {
 	return true
 }
 
-func (q query) shouldStripKeyID() bool {
+func (q Query) shouldStripKeyID() bool {
 	// Regular queries never need to have ID stripped
 	if !q.isIndexQuery {
 		return false
@@ -125,7 +126,7 @@ func (q query) shouldStripKeyID() bool {
 	return true
 }
 
-func (q query) isEndOfRange(it *badger.Iterator) bool {
+func (q Query) isEndOfRange(it *badger.Iterator) bool {
 	key := it.Item().Key()
 
 	if q.isIndexQuery {
@@ -135,11 +136,11 @@ func (q query) isEndOfRange(it *badger.Iterator) bool {
 	return !q.to.IsNil() && compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
 }
 
-func (q query) isLimitMet() bool {
+func (q Query) isLimitMet() bool {
 	return q.limit > 0 && q.counter >= q.limit
 }
 
-func (q query) endIteration(it *badger.Iterator) bool {
+func (q Query) endIteration(it *badger.Iterator) bool {
 	if it.ValidForPrefix(q.validTo) {
 		if q.isLimitMet() || q.isEndOfRange(it) {
 			return false
@@ -151,7 +152,7 @@ func (q query) endIteration(it *badger.Iterator) bool {
 	return false
 }
 
-func (q query) aggregate(item *badger.Item) {
+func (q Query) aggregate(item *badger.Item) {
 	// TODO: super inefficient to do this every time
 	switch q.aggTarget.(type) {
 	case *int32:
@@ -165,7 +166,7 @@ func (q query) aggregate(item *badger.Item) {
 	}
 }
 
-func (q *query) setRanges() {
+func (q *Query) setRanges() {
 	var seekFrom, validTo, compareTo []byte
 
 	if q.isIndexQuery && q.isExactIndexMatchSearch() {
@@ -189,20 +190,32 @@ func (q *query) setRanges() {
 	q.compareTo = compareTo
 }
 
-func (q *query) resetQuery() {
-	// Counter should always be reset before executing a query.
-	// Just in case a query is built then executed twice.
+func (q *Query) resetQuery() {
+	// Counter should always be reset before executing a Query.
+	// Just in case a Query is built then executed twice.
 	q.counter = 0
 	q.offsetCounter = q.offset
 
 }
 
-func (q *query) prepareQuery() {
+func (q *Query) prepareQuery() {
+	// If this is a reverse search,
+	// and there has been no FROM clause specified
+	// We need to add time.Now() otherwise no results are returned
+	// Conceptually its VERY hard to understand why this is the case:
+	// Basically, its to do with where Badger starts iteration from.
+	// If you just use the root, like 'c:order', and it's a reverse search,
+	// it will start at the END of the order list and therefore there
+	// will be no iterations
+	if q.reverse && q.from.IsNil() {
+		q.From(time.Now())
+	}
+
 	q.setRanges()
 	q.resetQuery()
 }
 
-func (q *query) fetchIndexedRecord(item *badger.Item) error {
+func (q *Query) fetchIndexedRecord(item *badger.Item) error {
 	key := extractID(item.Key())
 
 	var entity Tormentable
@@ -221,7 +234,7 @@ func (q *query) fetchIndexedRecord(item *badger.Item) error {
 		return fmt.Errorf("Could not retrieve entity %s", key)
 	}
 
-	// If this is a 'first' query - then just set the unmarshalled entity on the target
+	// If this is a 'first' Query - then just set the unmarshalled entity on the target
 	// Otherwise, build up the results slice - we'll set on the target later!
 	if q.first {
 		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
@@ -235,7 +248,7 @@ func (q *query) fetchIndexedRecord(item *badger.Item) error {
 	return nil
 }
 
-func (q *query) fetchRecord(item *badger.Item) error {
+func (q *Query) fetchRecord(item *badger.Item) error {
 	// Set up the entity for unmarshalling
 	var entity Tormentable
 	if q.first {
@@ -254,7 +267,7 @@ func (q *query) fetchRecord(item *badger.Item) error {
 		return err
 	}
 
-	// If this is a 'first' query - then just set the unmarshalled entity on the target
+	// If this is a 'first' Query - then just set the unmarshalled entity on the target
 	// Otherwise, build up the results slice - we'll set on the target later!
 	if q.first {
 		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
@@ -268,8 +281,8 @@ func (q *query) fetchRecord(item *badger.Item) error {
 	return nil
 }
 
-func (q *query) execute() (int, error) {
-	// Do the work of calculating and setting initial values for the query
+func (q *Query) execute() (int, error) {
+	// Do the work of calculating and setting initial values for the Query
 	q.prepareQuery()
 
 	// Iterate through records according to calcuted range limits
@@ -279,7 +292,7 @@ func (q *query) execute() (int, error) {
 
 		// Start iteration
 		for it.Seek(q.seekFrom); q.endIteration(it); it.Next() {
-			// If this is a 'range index' type query
+			// If this is a 'range index' type Query
 			// that ALSO has a date range, the procedure is a little more complicated
 			// compared to an exact index match.
 			// Since the start/end points of the iteration focus on the index, e.g. E-J (alphabetical index)
