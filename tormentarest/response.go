@@ -15,6 +15,8 @@ const (
 	errRecordNotFound   = "Record with id %s not found"
 	errBadLimitFormat   = "%s is an invalid input for LIMIT. Expecting a number"
 	errBadReverseFormat = "%s is an invalid input for REVERSE. Expecting true/false"
+	errBadFromFormat    = "Invalid input for FROM. Expecting somthing like '2006-01-02'"
+	errBadToFormat      = "Invalid input for TO. Expecting somthing like '2006-01-02'"
 )
 
 func renderError(w http.ResponseWriter, s string, i ...interface{}) {

@@ -60,11 +60,18 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Run the query
-	if _, err := q.Run(); err != nil {
+	n, err := q.Run()
+	if err != nil {
 		renderError(w, errDBConnection)
 		return
 	}
 
 	// Render JSON
+	// For 0 results, render empty list
+	if n == 0 {
+		App.Render.JSON(w, http.StatusOK, []interface{}{})
+		return
+	}
+
 	App.Render.JSON(w, http.StatusOK, results)
 }
