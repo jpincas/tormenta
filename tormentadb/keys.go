@@ -61,7 +61,7 @@ func withID(k key, id []gouuidv6.UUID) key {
 }
 
 func (k key) shouldAppendID() bool {
-	// If index is nil, definite no
+	// If ID is nil, definite no
 	if k.id.IsNil() {
 		return false
 	}

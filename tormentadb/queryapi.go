@@ -86,13 +86,30 @@ func (q *Query) Reverse() *Query {
 // If 2 parameters are supplied, it is a range search
 func (q *Query) Where(indexName string, params ...interface{}) *Query {
 	if len(params) == 1 {
+		// For a single parameter 'exact match' search, it is non sensical to pass nil
+		// Set the error and return the query unchanged
+		if params[0] == nil {
+			q.err = errors.New(ErrNilInputMatchIndexQuery)
+			return q
+		}
+
 		q.start = params[0]
 		q.end = params[0]
 	} else if len(params) == 2 {
+		// For an index range search,
+		// it is non-sensical to pass two nils
+		// Set the error and return the query unchanged
+		if params[0] == nil && params[1] == nil {
+			q.err = errors.New(ErrNilInputsRangeIndexQuery)
+			return q
+		}
+
 		q.start = params[0]
 		q.end = params[1]
 	} else {
-		q.err = errors.New("Index Query Where clause requires either 1 (exact match) or 2 (range) parameters")
+		// Only 1 or 2 parameters are accepted, anything else is an error
+		q.err = errors.New(ErrMoreThan2InputsRangeIndexQuery)
+		return q
 	}
 
 	q.isIndexQuery = true

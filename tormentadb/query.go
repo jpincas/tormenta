@@ -211,6 +211,28 @@ func (q *Query) prepareQuery() {
 		q.From(time.Now())
 	}
 
+	// For exact match tests, we have to tack on 'from' and 'to' clauses
+	// else, at least for strings, it sort of becomes a prefix match type search
+	// e.g. 'jon' would end up matching 'jonathan' etc
+	if q.isExactIndexMatchSearch() {
+		if q.reverse {
+			if q.from.IsNil() {
+				q.From(time.Now())
+			}
+
+			if q.to.IsNil() {
+				q.To(time.Time{})
+			}
+		} else {
+			if q.from.IsNil() {
+				q.From(time.Time{})
+			}
+			if q.to.IsNil() {
+				q.To(time.Now())
+			}
+		}
+	}
+
 	q.setRanges()
 	q.resetQuery()
 }
@@ -284,6 +306,13 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 func (q *Query) execute() (int, error) {
 	// Do the work of calculating and setting initial values for the Query
 	q.prepareQuery()
+
+	// Now, if during the query planning and preparation,
+	// something has gone wrong and an error has been set on the query,
+	// we'll return right here and now
+	if q.err != nil {
+		return 0, q.err
+	}
 
 	// Iterate through records according to calcuted range limits
 	err := q.db.KV.View(func(txn *badger.Txn) error {
