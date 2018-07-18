@@ -198,41 +198,35 @@ func (q *Query) resetQuery() {
 
 }
 
+func (q *Query) setFromToIfEmpty() {
+	// If 'from' or 'to' have not been specified manually by the user,
+	// then we set them to the 'widest' times possible,
+	// i.e. 'between beginning of time' and 'now'
+	// If we don't do this, then some searches work OK, but particuarly reversed searches
+	// can experience strange behaviour (namely returned 0 results), because the iteration
+	// ends up starting from the end of the list.
+
+	t1 := time.Time{}
+	t2 := time.Now()
+
+	// Reverse the endpoints of the range for 'reverse' searches
+	if q.reverse {
+		temp := t1
+		t1 = t2
+		t2 = temp
+	}
+
+	if q.from.IsNil() {
+		q.From(t1)
+	}
+
+	if q.to.IsNil() {
+		q.To(t2)
+	}
+}
+
 func (q *Query) prepareQuery() {
-	// If this is a reverse search,
-	// and there has been no FROM clause specified
-	// We need to add time.Now() otherwise no results are returned
-	// Conceptually its VERY hard to understand why this is the case:
-	// Basically, its to do with where Badger starts iteration from.
-	// If you just use the root, like 'c:order', and it's a reverse search,
-	// it will start at the END of the order list and therefore there
-	// will be no iterations
-	if q.reverse && q.from.IsNil() {
-		q.From(time.Now())
-	}
-
-	// For exact match tests, we have to tack on 'from' and 'to' clauses
-	// else, at least for strings, it sort of becomes a prefix match type search
-	// e.g. 'jon' would end up matching 'jonathan' etc
-	if q.isExactIndexMatchSearch() {
-		if q.reverse {
-			if q.from.IsNil() {
-				q.From(time.Now())
-			}
-
-			if q.to.IsNil() {
-				q.To(time.Time{})
-			}
-		} else {
-			if q.from.IsNil() {
-				q.From(time.Time{})
-			}
-			if q.to.IsNil() {
-				q.To(time.Now())
-			}
-		}
-	}
-
+	q.setFromToIfEmpty()
 	q.setRanges()
 	q.resetQuery()
 }
