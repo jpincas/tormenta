@@ -253,23 +253,26 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 	db.Save(orders...)
 
 	testCases := []struct {
-		testName string
-		match    string
-		reverse  bool
-		expected int
+		testName      string
+		match         interface{}
+		reverse       bool
+		expected      int
+		expectedError error
 	}{
-		{"blank string", "", false, 0},
-		{"should not match any", "nocustomerwiththisname", false, 0},
-		{"matches 1 exactly with no interference", "pablo", false, 33},
-		{"matches 1 exactly and 1 prefix", "jon", false, 34},
-		{"matches 1 exactly and has same prefix as other", "jonathan", false, 33},
+		{"blank string", nil, false, 0, errors.New(tormenta.ErrNilInputMatchIndexQuery)},
+		{"blank string", "", false, 0, nil},
+		{"should not match any", "nocustomerwiththisname", false, 0, nil},
+		{"matches 1 exactly with no interference", "pablo", false, 33, nil},
+		{"matches 1 exactly and 1 prefix", "jon", false, 34, nil},
+		{"matches 1 exactly and has same prefix as other", "jonathan", false, 33, nil},
 
 		// Reversed - shouldn't make any difference to N
-		{"blank string - reversed", "", true, 0},
-		{"should not match any - reversed", "nocustomerwiththisname", true, 0},
-		{"matches 1 exactly with no interference - reversed", "pablo", true, 33},
-		{"matches 1 exactly and 1 prefix - reversed", "jon", true, 34},
-		{"matches 1 exactly and has same prefix as other - reversed", "jonathan", true, 33},
+		{"blank string - reversed", nil, true, 0, errors.New(tormenta.ErrNilInputMatchIndexQuery)},
+		{"blank string - reversed", "", true, 0, nil},
+		{"should not match any - reversed", "nocustomerwiththisname", true, 0, nil},
+		{"matches 1 exactly with no interference - reversed", "pablo", true, 33, nil},
+		{"matches 1 exactly and 1 prefix - reversed", "jon", true, 34, nil},
+		{"matches 1 exactly and has same prefix as other - reversed", "jonathan", true, 33, nil},
 	}
 
 	for _, testCase := range testCases {
@@ -280,7 +283,15 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 			q.Reverse()
 		}
 
-		n, _ := q.Run()
+		n, err := q.Run()
+
+		if testCase.expectedError != nil && err == nil {
+			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
+		}
+
+		if testCase.expectedError == nil && err != nil {
+			t.Errorf("Testing %s. Didn't expect error [%v]", testCase.testName, err)
+		}
 
 		if n != testCase.expected {
 			t.Errorf("Testing %s.  Expecting %v, got %v", testCase.testName, testCase.expected, n)
