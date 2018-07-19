@@ -50,8 +50,13 @@ func (db DB) Query(entities interface{}, options QueryOptions) *Query {
 	}
 
 	// Apply index if required
+	// Use 'match' for 1 param, 'range' for 2
 	if options.IndexName != "" {
-		q.Where(options.IndexName, options.IndexParams...)
+		if len(options.IndexParams) == 1 {
+			q.Match(options.IndexName, options.IndexParams[0])
+		} else if len(options.IndexParams) == 2 {
+			q.Range(options.IndexName, options.IndexParams[0], options.IndexParams[1])
+		}
 	}
 
 	return q
@@ -81,41 +86,72 @@ func (q *Query) Reverse() *Query {
 	return q
 }
 
-// Where takes an index name and up to 2 paramaters.
-// If one parameter is supplied, the search is an exact match search
-// If 2 parameters are supplied, it is a range search
-func (q *Query) Where(indexName string, params ...interface{}) *Query {
-	if len(params) == 1 {
-		// For a single parameter 'exact match' search, it is non sensical to pass nil
-		// Set the error and return the query unchanged
-		if params[0] == nil {
-			q.err = errors.New(ErrNilInputMatchIndexQuery)
-			return q
-		}
-
-		q.start = params[0]
-		q.end = params[0]
-	} else if len(params) == 2 {
-		// For an index range search,
-		// it is non-sensical to pass two nils
-		// Set the error and return the query unchanged
-		if params[0] == nil && params[1] == nil {
-			q.err = errors.New(ErrNilInputsRangeIndexQuery)
-			return q
-		}
-
-		q.start = params[0]
-		q.end = params[1]
-	} else {
-		// Only 1 or 2 parameters are accepted, anything else is an error
-		q.err = errors.New(ErrMoreThan2InputsRangeIndexQuery)
+// Match adds an exact-match index search to a query
+func (q *Query) Match(indexName string, param interface{}) *Query {
+	// For a single parameter 'exact match' search, it is non sensical to pass nil
+	// Set the error and return the query unchanged
+	if param == nil {
+		q.err = errors.New(ErrNilInputMatchIndexQuery)
 		return q
 	}
-
+	q.start = param
+	q.end = param
 	q.isIndexQuery = true
 	q.indexName = []byte(indexName)
 	return q
 }
+
+// Range adds a range-match index search to a query
+func (q *Query) Range(indexName string, start, end interface{}) *Query {
+	// For an index range search,
+	// it is non-sensical to pass two nils
+	// Set the error and return the query unchanged
+	if start == nil && end == nil {
+		q.err = errors.New(ErrNilInputsRangeIndexQuery)
+		return q
+	}
+	q.start = start
+	q.end = end
+	q.isIndexQuery = true
+	q.indexName = []byte(indexName)
+	return q
+}
+
+// Where takes an index name and up to 2 paramaters.
+// If one parameter is supplied, the search is an exact match search
+// If 2 parameters are supplied, it is a range search
+// func (q *Query) Where(indexName string, params ...interface{}) *Query {
+// 	if len(params) == 1 {
+// 		// For a single parameter 'exact match' search, it is non sensical to pass nil
+// 		// Set the error and return the query unchanged
+// 		if params[0] == nil {
+// 			q.err = errors.New(ErrNilInputMatchIndexQuery)
+// 			return q
+// 		}
+
+// 		q.start = params[0]
+// 		q.end = params[0]
+// 	} else if len(params) == 2 {
+// 		// For an index range search,
+// 		// it is non-sensical to pass two nils
+// 		// Set the error and return the query unchanged
+// 		if params[0] == nil && params[1] == nil {
+// 			q.err = errors.New(ErrNilInputsRangeIndexQuery)
+// 			return q
+// 		}
+
+// 		q.start = params[0]
+// 		q.end = params[1]
+// 	} else {
+// 		// Only 1 or 2 parameters are accepted, anything else is an error
+// 		q.err = errors.New(ErrMoreThan2InputsRangeIndexQuery)
+// 		return q
+// 	}
+
+// 	q.isIndexQuery = true
+// 	q.indexName = []byte(indexName)
+// 	return q
+// }
 
 // From adds a lower boundary to the date range of the Query
 func (q *Query) From(t time.Time) *Query {
