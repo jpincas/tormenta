@@ -45,6 +45,7 @@ type Order struct {
 	Customer                string  `tormenta:"index"`
 	Department              int     `tormenta:"index"`
 	ShippingFee             float64 `tormenta:"index"`
+	HasShipped              bool    `tormenta:"index"`
 	Items                   []Line
 	ContainsProhibitedItems bool `msg:"-"`
 	OrderSaved              bool `msg:"-"`

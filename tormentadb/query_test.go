@@ -238,6 +238,29 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 // Index Queries
 
+func Test_IndexQuery_Bool(t *testing.T) {
+	orderFalse := demo.Order{}
+	orderTrue := demo.Order{HasShipped: true}
+	orderTrue2 := demo.Order{HasShipped: true}
+	db, _ := tormenta.OpenTest("data/tests")
+	defer db.Close()
+	db.Save(&orderFalse, &orderTrue, &orderTrue2)
+
+	results := []demo.Order{}
+	// Test true
+	n, _ := db.Find(&results).Where("hasshipped", true).Run()
+	if n != 2 {
+		t.Errorf("Testing bool index.  Expected 2 results, got %v", n)
+	}
+
+	// Test false + count
+	c, _ := db.Find(&results).Where("hasshipped", false).Count()
+	if c != 1 {
+		t.Errorf("Testing bool index.  Expected 1 result, got %v", c)
+	}
+
+}
+
 func Test_IndexQuery_Match_String(t *testing.T) {
 	customers := []string{"jon", "jonathan", "pablo"}
 	var orders []tormenta.Tormentable

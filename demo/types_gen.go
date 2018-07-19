@@ -254,6 +254,11 @@ func (z *Order) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
+		case "HasShipped":
+			z.HasShipped, err = dc.ReadBool()
+			if err != nil {
+				return
+			}
 		case "Items":
 			var zb0002 uint32
 			zb0002, err = dc.ReadArrayHeader()
@@ -308,9 +313,9 @@ func (z *Order) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Order) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 5
+	// map header, size 6
 	// write "Model"
-	err = en.Append(0x85, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	err = en.Append(0x86, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	if err != nil {
 		return
 	}
@@ -342,6 +347,15 @@ func (z *Order) EncodeMsg(en *msgp.Writer) (err error) {
 		return
 	}
 	err = en.WriteFloat64(z.ShippingFee)
+	if err != nil {
+		return
+	}
+	// write "HasShipped"
+	err = en.Append(0xaa, 0x48, 0x61, 0x73, 0x53, 0x68, 0x69, 0x70, 0x70, 0x65, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.HasShipped)
 	if err != nil {
 		return
 	}
@@ -381,9 +395,9 @@ func (z *Order) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Order) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 5
+	// map header, size 6
 	// string "Model"
-	o = append(o, 0x85, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	o = append(o, 0x86, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	o, err = z.Model.MarshalMsg(o)
 	if err != nil {
 		return
@@ -397,6 +411,9 @@ func (z *Order) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "ShippingFee"
 	o = append(o, 0xab, 0x53, 0x68, 0x69, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x46, 0x65, 0x65)
 	o = msgp.AppendFloat64(o, z.ShippingFee)
+	// string "HasShipped"
+	o = append(o, 0xaa, 0x48, 0x61, 0x73, 0x53, 0x68, 0x69, 0x70, 0x70, 0x65, 0x64)
+	o = msgp.AppendBool(o, z.HasShipped)
 	// string "Items"
 	o = append(o, 0xa5, 0x49, 0x74, 0x65, 0x6d, 0x73)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Items)))
@@ -445,6 +462,11 @@ func (z *Order) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			}
 		case "ShippingFee":
 			z.ShippingFee, bts, err = msgp.ReadFloat64Bytes(bts)
+			if err != nil {
+				return
+			}
+		case "HasShipped":
+			z.HasShipped, bts, err = msgp.ReadBoolBytes(bts)
 			if err != nil {
 				return
 			}
@@ -503,7 +525,7 @@ func (z *Order) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Order) Msgsize() (s int) {
-	s = 1 + 6 + z.Model.Msgsize() + 9 + msgp.StringPrefixSize + len(z.Customer) + 11 + msgp.IntSize + 12 + msgp.Float64Size + 6 + msgp.ArrayHeaderSize
+	s = 1 + 6 + z.Model.Msgsize() + 9 + msgp.StringPrefixSize + len(z.Customer) + 11 + msgp.IntSize + 12 + msgp.Float64Size + 11 + msgp.BoolSize + 6 + msgp.ArrayHeaderSize
 	for za0001 := range z.Items {
 		s += 1 + 12 + msgp.StringPrefixSize + len(z.Items[za0001].ProductCode) + 4 + msgp.IntSize
 	}
