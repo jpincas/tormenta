@@ -66,6 +66,9 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 func setSplitStringIndexes(txn *badger.Txn, v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) error {
 	strings := strings.Split(v.String(), " ")
 
+	// Clean non-content words
+	strings = removeNonContentWords(strings)
+
 	for _, s := range strings {
 		if err := setIndexKey(txn, root, id, indexName, s); err != nil {
 			return err

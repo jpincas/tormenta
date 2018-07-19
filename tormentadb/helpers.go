@@ -8,3 +8,24 @@ func RandomiseTormentables(slice []Tormentable) {
 		slice[i], slice[j] = slice[j], slice[i]
 	}
 }
+
+func MemberString(valid []string, target string) bool {
+	for _, validOption := range valid {
+		if target == validOption {
+			return true
+		}
+	}
+	return false
+}
+
+var nonContentWords = []string{"on", "at", "the", "in", "a"}
+
+func removeNonContentWords(strings []string) (results []string) {
+	for _, s := range strings {
+		if !MemberString(nonContentWords, s) {
+			results = append(results, s)
+		}
+	}
+
+	return
+}

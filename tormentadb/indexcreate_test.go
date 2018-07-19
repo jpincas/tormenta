@@ -90,13 +90,17 @@ func Test_CreateIndexKeys_Split(t *testing.T) {
 
 	db.Save(&product)
 
+	// content words
 	expectedKeys := [][]byte{
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "the"),
 		tormenta.IndexKey([]byte("product"), product.ID, "name", "coolest"),
 		tormenta.IndexKey([]byte("product"), product.ID, "name", "product"),
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "in"),
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "the"),
 		tormenta.IndexKey([]byte("product"), product.ID, "name", "world"),
+	}
+
+	// non content words
+	nonExpectedKeys := [][]byte{
+		tormenta.IndexKey([]byte("product"), product.ID, "name", "the"),
+		tormenta.IndexKey([]byte("product"), product.ID, "name", "in"),
 	}
 
 	db.KV.View(func(txn *badger.Txn) error {
@@ -104,6 +108,13 @@ func Test_CreateIndexKeys_Split(t *testing.T) {
 			_, err := txn.Get(key)
 			if err == badger.ErrKeyNotFound {
 				t.Errorf("Testing index creation from slices.  Key [%v] should have been created but could not be retrieved", key)
+			}
+		}
+
+		for _, key := range nonExpectedKeys {
+			_, err := txn.Get(key)
+			if err != badger.ErrKeyNotFound {
+				t.Errorf("Testing index creation from slices.  Key [%v] should NOT have been created but was", key)
 			}
 		}
 
