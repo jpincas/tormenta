@@ -16,8 +16,9 @@ import (
 // i:order:customer:5:324ds-3werwf-234wef-23wef
 
 const (
-	tormentaTag      = "tormenta"
-	tormentaTagIndex = "index"
+	tormentaTag        = "tormenta"
+	tormentaTagNoIndex = "noindex"
+	tormentaTagSplit   = "split"
 )
 
 func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
@@ -25,9 +26,9 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 
 	for i := 0; i < v.NumField(); i++ {
 
-		// Look for the 'tormenta:index' tag
+		// If the 'tormenta:noindex' tag is present, don't index
 		fieldType := v.Type().Field(i)
-		if idx := fieldType.Tag.Get(tormentaTag); idx == tormentaTagIndex {
+		if idx := fieldType.Tag.Get(tormentaTag); idx != tormentaTagNoIndex {
 
 			switch fieldType.Type.Kind() {
 			case reflect.Slice:
@@ -38,12 +39,36 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
 					return err
 				}
+			case reflect.String:
+				// If the string is tagged with 'split',
+				// then index each of the words separately
+				if idx == tormentaTagSplit {
+					if err := setSplitStringIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
+						return err
+					}
+				} else {
+					if err := setIndexKey(txn, keyRoot, id, fieldType.Name, v.Field(i).Interface()); err != nil {
+						return err
+					}
+				}
 			default:
 				if err := setIndexKey(txn, keyRoot, id, fieldType.Name, v.Field(i).Interface()); err != nil {
 					return err
 				}
 			}
 
+		}
+	}
+
+	return nil
+}
+
+func setSplitStringIndexes(txn *badger.Txn, v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) error {
+	strings := strings.Split(v.String(), " ")
+
+	for _, s := range strings {
+		if err := setIndexKey(txn, root, id, indexName, s); err != nil {
+			return err
 		}
 	}
 

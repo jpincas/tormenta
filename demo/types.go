@@ -25,11 +25,11 @@ type NoModel struct {
 type Product struct {
 	tormenta.Model
 	Code          string
-	Name          string   `tormenta:"index"`
-	Price         float64  `tormenta:"index"`
-	StartingStock int      `tormenta:"index"`
-	Tags          []string `tormenta:"index"`
-	Departments   []int    `tormenta:"index"`
+	Name          string `tormenta:"split"`
+	Price         float64
+	StartingStock int
+	Tags          []string
+	Departments   []int
 
 	// For a bit more realism and to pad out the serialised data
 	Description string
@@ -42,14 +42,14 @@ type Line struct {
 
 type Order struct {
 	tormenta.Model
-	Customer                string  `tormenta:"index"`
-	Department              int     `tormenta:"index"`
-	ShippingFee             float64 `tormenta:"index"`
-	HasShipped              bool    `tormenta:"index"`
+	Customer                string
+	Department              int
+	ShippingFee             float64
+	HasShipped              bool
 	Items                   []Line
-	ContainsProhibitedItems bool `msg:"-"`
-	OrderSaved              bool `msg:"-"`
-	OrderRetrieved          bool `msg:"-"`
+	ContainsProhibitedItems bool `msg:"-" tormenta:"noindex"`
+	OrderSaved              bool `msg:"-" tormenta:"noindex"`
+	OrderRetrieved          bool `msg:"-" tormenta:"noindex"`
 }
 
 func (o Order) PreSave() error {
