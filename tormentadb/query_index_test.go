@@ -2,7 +2,6 @@ package tormentadb_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -96,24 +95,15 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 	}
 }
 
-// Test range queries across different types
-func Test_IndexQuery_Range(t *testing.T) {
-	// Set up 100 orders with increasing department, customer and shipping fee
-	// and save
+func Test_IndexQuery_StartsWith(t *testing.T) {
+	customers := []string{"j", "jo", "jon", "jonathan", "job", "pablo"}
 	var orders []tormenta.Tormentable
 
-	for i := 0; i < 100; i++ {
+	for _, customer := range customers {
 		orders = append(orders, &demo.Order{
-			Department:  i + 1,
-			Customer:    fmt.Sprintf("customer-%v", string((i%26)+65)),
-			ShippingFee: float64(i) + 0.99,
+			Customer: customer,
 		})
 	}
-
-	// Randomise order before saving,
-	// to ensure save order is not affecting retrieval
-	// in some roundabout way
-	tormenta.RandomiseTormentables(orders)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
@@ -121,50 +111,40 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 	testCases := []struct {
 		testName      string
-		indexName     string
-		start, end    interface{}
+		startsWith    string
+		reverse       bool
 		expected      int
 		expectedError error
 	}{
-		// Non existent index
-		{"non existent index - no range", "notanindex", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"non existent index", "notanindex", 1, 2, 0, nil},
+		{"blank string", "", false, 0, errors.New(tormenta.ErrBlankInputStartsWithQuery)},
+		{"no match - no interference", "nocustomerwiththisname", false, 0, nil},
+		{"single match - no interference", "pablo", false, 1, nil},
+		{"single match - possible interference", "jonathan", false, 1, nil},
+		{"single match - possible interference", "job", false, 1, nil},
+		{"wide match - 1 letter", "j", false, 5, nil},
+		{"wide match - 2 letters", "jo", false, 4, nil},
+		{"wide match - 3 letters", "jon", false, 2, nil},
 
-		// Int
-		{"integer - no range", "department", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"integer - from 1", "department", 1, nil, 100, nil},
-		{"integer - from 2", "department", 2, nil, 99, nil},
-		{"integer - from 50", "department", 50, nil, 51, nil},
-		{"integer - 1 to 2", "department", 1, 2, 2, nil},
-		{"integer - 50 to 59", "department", 50, 59, 10, nil},
-		{"integer - 1 to 100", "department", 1, 100, 100, nil},
-		{"integer - to 50", "department", nil, 50, 50, nil},
-
-		// String
-		{"string - no range", "customer", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"string", "customer", "customer", nil, 100, nil},
-		{"string - from A", "customer", "customer-A", nil, 100, nil},
-		{"string - from B", "customer", "customer-B", nil, 96, nil},
-		{"string - from Z", "customer", "customer-Z", nil, 3, nil},
-		{"string - from A to Z", "customer", "customer-A", "customer-Z", 100, nil},
-		{"string - to Z", "customer", nil, "customer-Z", 100, nil},
-
-		// Float
-		{"float - no range", "shippingfee", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"float", "shippingfee", 0, nil, 100, nil},
-		{"float", "shippingfee", 0.99, nil, 100, nil},
-		{"float - from 1.99", "shippingfee", 1.99, nil, 99, nil},
-		{"float - from 50.99", "shippingfee", 50.99, nil, 50, nil},
-		{"float - from 99.99", "shippingfee", 99.99, nil, 1, nil},
-		{"float - to 20.99", "shippingfee", nil, 20.99, 21, nil},
+		// Reversed - shouldn't make any difference to N
+		{"blank string", "", true, 0, errors.New(tormenta.ErrBlankInputStartsWithQuery)},
+		{"no match - no interference", "nocustomerwiththisname", true, 0, nil},
+		{"single match - no interference", "pablo", true, 1, nil},
+		{"single match - possible interference", "jonathan", true, 1, nil},
+		{"single match - possible interference", "job", true, 1, nil},
+		{"wide match - 1 letter", "j", true, 5, nil},
+		{"wide match - 2 letters", "jo", true, 4, nil},
+		{"wide match - 3 letters", "jon", true, 2, nil},
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []demo.Order{}
-		n, err := db.
-			Find(&rangequeryResults).
-			Range(testCase.indexName, testCase.start, testCase.end).
-			Run()
+		results := []demo.Order{}
+
+		q := db.Find(&results).StartsWith("customer", testCase.startsWith)
+		if testCase.reverse {
+			q.Reverse()
+		}
+
+		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -174,31 +154,10 @@ func Test_IndexQuery_Range(t *testing.T) {
 			t.Errorf("Testing %s. Didn't expect error [%v]", testCase.testName, err)
 		}
 
-		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
-		}
-
-		// Check each member of the results for nil ID, customer and shipping fee
-		for i, order := range rangequeryResults {
-			if order.ID.IsNil() {
-				t.Errorf("Testing %s.  Order no %v has nil ID", testCase.testName, i)
-			}
-
-			if order.Department == 0 {
-				t.Errorf("Testing %s.  Order no %v has 0 department", testCase.testName, i)
-			}
-
-			if order.Customer == "" {
-				t.Errorf("Testing %s.  Order no %v has blank customer", testCase.testName, i)
-			}
-
-			if order.ShippingFee == 0.0 {
-				t.Errorf("Testing %s.  Order no %v has 0 shipping fee", testCase.testName, i)
-			}
+			t.Errorf("Testing %s.  Expecting %v, got %v", testCase.testName, testCase.expected, n)
 		}
 	}
-
 }
 
 // Helper for making groups of depatments

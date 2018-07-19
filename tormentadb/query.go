@@ -47,6 +47,9 @@ type Query struct {
 	// Is this an index Query
 	isIndexQuery bool
 
+	// Is this a 'starts with' index query
+	isStartsWithQuery bool
+
 	// Is this a count only search
 	countOnly bool
 
@@ -100,6 +103,10 @@ func (q Query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 
 func (q Query) isExactIndexMatchSearch() bool {
 	return q.start == q.end
+}
+
+func (q Query) isIndexRangeSearch() bool {
+	return q.start != q.end && !q.isStartsWithQuery
 }
 
 func (q Query) shouldGetValues() bool {
@@ -199,12 +206,19 @@ func (q *Query) resetQuery() {
 }
 
 func (q *Query) setFromToIfEmpty() {
+	// For index range searches - we don't do this,
+	// so exit right away
+	if q.isIndexRangeSearch() {
+		return
+	}
+
 	// If 'from' or 'to' have not been specified manually by the user,
 	// then we set them to the 'widest' times possible,
 	// i.e. 'between beginning of time' and 'now'
 	// If we don't do this, then some searches work OK, but particuarly reversed searches
 	// can experience strange behaviour (namely returned 0 results), because the iteration
 	// ends up starting from the end of the list.
+	// Another side-effect of not doing this is that exact match string searches would become 'starts with' searches.  We might want that behaviour though, so we include a check for this type of search below
 
 	t1 := time.Time{}
 	t2 := time.Now()
@@ -217,7 +231,16 @@ func (q *Query) setFromToIfEmpty() {
 	}
 
 	if q.from.IsNil() {
-		q.From(t1)
+		// If we are doing a 'starts with' query,
+		// then we DON'T want to set the from point
+		// This magically gives us 'starts with'
+		// instead of exact match,
+		// BUT - this trick only works for forward searches,
+		// not 'reverse' searches,
+		// so there is a protection in the query preparation
+		if !q.isStartsWithQuery {
+			q.From(t1)
+		}
 	}
 
 	if q.to.IsNil() {
@@ -226,6 +249,12 @@ func (q *Query) setFromToIfEmpty() {
 }
 
 func (q *Query) prepareQuery() {
+	// 'starts with' type query doesn't work with reverse
+	// so switch it back to a regular search
+	if q.isIndexQuery && q.isStartsWithQuery && q.reverse {
+		q.reverse = false
+	}
+
 	q.setFromToIfEmpty()
 	q.setRanges()
 	q.resetQuery()

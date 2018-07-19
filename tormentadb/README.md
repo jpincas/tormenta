@@ -207,14 +207,35 @@ func Example_Main() {
 - [x] Delete
 - [x] Logic triggers (preSave, postSave, postGet)
 - [ ] Easy joins
-- [ ] Filter functions for easily applying arbitrary criteria to returned results
+- [ ] Arbitrary filter functions for indexes
 - [ ] Better error reporting from query construction
 - [ ] Better protection against unsupported types being passed around as interfaces
 - [ ] Fully benchmarked simulation of a real-world use case
 - [ ] Optional TTL on save
 - [x] Slices as indexes -> multiple index entries
-- [ ] Generic REST API persisted by Tormenta
-- [ ] Generic GUI for connecting to and editing database entries
 - [ ] Rebuild indices command
 - [ ] Stack multiple queries, execute as AND/OR, execute in parallel
 - [ ] For large iterations, how could we run parts in parallel? Would have to specify with a tag?
+- [x] Split-string indexing with 'split' tag
+- [ ] 'Starts with' index match
+- [x] Indexes on by default
+- [ ] Multiple entity `Get()`
+- [ ] Bulk unmarshall rather than 1 at a time? Concurrent?
+- [ ] JSON dump/ backup
+
+
+## Questions / Experiments etc
+
+### Should we consider replacing messagepack with (fast) JSON? 
+
+#### PROS 
+- Would be easier to get started with (no need to install generator)
+- Doesn't require user to run `go generate` after each change in types 
+- Mitigates the chance of forgetting to run after type change 
+- Could enable 'pass-thru' for JSON api (i.e. no unmarshalling/marshalling)
+- Easy dump/backup to JSON files
+- Might be easier to implement selective field getting, rather than unmarhsalling the whole thing
+
+### CONS
+- Speed
+- Cross-talk between JSON tags for Tormenta and general JSON input/output
