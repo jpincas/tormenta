@@ -143,7 +143,6 @@ func (q *Query) From(t time.Time) *Query {
 
 // To adds an upper bound to the date range of the Query
 func (q *Query) To(t time.Time) *Query {
-
 	q.to = gouuidv6.NewFromTime(t)
 	return q
 }
