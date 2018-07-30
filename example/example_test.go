@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jpincas/gouuidv6"
-	"github.com/jpincas/tormenta"
+	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
 //go:generate msgp
@@ -14,21 +14,21 @@ import (
 
 // Define your data.
 // Include tormenta.Model to get date ordered IDs, last updated field etc
-// Tag with 'tormenta:"index"' to create secondary indexes
+// Tag with 'tormenta:"noindex"' to skip secondary index creation
 type Product struct {
 	tormenta.Model
 	Code          string
-	Name          string `tormenta:"index"`
+	Name          string
 	Price         float32
 	StartingStock int
-	Tags          []string `tormenta:"index"`
+	Tags          []string
 }
 
 type Order struct {
 	tormenta.Model
-	Customer    string  `tormenta:"index"`
-	Department  int     `tormenta:"index"`
-	ShippingFee float64 `tormenta:"index"`
+	Customer    string
+	Department  int
+	ShippingFee float64
 }
 
 func Example_Main() {
@@ -135,28 +135,32 @@ func Example_Main() {
 	n, _ = db.Find(&orders).From(mid2009).To(mid2012).Limit(2).Offset(1).Run()
 	log.Println("Limit and offset: ", n) // 2 (same count, different results)
 
-	// Reverse (note reversed range)
-	c, _ = db.Find(&orders).Reverse().From(mid2012).To(mid2009).Count()
+	// Reverse
+	c, _ = db.Find(&orders).Reverse().From(mid2009).To(mid2012).Count()
 	log.Println("Reverse: ", c) // 3
 
 	// Secondary index on 'customer' - exact index match
-	n, _ = db.First(&order).Where("customer", "customer-2").Run()
+	n, _ = db.First(&order).Match("customer", "customer-2").Run()
 	log.Println("Index - exact match: ", n) // 1 (-> order )
+
+	// Secondary index on 'customer' - prefix match
+	n, _ = db.First(&order).StartsWith("customer", "customer-").Run()
+	log.Println("Index - prefix match: ", n) // 5 (-> order )
 
 	// Sum (based on index)
 	var sum float64
-	db.Find(&orders).Where("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum)
+	db.Find(&orders).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum)
 	log.Println("Sum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
 
 	// Secondary index on 'customer' - index range and count
-	c, _ = db.Find(&orders).Where("customer", "customer-1", "customer-3").Count()
+	c, _ = db.Find(&orders).Range("customer", "customer-1", "customer-3").Count()
 	log.Println("Index - range: ", c) // 3
 
 	// Secondary index on 'customer' - exact index match, count and date range
-	c, _ = db.Find(&orders).Where("customer", "customer-3").From(mid2009).To(time.Now()).Count()
+	c, _ = db.Find(&orders).Match("customer", "customer-3").From(mid2009).To(time.Now()).Count()
 	log.Println("Index - exact match and date range: ", c) // 1
 
 	// Secondary index on 'customer' - index range AND date range
-	c, _ = db.Find(&orders).Where("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
+	c, _ = db.Find(&orders).Range("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
 	log.Println("Index - range and date range", c) // 1
 }
