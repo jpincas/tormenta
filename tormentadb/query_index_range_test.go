@@ -82,32 +82,32 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Int
 		{"integer - no range", "department", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery), true},
-		{"integer - from 100 - reverse", "department", 100, nil, 99, nil, true},
-		{"integer - from 99", "department", 99, nil, 98, nil, true},
-		{"integer - from 50", "department", 50, nil, 49, nil, true},
-		{"integer - 2 to 1", "department", 2, 1, 1, nil, true},
-		{"integer - 59 to 50", "department", 59, 50, 9, nil, true},
-		{"integer - 100 to 1", "department", 100, 1, 99, nil, true},
-		{"integer - to 50", "department", nil, 50, 0, nil, true},
+		{"integer - from 100 - reverse", "department", 100, nil, 100, nil, true},
+		{"integer - from 99", "department", 99, nil, 99, nil, true},
+		{"integer - from 50", "department", 50, nil, 50, nil, true},
+		{"integer - 2 to 1", "department", 2, 1, 2, nil, true},
+		{"integer - 59 to 50", "department", 59, 50, 10, nil, true},
+		{"integer - 100 to 1", "department", 100, 1, 100, nil, true},
+		{"integer - to 50", "department", nil, 50, 51, nil, true},
 
 		// String
 		{"string - no range", "customer", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery), true},
-		{"string", "customer", "customer", nil, 0, nil, true},
-		{"string - from A", "customer", "customer-A", nil, 0, nil, true},
-		{"string - from B", "customer", "customer-B", nil, 4, nil, true},
-		{"string - from Z", "customer", "customer-Z", nil, 97, nil,
+		{"string", "customer", "customer", nil, 100, nil, true},
+		{"string - from A", "customer", "customer-A", nil, 4, nil, true},
+		{"string - from B", "customer", "customer-B", nil, 8, nil, true},
+		{"string - from Z", "customer", "customer-Z", nil, 100, nil,
 			true},
-		{"string - from Z to A", "customer", "customer-Z", "customer-A", 97, nil, true},
-		{"string - to Z", "customer", nil, "customer-Z", 0, nil, true},
+		{"string - from Z to A", "customer", "customer-Z", "customer-A", 100, nil, true},
+		{"string - to Z", "customer", nil, "customer-Z", 3, nil, true},
 
 		// Float
 		{"float - no range", "shippingfee", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery), true},
-		{"float", "shippingfee", 0, nil, 0, nil, true},
-		{"float", "shippingfee", 0.99, nil, 0, nil, true},
-		{"float - from 1.99", "shippingfee", 1.99, nil, 1, nil, true},
-		{"float - from 50.99", "shippingfee", 50.99, nil, 50, nil, true},
-		{"float - from 99.99", "shippingfee", 99.99, nil, 99, nil, true},
-		{"float - to 20.99", "shippingfee", nil, 20.99, 0, nil, true},
+		{"float - from 0", "shippingfee", 0, nil, 0, nil, true},
+		{"float - from 0.99", "shippingfee", 0.99, nil, 1, nil, true},
+		{"float - from 1.99", "shippingfee", 1.99, nil, 2, nil, true},
+		{"float - from 50.99", "shippingfee", 50.99, nil, 51, nil, true},
+		{"float - from 99.99", "shippingfee", 99.99, nil, 100, nil, true},
+		{"float - to 20.99", "shippingfee", nil, 20.99, 80, nil, true},
 	}
 
 	for _, testCase := range testCases {

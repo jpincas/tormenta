@@ -192,6 +192,12 @@ func (q *Query) setRanges() {
 		compareTo = newContentKey(q.keyRoot, q.to).bytes()
 	}
 
+	// For reverse queries, append the byte 0xFF to get inclusive results
+	// See Badger issue: https://github.com/dgraph-io/badger/issues/347
+	if q.reverse {
+		seekFrom = append(seekFrom, 0xFF)
+	}
+
 	q.seekFrom = seekFrom
 	q.validTo = validTo
 	q.compareTo = compareTo
