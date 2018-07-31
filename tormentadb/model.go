@@ -39,3 +39,7 @@ func (m Model) PreSave() error {
 func (m Model) PostSave() {}
 
 func (m Model) PostGet() {}
+
+func (m Model) CreatedAt() time.Time {
+	return m.ID.Time()
+}
