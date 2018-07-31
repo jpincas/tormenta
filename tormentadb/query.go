@@ -335,6 +335,9 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 		return err
 	}
 
+	// Post Get trigger
+	entity.PostGet()
+
 	// If this is a 'first' Query - then just set the unmarshalled entity on the target
 	// Otherwise, build up the results slice - we'll set on the target later!
 	if q.first {

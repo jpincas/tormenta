@@ -66,5 +66,8 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
 		return false, err
 	}
 
+	// Post Get trigger
+	entity.PostGet()
+
 	return true, nil
 }
