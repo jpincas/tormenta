@@ -33,8 +33,8 @@ func Orders(n int) (orders []tormenta.Tormentable) {
 				),
 			},
 			Customer:                "a customer",
-			Department:              1,
-			ShippingFee:             4.99,
+			Department:              rand.Intn(20),
+			ShippingFee:             float64(rand.Intn(20)) + .99,
 			ContainsProhibitedItems: false,
 		}
 
