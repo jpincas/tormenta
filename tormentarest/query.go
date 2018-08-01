@@ -161,5 +161,6 @@ func stringToInterface(s string) interface{} {
 		return b
 	}
 
+	// Default to string
 	return s
 }

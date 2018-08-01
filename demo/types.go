@@ -32,7 +32,7 @@ type Product struct {
 	Departments   []int
 
 	// For a bit more realism and to pad out the serialised data
-	Description string
+	Description string `tormenta:"noindex"`
 }
 
 type Line struct {

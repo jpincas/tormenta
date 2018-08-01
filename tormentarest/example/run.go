@@ -3,12 +3,18 @@ package main
 import (
 	"log"
 
+	"github.com/go-chi/chi"
 	"github.com/jpincas/tormenta/demo"
 	tormenta "github.com/jpincas/tormenta/tormentadb"
 	"github.com/jpincas/tormenta/tormentarest"
 )
 
 func main() {
+	serveGeneric()
+	// serveCustom()
+}
+
+func serveGeneric() {
 	// Open the DB
 	db, err := tormenta.OpenTest("data")
 	if err != nil {
@@ -27,4 +33,22 @@ func main() {
 		&demo.Order{},   // -> /order
 		&demo.Product{}, // -> /product
 	)
+}
+
+func serveCustom() {
+	// Open the DB
+	db, err := tormenta.OpenTest("data")
+	if err != nil {
+		log.Fatalf("Could not open DB: %s", err)
+		return
+	}
+
+	// Populate with data
+	demo.PopulateWithDemoData(db, 100)
+
+	// New router
+	r := chi.NewRouter()
+
+	// Serve the REST api
+	tormentarest.ServeRouter(r, ":3333", db, &demo.Order{}, &demo.Product{})
 }

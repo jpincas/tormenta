@@ -24,3 +24,8 @@ func (a *application) init(db *tormenta.DB) {
 	// Entity Map
 	a.EntityMap = map[string]tormenta.Tormentable{}
 }
+
+// Init initialises TormentaREST to the passed in DB
+func Init(db *tormenta.DB) {
+	App.init(db)
+}

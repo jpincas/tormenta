@@ -12,19 +12,26 @@ func (db DB) Delete(root string, ids ...gouuidv6.UUID) (int, error) {
 		return 0, errors.New("Must specify at least one ID to delete")
 	}
 
+	// Deleted counter
+	var deleted int
+
 	err := db.KV.Update(func(txn *badger.Txn) error {
 		for _, id := range ids {
-			if err := txn.Delete(newContentKey([]byte(root), id).bytes()); err != nil {
-				return err
+
+			key := newContentKey([]byte(root), id).bytes()
+
+			// First check to see if the key actually exists
+			_, err := txn.Get(key)
+			if err != badger.ErrKeyNotFound {
+				if err := txn.Delete(key); err != nil {
+					return err
+				}
+				deleted++
 			}
 		}
 
 		return nil
 	})
 
-	if err != nil {
-		return 0, err
-	}
-
-	return len(ids), nil
+	return deleted, err
 }

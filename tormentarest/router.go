@@ -1,46 +1,31 @@
 package tormentarest
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/go-chi/chi"
 	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
-// MakeRouter takes a list of entities and constucts the REST endpoints
-func MakeRouter(entities ...tormenta.Tormentable) *chi.Mux {
+// New takes a list of entities and constucts the REST endpoints
+func New(entities ...tormenta.Tormentable) *chi.Mux {
 	r := chi.NewRouter()
-
-	for _, entity := range entities {
-		entityName := entityRoot(entity)
-		App.EntityMap[entityName] = entity
-
-		r.Route("/"+entityName, func(r chi.Router) {
-			r.Get("/", getList)
-			r.Get("/{id}", getByID)
-		})
-	}
-
+	buildRouter(r, entities...)
 	return r
 }
 
-// Serve serves a generic REST api over a Tormenta DB
-func Serve(port string, db *tormenta.DB, entities ...tormenta.Tormentable) {
-	// Initialise the application
-	App.init(db)
+// WithRouter builds a REST api on the specified router
+func WithRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
+	buildRouter(r, entities...)
+}
 
-	// Make the router
-	r := MakeRouter(entities...)
+func buildRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
+	for _, entity := range entities {
+		entityName := entityRoot(entity)
+		App.EntityMap[entityName] = entity
+		r.Route("/"+entityName, func(r chi.Router) {
+			r.Get("/", getList)
+			r.Get("/{id}", getByID)
 
-	// Show that we're starting
-	fmt.Println(
-		`
-------------------------
-Starting TormentaREST...
-------------------------
-		`)
-
-	// Fire up the router
-	http.ListenAndServe(port, r)
+			r.Delete("/{id}", deleteByID)
+		})
+	}
 }
