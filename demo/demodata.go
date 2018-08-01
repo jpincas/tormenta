@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/jpincas/gouuidv6"
+
 	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
@@ -24,6 +26,12 @@ func Orders(n int) (orders []tormenta.Tormentable) {
 
 	for i := 0; i < n; i++ {
 		order := Order{
+			Model: tormenta.Model{
+				// Random creation date from now to a year ago
+				ID: gouuidv6.NewFromTime(
+					randomDate(time.Date(2016, time.June, 1, 23, 0, 0, 0, time.UTC)),
+				),
+			},
 			Customer:                "a customer",
 			Department:              1,
 			ShippingFee:             4.99,
@@ -55,4 +63,13 @@ func Products(n int) (products []tormenta.Tormentable) {
 	}
 
 	return
+}
+
+// randomDate generates a random date between the given 'from' time and now
+func randomDate(from time.Time) time.Time {
+	f := from.Unix()
+	diff := time.Now().Unix() - f
+	r := rand.Int63n(diff)
+	seconds := f + r
+	return time.Unix(seconds, 0)
 }

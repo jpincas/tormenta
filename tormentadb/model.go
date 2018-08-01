@@ -14,10 +14,12 @@ type Tormentable interface {
 	PreSave() error
 	PostSave()
 	PostGet()
+	GetCreated() time.Time
 }
 
 type Model struct {
 	ID          gouuidv6.UUID `msg:",extension"`
+	Created     time.Time     `msg:"-"`
 	LastUpdated time.Time
 }
 
@@ -40,6 +42,8 @@ func (m Model) PostSave() {}
 
 func (m Model) PostGet() {}
 
-func (m Model) CreatedAt() time.Time {
-	return m.ID.Time()
+func (m *Model) GetCreated() time.Time {
+	createdAt := m.ID.Time()
+	m.Created = createdAt
+	return createdAt
 }

@@ -335,7 +335,8 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 		return err
 	}
 
-	// Post Get trigger
+	// Post Get trigger and set created at
+	entity.GetCreated()
 	entity.PostGet()
 
 	// If this is a 'first' Query - then just set the unmarshalled entity on the target
