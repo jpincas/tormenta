@@ -23,6 +23,7 @@ const (
 	errBadToFormat       = "Invalid input for TO. Expecting somthing like '2006-01-02'"
 	errIndexWithNoParams = "An index search has been specified, but no MATCH or START/END (for range) has been specified"
 	errRangeTypeMismatch = "For a range index search, START and END should be of the same type (bool, int, float, string)"
+	errUnmarshall        = "Error decoding the POST body"
 )
 
 func renderError(w http.ResponseWriter, s string, i ...interface{}) {

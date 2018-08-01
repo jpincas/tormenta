@@ -21,11 +21,17 @@ func buildRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
 	for _, entity := range entities {
 		entityName := entityRoot(entity)
 		App.EntityMap[entityName] = entity
+
 		r.Route("/"+entityName, func(r chi.Router) {
+			// GET
 			r.Get("/", getList)
 			r.Get("/{id}", getByID)
 
+			// DELETE
 			r.Delete("/{id}", deleteByID)
+
+			// POST
+			r.Post("/", post)
 		})
 	}
 }
