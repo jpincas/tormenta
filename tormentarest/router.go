@@ -32,6 +32,9 @@ func buildRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
 
 			// POST
 			r.Post("/", post)
+
+			// PUT
+			r.Put("/{id}", putByID)
 		})
 	}
 }

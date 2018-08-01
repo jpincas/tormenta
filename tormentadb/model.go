@@ -15,6 +15,7 @@ type Tormentable interface {
 	PostSave()
 	PostGet()
 	GetCreated() time.Time
+	SetID(gouuidv6.UUID)
 }
 
 type Model struct {
@@ -41,6 +42,10 @@ func (m Model) PreSave() error {
 func (m Model) PostSave() {}
 
 func (m Model) PostGet() {}
+
+func (m *Model) SetID(id gouuidv6.UUID) {
+	m.ID = id
+}
 
 func (m *Model) GetCreated() time.Time {
 	createdAt := m.ID.Time()
