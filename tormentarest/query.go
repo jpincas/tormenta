@@ -15,6 +15,7 @@ const (
 	reverse = "reverse"
 	from    = "from"
 	to      = "to"
+	offset  = "offset"
 )
 
 func buildQuery(r *http.Request, q *tormenta.Query) error {
@@ -38,6 +39,17 @@ func buildQuery(r *http.Request, q *tormenta.Query) error {
 		}
 
 		q.Limit(n)
+	}
+
+	// Offset
+	offsetString := r.URL.Query().Get(offset)
+	if offsetString != "" {
+		n, err := strconv.Atoi(offsetString)
+		if err != nil {
+			return fmt.Errorf(errBadOffsetFormat, limitString)
+		}
+
+		q.Offset(n)
 	}
 
 	// From / To
