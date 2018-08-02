@@ -45,5 +45,5 @@ func buildRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
 	}
 
 	// Static file server
-	fileServer(r, "/static", http.Dir("../static"))
+	fileServer(r, "/static", http.Dir(App.staticFilesLocation()))
 }
