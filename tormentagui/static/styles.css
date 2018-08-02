@@ -1,12 +1,19 @@
 :root {
-    --main-bg-color: rgba(0,0,0,0.10);
-    --light-bg-color: white;
+    --main-bg-color: rgba(23, 51, 78, 0.05);
+    --dark-bg-color: rgba(23, 51, 78, 0.8);
+    --inverted-bg-color: rgba(255,255,255, 0.87);
+    --accent-color: rgb(51, 75, 184);
     --main-text-color: rgba(0,0,0,0.87);
     --disabled-text-color: rgba(0,0,0,0.30);
+    --inverted-text-color: var(--inverted-bg-color);
+    --color-success-inverted: rgb(124, 238, 124);
+    --color-warning-inverted: rgb(253, 93, 93);
+
     --space: 10px;
     --font-size: 14px;
     --main-font: 'Roboto', sans-serif;
     --data-font: 'Roboto Mono', monospace;
+    --rounded-corners: 2px;
 }
 
 body {
@@ -19,21 +26,43 @@ body {
     display: flex;
     flex-direction: row;
     height: 100vh;
-    background-color: var(--light-bg-color);
+    background-color: var(--main-bg-color);
     font-weight: 400;
 }
 
+button {
+    background-color: var(--dark-bg-color);
+    color: var(--inverted-text-color);
+    text-transform: uppercase;
+    padding: 5px 15px;
+    border: none;
+    font-size: 1.1em;
+    border-radius: var(--rounded-corners);
+    cursor: pointer;
+}
+
+[contenteditable]:focus {
+    outline: 0px solid transparent;
+}
+
+button.inverted {
+    background-color: var(--inverted-bg-color);
+    color: var(--main-text-color);
+}
+
+/* Sidebar */
+
 #sidebar {
-    flex-basis: 200px;
-    flex-shrink: 0;
+    width: 200px;
     padding: var(--space);
     display: flex;
     flex-direction: column;
-    background-color: var(--main-bg-color);
+    background-color: var(--dark-bg-color);
+    color: var(--inverted-text-color);
     overflow-y: scroll;
 }
 
-/* Logo Area */
+/* Sidebar - Logo Area */
 
 #sidebar #logo-area {
     display: flex;
@@ -46,7 +75,7 @@ body {
     font-size: 2em;
 }
 
-/* Entity List */
+/* Sidebar - Entity List */
 
 #sidebar ul#entity-list {
     list-style: none;
@@ -65,6 +94,8 @@ body {
     margin-right: var(--space);
 }
 
+/* Content Area */
+
 #main-content {
     flex: 1;
     padding: var(--space);
@@ -75,7 +106,7 @@ body {
     overflow: scroll;
 }
 
-/* Content Area */
+/* Content Area - Placeholder */
 
 #content-placeholder {
     display: flex;
@@ -89,21 +120,42 @@ body {
 }
 
 /* Data Table */
+
+.number-of-results {
+    margin-bottom: 2px;
+    width: 100%;
+}
+
+.number-of-results span.number {
+    font-weight: 700;
+}
+
 .entity-table {
     font-family: var(--data-font);
     font-size: 0.9em;
     width: fit-content;
     border-collapse: collapse;
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.40);
+    margin: var(--space);
 }
 
 .entity-table thead {
     font-family: var(--main-font);
     font-weight: 700;
     text-transform: lowercase;
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    background-color: var(--main-bg-color);
 }
 
 .entity-table .record {
     border-bottom: 1px solid rgba(0,0,0,0.10);
+    background-color: white;
+    cursor: pointer;
+}
+
+.entity-table .record:hover {
+    background-color: var(--main-bg-color);
 }
 
 .entity-table td,
@@ -128,4 +180,87 @@ body {
 
 .entity-table tbody .record td:first-child {
     font-weight: 700;
+}
+
+/* Detail View */
+
+#detail-view {
+    width: 430px;
+    box-sizing: border-box;
+    background-color: var(--dark-bg-color);
+    padding: var(--space);
+    height: 100vh;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+}
+
+#detail-view #identifiers-table{
+    font-family: var(--data-font);
+    font-size: 0.9em;
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.40);
+    margin-top: var(--space);
+    margin-bottom: var(--space);
+    background-color: white;
+    border-radius: var(--rounded-corners);
+}
+#detail-view #identifiers-table td{
+    padding: 3px;
+    background-color: var(--main-bg-color);
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+}
+
+#detail-view #identifiers-table .label{
+    font-weight: 700;
+    border-right: 1px solid rgba(0,0,0,0.10);
+}
+
+#detail-view #identifiers-table .id{
+    font-weight: 700;
+}
+
+#detail-view #controls{
+    margin-bottom: var(--space);
+}
+
+#detail-view #controls button{
+    margin-right: var(--space);
+}
+
+#detail-view #controls button:last-child{
+    margin-right: 0;
+}
+
+#detail-view #result-json pre {
+    white-space: pre-wrap;       /* Since CSS 2.1 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+#detail-view #result-json {
+    background-color: rgba(0,0,0,0.77);
+    color: var(--inverted-text-color);
+    padding: var(--space);
+    border-radius: var(--rounded-corners);
+}
+
+#detail-view #save-result.success{
+    font-weight: 700;
+    color: var(--color-success-inverted);
+}
+
+#detail-view #save-result.fail{
+    font-weight: 700;
+    color: var(--color-warning-inverted);
+}
+
+#detail-view #save-error-message{
+    margin-top: var(--space);
+    font-weight: 700;
+    color: var(--color-warning-inverted);
 }

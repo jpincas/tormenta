@@ -1,5 +1,8 @@
- {{ $results := .Results }} {{ $fields := .Fields }}
+ {{ $results := .Results }} {{ $fields := .Fields }} {{ $entity := .EntityName }}
 
+<div class="number-of-results">
+    <span class="number">{{ .NoResults }}</span> results
+</div>
 
 <table class="entity-table">
     <thead>
@@ -10,8 +13,12 @@
         </tr>
     </thead>
     <tbody>
-        {{ range $results }} {{ $thisResult := mapFields . }}
-        <tr class="record">
+        {{ range $results }}
+        <!-- spacer -->
+        {{ $thisResult := mapFields . }}
+        <!-- spacer -->
+        {{ $id := index $thisResult "ID" }}
+        <tr class="record" ic-get-from="/{{ $entity }}/{{ $id }}" ic-trigger-on="click" ic-target="#detail-view">
             {{ range $fields }}
             <td>{{ index $thisResult . | autoFormat }}</td>
             {{end}}

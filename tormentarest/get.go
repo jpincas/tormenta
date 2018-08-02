@@ -3,7 +3,6 @@ package tormentarest
 import (
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/jpincas/gouuidv6"
@@ -16,7 +15,7 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 	// look it up in the entity map,
 	// then create a new one of that type to hold the results of the query
 	idString := chi.URLParam(r, "id")
-	entityName := strings.Split(r.URL.Path, "/")[1]
+	entityName := entityNameFromPath_ID(r.URL.Path)
 	entity := App.EntityMap[entityName]
 	result := reflect.New(reflect.Indirect(reflect.ValueOf(entity)).Type()).Interface().(tormenta.Tormentable)
 
@@ -46,7 +45,7 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	// Get the entity name from the URL,
 	// look it up in the entity map,
 	// then create a new slice of that type to hold the results of the query
-	entityName := strings.TrimPrefix(r.URL.Path, "/")
+	entityName := entityNameFromPath_List(r.URL.Path)
 	entity := App.EntityMap[entityName]
 	results := reflect.New(reflect.SliceOf(reflect.Indirect(reflect.ValueOf(entity)).Type())).Interface()
 

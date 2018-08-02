@@ -5,37 +5,37 @@ import (
 	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
-// New takes a list of entities and constucts the REST endpoints
-func New(entities ...tormenta.Tormentable) *chi.Mux {
-	r := chi.NewRouter()
-	buildRouter(r, entities...)
-	return r
-}
-
 // WithRouter builds a REST api on the specified router
-func WithRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
-	buildRouter(r, entities...)
+func WithRouter(r *chi.Mux, db *tormenta.DB, root string, entities ...tormenta.Tormentable) {
+	// Initialise the application
+	App.init(db, root)
+	// Build the router
+	buildRouter(r, root, entities...)
 }
 
-func buildRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
+func buildRouter(r *chi.Mux, root string, entities ...tormenta.Tormentable) {
 
-	for _, entity := range entities {
-		entityName := tormenta.KeyRootString(entity)
-		App.EntityMap[entityName] = entity
+	r.Route("/"+root, func(r chi.Router) {
 
-		r.Route("/"+entityName, func(r chi.Router) {
-			// GET
-			r.Get("/", getList)
-			r.Get("/{id}", getByID)
+		for _, entity := range entities {
+			entityName := tormenta.KeyRootString(entity)
+			App.EntityMap[entityName] = entity
 
-			// DELETE
-			r.Delete("/{id}", deleteByID)
+			r.Route("/"+entityName, func(r chi.Router) {
+				// GET
+				r.Get("/", getList)
+				r.Get("/{id}", getByID)
 
-			// POST
-			r.Post("/", post)
+				// DELETE
+				r.Delete("/{id}", deleteByID)
 
-			// PUT
-			r.Put("/{id}", putByID)
-		})
-	}
+				// POST
+				r.Post("/", post)
+
+				// PUT
+				r.Put("/{id}", putByID)
+			})
+		}
+	})
+
 }

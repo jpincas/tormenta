@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/jpincas/gouuidv6"
@@ -14,7 +13,7 @@ import (
 
 func putByID(w http.ResponseWriter, r *http.Request) {
 	idString := chi.URLParam(r, "id")
-	entityName := strings.Split(r.URL.Path, "/")[1]
+	entityName := entityNameFromPath_ID(r.URL.Path)
 	entity := App.EntityMap[entityName]
 	toSave := reflect.New(reflect.Indirect(reflect.ValueOf(entity)).Type()).Interface().(tormenta.Tormentable)
 

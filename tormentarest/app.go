@@ -12,11 +12,15 @@ type application struct {
 	DB        *tormenta.DB
 	Render    *render.Render
 	EntityMap map[string]tormenta.Tormentable
+	Root      string
 }
 
-func (a *application) init(db *tormenta.DB) {
+func (a *application) init(db *tormenta.DB, root string) {
 	// DB
 	a.DB = db
+
+	// Root
+	a.Root = root
 
 	// Renderer
 	a.Render = render.New()
@@ -26,6 +30,6 @@ func (a *application) init(db *tormenta.DB) {
 }
 
 // Init initialises TormentaREST to the passed in DB
-func Init(db *tormenta.DB) {
-	App.init(db)
+func Init(db *tormenta.DB, root string) {
+	App.init(db, root)
 }

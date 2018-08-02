@@ -9,41 +9,28 @@ import (
 )
 
 // Serve serves a completely generic REST api over a Tormenta DB
-func Serve(port string, db *tormenta.DB, entities ...tormenta.Tormentable) {
-	// Initialise the application
-	App.init(db)
-
-	// Make the router
-	r := New(entities...)
-
-	// Show that we're starting
-	fmt.Println(
-		`
------------------------------------
-Starting Generic TormentaREST API...
------------------------------------
-		`)
-
-	// Fire up the router
-	http.ListenAndServe(port, r)
+func Serve(root, port string, db *tormenta.DB, entities ...tormenta.Tormentable) {
+	r := chi.NewRouter()
+	ServeRouter(r, root, port, db, entities...)
 }
 
 // ServeRouter serves a custom router over a Tormenta DB
-func ServeRouter(r *chi.Mux, port string, db *tormenta.DB, entities ...tormenta.Tormentable) {
-	// Initialise the application
-	App.init(db)
+func ServeRouter(r *chi.Mux, root, port string, db *tormenta.DB, entities ...tormenta.Tormentable) {
 
 	// Make the router
-	WithRouter(r, entities...)
+	WithRouter(r, db, root, entities...)
 
 	// Show that we're starting
 	fmt.Println(
 		`
 -----------------------------------
-Starting Custom TormentaREST API...
+Starting TormentaREST API...
 -----------------------------------
 		`)
 
 	// Fire up the router and serve passed in router
-	http.ListenAndServe(port, r)
+	err := http.ListenAndServe(port, r)
+	if err != nil {
+		panic("Could not start TormentaREST server")
+	}
 }

@@ -1,0 +1,48 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Tormenta GUI</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700|Roboto:400,900" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://intercoolerreleases-leaddynocom.netdna-ssl.com/intercooler-1.2.1.min.js"></script>
+    <script src="/static/main.js"></script>
+</head>
+
+<body>
+    <div id="sidebar">
+        <div id="logo-area">
+            <i class="fas fa-bolt fa-5x"></i>
+            <h1>TormentaDB</h1>
+        </div>
+
+        <ul id="entity-list">
+            {{ range $k, $v := .Entities }}
+            <li class="entity-link">
+                <a ic-get-from="/{{ $k }}" ic-target="#main-content">
+                    <i class="fas fa-table"></i>{{ $k }}
+                </a>
+            </li>
+            {{ end }}
+        </ul>
+    </div>
+
+    <div id="main-content">
+        <div id="content-placeholder">
+            Choose an entity to view data
+        </div>
+    </div>
+
+    <div id="detail-view">
+
+    </div>
+
+</body>
+
+</html>

@@ -27,6 +27,7 @@ func serveGeneric() {
 
 	// Serve the REST api
 	tormentarest.Serve(
+		"api",   // root
 		":3333", // the port you want to serve the api on
 		db,      // connection to the Tormenta DB
 		// List of entities to include in the API
@@ -50,5 +51,5 @@ func serveCustom() {
 	r := chi.NewRouter()
 
 	// Serve the REST api
-	tormentarest.ServeRouter(r, ":3333", db, &demo.Order{}, &demo.Product{})
+	tormentarest.ServeRouter(r, "api", ":3333", db, &demo.Order{}, &demo.Product{})
 }
