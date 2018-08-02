@@ -18,8 +18,9 @@ func WithRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
 }
 
 func buildRouter(r *chi.Mux, entities ...tormenta.Tormentable) {
+
 	for _, entity := range entities {
-		entityName := entityRoot(entity)
+		entityName := tormenta.KeyRootString(entity)
 		App.EntityMap[entityName] = entity
 
 		r.Route("/"+entityName, func(r chi.Router) {

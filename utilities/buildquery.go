@@ -1,4 +1,4 @@
-package tormentarest
+package utilities
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ const (
 	end   = "end"
 )
 
-func buildQuery(r *http.Request, q *tormenta.Query) error {
+func BuildQuery(r *http.Request, q *tormenta.Query) error {
 	// Reverse
 	reverseString := r.URL.Query().Get(reverse)
 	if reverseString == "true" {
@@ -34,7 +34,7 @@ func buildQuery(r *http.Request, q *tormenta.Query) error {
 		// don't actually do anything
 		// but it's still a valid input
 	} else {
-		return fmt.Errorf(errBadReverseFormat, reverseString)
+		return fmt.Errorf(ErrBadReverseFormat, reverseString)
 	}
 
 	// Limit
@@ -42,7 +42,7 @@ func buildQuery(r *http.Request, q *tormenta.Query) error {
 	if limitString != "" {
 		n, err := strconv.Atoi(limitString)
 		if err != nil {
-			return fmt.Errorf(errBadLimitFormat, limitString)
+			return fmt.Errorf(ErrBadLimitFormat, limitString)
 		}
 
 		q.Limit(n)
@@ -53,7 +53,7 @@ func buildQuery(r *http.Request, q *tormenta.Query) error {
 	if offsetString != "" {
 		n, err := strconv.Atoi(offsetString)
 		if err != nil {
-			return fmt.Errorf(errBadOffsetFormat, limitString)
+			return fmt.Errorf(ErrBadOffsetFormat, limitString)
 		}
 
 		q.Offset(n)
@@ -66,14 +66,14 @@ func buildQuery(r *http.Request, q *tormenta.Query) error {
 	if fromString != "" {
 		t, err := time.Parse(dateFormat1, fromString)
 		if err != nil {
-			return errors.New(errBadFromFormat)
+			return errors.New(ErrBadFromFormat)
 		}
 		q.From(t)
 	}
 	if toString != "" {
 		t, err := time.Parse(dateFormat1, toString)
 		if err != nil {
-			return errors.New(errBadToFormat)
+			return errors.New(ErrBadToFormat)
 		}
 		q.To(t)
 	}
@@ -100,7 +100,7 @@ func buildIndexQuery(r *http.Request, q *tormenta.Query, key string) error {
 	// If 'index' param has been specified,
 	// but no exact match or range has been given, return an error
 	if matchString == "" && (startString == "" && endString == "") {
-		return errors.New(errIndexWithNoParams)
+		return errors.New(ErrIndexWithNoParams)
 	}
 
 	// Match
@@ -119,7 +119,7 @@ func buildIndexQuery(r *http.Request, q *tormenta.Query, key string) error {
 		end := stringToInterface(endString)
 		if reflect.TypeOf(start) !=
 			reflect.TypeOf(end) {
-			return errors.New(errRangeTypeMismatch)
+			return errors.New(ErrRangeTypeMismatch)
 		}
 
 		q.Range(key, start, end)

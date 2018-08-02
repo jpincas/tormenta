@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jpincas/gouuidv6"
 	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta/utilities"
 )
 
 func putByID(w http.ResponseWriter, r *http.Request) {
@@ -19,14 +20,14 @@ func putByID(w http.ResponseWriter, r *http.Request) {
 
 	id := gouuidv6.UUID{}
 	if err := id.UnmarshalText([]byte(idString)); err != nil {
-		renderError(w, errBadIDFormat, idString)
+		renderError(w, utilities.ErrBadIDFormat, idString)
 		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&toSave)
 	if err != nil {
-		renderError(w, errUnmarshall)
+		renderError(w, utilities.ErrUnmarshall)
 		return
 	}
 
@@ -40,7 +41,7 @@ func putByID(w http.ResponseWriter, r *http.Request) {
 
 	_, err = App.DB.Save(toSave)
 	if err != nil {
-		renderError(w, errDBConnection)
+		renderError(w, utilities.ErrDBConnection)
 		return
 	}
 

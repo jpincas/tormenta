@@ -1,0 +1,131 @@
+:root {
+    --main-bg-color: rgba(0,0,0,0.10);
+    --light-bg-color: white;
+    --main-text-color: rgba(0,0,0,0.87);
+    --disabled-text-color: rgba(0,0,0,0.30);
+    --space: 10px;
+    --font-size: 14px;
+    --main-font: 'Roboto', sans-serif;
+    --data-font: 'Roboto Mono', monospace;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: var(--main-font);
+    font-size: var(--font-size);
+    color: var(--main-text-color);
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    background-color: var(--light-bg-color);
+    font-weight: 400;
+}
+
+#sidebar {
+    flex-basis: 200px;
+    flex-shrink: 0;
+    padding: var(--space);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--main-bg-color);
+    overflow-y: scroll;
+}
+
+/* Logo Area */
+
+#sidebar #logo-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#sidebar #logo-area h1 {
+    font-size: 2em;
+}
+
+/* Entity List */
+
+#sidebar ul#entity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#sidebar ul#entity-list li.entity-link {
+    text-transform: uppercase;
+    font-size: 1.2em;
+    margin: var(--space);
+    cursor: pointer;
+}
+
+#sidebar ul#entity-list li.entity-link i {
+    margin-right: var(--space);
+}
+
+#main-content {
+    flex: 1;
+    padding: var(--space);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: scroll;
+}
+
+/* Content Area */
+
+#content-placeholder {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+
+    color: var(--disabled-text-color);
+    font-size: 3em;
+}
+
+/* Data Table */
+.entity-table {
+    font-family: var(--data-font);
+    font-size: 0.9em;
+    width: fit-content;
+    border-collapse: collapse;
+}
+
+.entity-table thead {
+    font-family: var(--main-font);
+    font-weight: 700;
+    text-transform: lowercase;
+}
+
+.entity-table .record {
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+}
+
+.entity-table td,
+.entity-table th {
+    padding: var(--space);
+    white-space: nowrap;
+    max-width: 350px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-right: 1px solid rgba(0,0,0,0.10);
+}
+
+.entity-table td:last-child,
+.entity-table th:last-child {
+    padding: var(--space);
+    white-space: nowrap;
+    max-width: 350px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-right: none;
+}
+
+.entity-table tbody .record td:first-child {
+    font-weight: 700;
+}

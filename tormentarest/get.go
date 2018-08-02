@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jpincas/gouuidv6"
 	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta/utilities"
 )
 
 func getByID(w http.ResponseWriter, r *http.Request) {
@@ -21,19 +22,19 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 
 	id := gouuidv6.UUID{}
 	if err := id.UnmarshalText([]byte(idString)); err != nil {
-		renderError(w, errBadIDFormat, idString)
+		renderError(w, utilities.ErrBadIDFormat, idString)
 		return
 	}
 
 	// Get the record
 	ok, err := App.DB.Get(result, id)
 	if err != nil {
-		renderError(w, errDBConnection)
+		renderError(w, utilities.ErrDBConnection)
 		return
 	}
 
 	if !ok {
-		renderError(w, errRecordNotFound, idString)
+		renderError(w, utilities.ErrRecordNotFound, idString)
 		return
 	}
 
@@ -54,7 +55,7 @@ func getList(w http.ResponseWriter, r *http.Request) {
 
 	// Run the query builder,
 	// to apply query options from the URL parameters
-	if err := buildQuery(r, q); err != nil {
+	if err := utilities.BuildQuery(r, q); err != nil {
 		renderError(w, err.Error())
 		return
 	}
@@ -62,7 +63,7 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	// Run the query
 	n, err := q.Run()
 	if err != nil {
-		renderError(w, errDBConnection)
+		renderError(w, utilities.ErrDBConnection)
 		return
 	}
 

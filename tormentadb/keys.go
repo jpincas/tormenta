@@ -173,6 +173,10 @@ func KeyRoot(t interface{}) []byte {
 	return k
 }
 
+func KeyRootString(entity Tormentable) string {
+	return string(KeyRoot(entity))
+}
+
 func typeToKeyRoot(typeSig string) []byte {
 	sp := strings.Split(typeSig, ".")
 	s := sp[len(sp)-1]

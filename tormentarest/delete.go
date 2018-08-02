@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/jpincas/gouuidv6"
+	"github.com/jpincas/tormenta/utilities"
 )
 
 func deleteByID(w http.ResponseWriter, r *http.Request) {
@@ -17,19 +18,19 @@ func deleteByID(w http.ResponseWriter, r *http.Request) {
 
 	id := gouuidv6.UUID{}
 	if err := id.UnmarshalText([]byte(idString)); err != nil {
-		renderError(w, errBadIDFormat, idString)
+		renderError(w, utilities.ErrBadIDFormat, idString)
 		return
 	}
 
 	// Delete the record
 	n, err := App.DB.Delete(entityName, id)
 	if err != nil {
-		renderError(w, errDBConnection)
+		renderError(w, utilities.ErrDBConnection)
 		return
 	}
 
 	if n == 0 {
-		renderError(w, errRecordNotFound, idString)
+		renderError(w, utilities.ErrRecordNotFound, idString)
 		return
 	}
 

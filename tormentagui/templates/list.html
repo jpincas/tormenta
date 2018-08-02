@@ -1,0 +1,21 @@
+ {{ $results := .Results }} {{ $fields := .Fields }}
+
+
+<table class="entity-table">
+    <thead>
+        <tr>
+            {{ range $fields }}
+            <th>{{ . }}</th>
+            {{end}}
+        </tr>
+    </thead>
+    <tbody>
+        {{ range $results }} {{ $thisResult := mapFields . }}
+        <tr class="record">
+            {{ range $fields }}
+            <td>{{ index $thisResult . | autoFormat }}</td>
+            {{end}}
+        </tr>
+        {{ end }}
+    </tbody>
+</table>

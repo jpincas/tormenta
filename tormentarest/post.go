@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta/utilities"
 )
 
 func post(w http.ResponseWriter, r *http.Request) {
@@ -20,13 +21,13 @@ func post(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&toSave)
 	if err != nil {
-		renderError(w, errUnmarshall)
+		renderError(w, utilities.ErrUnmarshall)
 		return
 	}
 
 	_, err = App.DB.Save(toSave)
 	if err != nil {
-		renderError(w, errDBConnection)
+		renderError(w, utilities.ErrDBConnection)
 		return
 	}
 
