@@ -14,14 +14,16 @@
 </table>
 
 <div id="controls">
-    <button class="inverted" onclick="saveEntity({{ .EntityName }}, {{ .Result.ID }})">
+    <button onclick="saveEntity('{{ .EntityName }}', '{{ .Result.ID }}')">
         <i class="far fa-save"></i> Save
     </button>
+    <button onclick="fill('/{{ .EntityName }}/new', 'detail-view')">
+        <i class="far fa-plus-square"></i> New
+    </button>
     <span id="save-result"></span>
+    <span id="save-error-message"></span>
 </div>
 
 <div id="result-json">
-    <pre><code id="entity-json" contenteditable="true">{{ .Result | prettyPrint }}</code></pre>
+    <pre><code id="entity-json" contenteditable="true">{{ .Result | printJSONWithoutModel }}</code></pre>
 </div>
-
-<div id="save-error-message"></div>

@@ -7,11 +7,12 @@
     <title>Tormenta GUI</title>
 
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <link rel="stylesheet" type="text/css" href="/static/animate.css">
+
     <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700|Roboto:400,900" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
 
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="https://intercoolerreleases-leaddynocom.netdna-ssl.com/intercooler-1.2.1.min.js"></script>
+    <script src="/static/morphdom.js"></script>
     <script src="/static/main.js"></script>
 </head>
 
@@ -25,7 +26,7 @@
         <ul id="entity-list">
             {{ range $k, $v := .Entities }}
             <li class="entity-link">
-                <a ic-get-from="/{{ $k }}" ic-target="#main-content">
+                <a onclick="fill('/{{ $k }}', 'list-view')">
                     <i class="fas fa-table"></i>{{ $k }}
                 </a>
             </li>
@@ -34,14 +35,15 @@
     </div>
 
     <div id="main-content">
-        <div id="content-placeholder">
-            Choose an entity to view data
+        <div id="detail-view"></div>
+        <div id="list-view">
+            <div id="content-placeholder">
+                Choose an entity to view data
+            </div>
         </div>
     </div>
 
-    <div id="detail-view">
 
-    </div>
 
 </body>
 

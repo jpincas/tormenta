@@ -1,7 +1,6 @@
 package tormentagui
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"os"
@@ -21,12 +20,6 @@ type application struct {
 	GoPath    string
 }
 
-// prettyPrintStruct just outputs a struct as indented JSON
-func prettyPrintStruct(s interface{}) string {
-	res, _ := json.MarshalIndent(s, "", " ")
-	return fmt.Sprintln(string(res))
-}
-
 func (a application) templatesLocation() string {
 	return fmt.Sprintf("%s/src/%s/templates/*.html", a.GoPath, packagePath)
 }
@@ -38,9 +31,9 @@ func (a application) staticFilesLocation() string {
 func (a *application) parseTemplates() {
 	//Formatting functions for templates
 	funcMap := template.FuncMap{
-		"prettyPrint": prettyPrintStruct,
-		"mapFields":   tormenta.MapFields,
-		"autoFormat":  autoFormat,
+		"printJSONWithoutModel": printJSONWithoutModel,
+		"mapFields":             tormenta.MapFields,
+		"autoFormat":            autoFormat,
 	}
 
 	a.Templates = template.Must(template.New("main").Funcs(funcMap).ParseGlob(a.templatesLocation()))

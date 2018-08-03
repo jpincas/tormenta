@@ -1,7 +1,12 @@
  {{ $results := .Results }} {{ $fields := .Fields }} {{ $entity := .EntityName }}
 
+
 <div class="number-of-results">
-    <span class="number">{{ .NoResults }}</span> results
+    Showing
+    <span class="number"> {{ .NoResults }}</span> results
+    <button class="icon" onclick="fill('/{{ $entity }}/new', 'detail-view')">
+        <i class="fas fa-plus-circle"></i>
+    </button>
 </div>
 
 <table class="entity-table">
@@ -18,7 +23,7 @@
         {{ $thisResult := mapFields . }}
         <!-- spacer -->
         {{ $id := index $thisResult "ID" }}
-        <tr class="record" ic-get-from="/{{ $entity }}/{{ $id }}" ic-trigger-on="click" ic-target="#detail-view">
+        <tr id="{{ $id }}" class="record" onclick="fill('/{{ $entity }}/{{ $id }}', 'detail-view')">
             {{ range $fields }}
             <td>{{ index $thisResult . | autoFormat }}</td>
             {{end}}

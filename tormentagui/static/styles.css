@@ -2,10 +2,12 @@
     --main-bg-color: rgba(23, 51, 78, 0.05);
     --dark-bg-color: rgba(23, 51, 78, 0.8);
     --inverted-bg-color: rgba(255,255,255, 0.87);
-    --accent-color: rgb(51, 75, 184);
+    --accent-color: rgb(7, 63, 128);
     --main-text-color: rgba(0,0,0,0.87);
     --disabled-text-color: rgba(0,0,0,0.30);
     --inverted-text-color: var(--inverted-bg-color);
+    --color-success: rgb(32, 172, 32);
+    --color-warning: rgb(184, 37, 37);
     --color-success-inverted: rgb(124, 238, 124);
     --color-warning-inverted: rgb(253, 93, 93);
 
@@ -14,6 +16,8 @@
     --main-font: 'Roboto', sans-serif;
     --data-font: 'Roboto Mono', monospace;
     --rounded-corners: 2px;
+    --box-shadow: 0px 0px 8px rgba(0,0,0,0.20);
+    --border: 1px solid rgba(0,0,0,0.05);
 }
 
 body {
@@ -31,7 +35,7 @@ body {
 }
 
 button {
-    background-color: var(--dark-bg-color);
+    background-color: var(--accent-color);
     color: var(--inverted-text-color);
     text-transform: uppercase;
     padding: 5px 15px;
@@ -48,6 +52,16 @@ button {
 button.inverted {
     background-color: var(--inverted-bg-color);
     color: var(--main-text-color);
+}
+
+button.icon {
+    background-color: inherit;
+    color: var(--main-text-color);
+    padding: 5px 5px;
+}
+
+button:focus {
+    outline: 0px solid transparent;
 }
 
 /* Sidebar */
@@ -103,7 +117,7 @@ button.inverted {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    overflow: scroll;
+    overflow: hidden;
 }
 
 /* Content Area - Placeholder */
@@ -114,15 +128,22 @@ button.inverted {
     flex: 1;
     justify-content: center;
     align-items: center;
-
     color: var(--disabled-text-color);
     font-size: 3em;
+    box-sizing: border-box;
 }
 
 /* Data Table */
 
+#list-view {
+    flex: 1;
+    overflow: scroll;
+    display: flex;
+    flex-direction: column;
+}
+
 .number-of-results {
-    margin-bottom: 2px;
+    margin-bottom: var(--space);
     width: 100%;
 }
 
@@ -134,22 +155,22 @@ button.inverted {
     font-family: var(--data-font);
     font-size: 0.9em;
     width: fit-content;
+    /* Give the scrollbar a bit of breathing space */
+    min-width:  calc(100% - 10px);
     border-collapse: collapse;
-    border: 1px solid rgba(0,0,0,0.10);
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.40);
-    margin: var(--space);
+    border: var(--border);
 }
 
 .entity-table thead {
     font-family: var(--main-font);
     font-weight: 700;
     text-transform: lowercase;
-    border-bottom: 1px solid rgba(0,0,0,0.10);
+    border-bottom: var(--border);
     background-color: var(--main-bg-color);
 }
 
 .entity-table .record {
-    border-bottom: 1px solid rgba(0,0,0,0.10);
+    border-bottom: var(--border);
     background-color: white;
     cursor: pointer;
 }
@@ -165,7 +186,7 @@ button.inverted {
     max-width: 350px;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-right: 1px solid rgba(0,0,0,0.10);
+    border-right: var(--border);
 }
 
 .entity-table td:last-child,
@@ -185,14 +206,9 @@ button.inverted {
 /* Detail View */
 
 #detail-view {
-    width: 430px;
-    box-sizing: border-box;
-    background-color: var(--dark-bg-color);
-    padding: var(--space);
-    height: 100vh;
-    overflow-y: scroll;
     display: flex;
     flex-direction: column;
+    margin-bottom: var(--space);
 }
 
 #detail-view #identifiers-table{
@@ -200,22 +216,25 @@ button.inverted {
     font-size: 0.9em;
     width: 100%;
     border-collapse: collapse;
-    border: 1px solid rgba(0,0,0,0.10);
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.40);
-    margin-top: var(--space);
+    border: var(--border);
+    box-shadow: var(--box-shadow);
     margin-bottom: var(--space);
     background-color: white;
     border-radius: var(--rounded-corners);
 }
-#detail-view #identifiers-table td{
+
+#detail-view #identifiers-table td {
     padding: 3px;
-    background-color: var(--main-bg-color);
-    border-bottom: 1px solid rgba(0,0,0,0.10);
+    border-right: var(--border);
+}
+
+#detail-view #identifiers-table tr {
+    border-bottom: var(--border);
 }
 
 #detail-view #identifiers-table .label{
     font-weight: 700;
-    border-right: 1px solid rgba(0,0,0,0.10);
+    background-color: var(--main-bg-color);   
 }
 
 #detail-view #identifiers-table .id{
@@ -251,16 +270,16 @@ button.inverted {
 
 #detail-view #save-result.success{
     font-weight: 700;
-    color: var(--color-success-inverted);
+    color: var(--color-success);
 }
 
 #detail-view #save-result.fail{
     font-weight: 700;
-    color: var(--color-warning-inverted);
+    color: var(--color-warning);
 }
 
 #detail-view #save-error-message{
     margin-top: var(--space);
     font-weight: 700;
-    color: var(--color-warning-inverted);
+    color: var(--color-warning);
 }

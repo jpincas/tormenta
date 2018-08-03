@@ -20,24 +20,27 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 	entity := App.EntityMap[entityName]
 	result := reflect.New(reflect.Indirect(reflect.ValueOf(entity)).Type()).Interface().(tormenta.Tormentable)
 
+	// Try unmarhsalling to uuuidv6
+	// But don't worry if you can't, we're actually going to use that case
+	// for something useful
 	id := gouuidv6.UUID{}
-	if err := id.UnmarshalText([]byte(idString)); err != nil {
-		//
-		return
-	}
+	id.UnmarshalText([]byte(idString))
 
 	// Get the record
-	ok, err := App.DB.Get(result, id)
+	// If you can't find it, again, don't worry
+	_, err := App.DB.Get(result, id)
 	if err != nil {
-		//
+		App.Templates.ExecuteTemplate(w, "error-partial.html", struct{}{})
 		return
 	}
 
-	if !ok {
-		//
-		return
-	}
-
+	// At this point, the result will be correct
+	// if a correct ID has been provided
+	// Otherwise, the zero-value (blank struct) will be there
+	// and this will get marhsalled and return
+	// We can use this as a tempalte for creating new entities!
+	// i.e. if I call /api/order/new
+	// 'new' doesnt exist, so I get the correct blank template back
 	templateData := struct {
 		Result     interface{}
 		EntityName string
@@ -68,7 +71,8 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	results := reflect.New(reflect.SliceOf(reflect.Indirect(reflect.ValueOf(entity)).Type())).Interface()
 
 	// Set up the base query
-	q := App.DB.Find(results)
+	// Reverse as default
+	q := App.DB.Find(results).Reverse()
 
 	// Run the query builder,
 	// to apply query options from the URL parameters
