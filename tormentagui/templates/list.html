@@ -12,6 +12,7 @@
 <table class="entity-table">
     <thead>
         <tr>
+            <th></th>
             {{ range $fields }}
             <th>{{ . }}</th>
             {{end}}
@@ -23,9 +24,16 @@
         {{ $thisResult := mapFields . }}
         <!-- spacer -->
         {{ $id := index $thisResult "ID" }}
-        <tr id="{{ $id }}" class="record" onclick="fill('/{{ $entity }}/{{ $id }}', 'detail-view')">
+        <tr id="{{ $id }}" class="record">
+            <td class="align-center">
+                <button class="icon danger" onclick="deleteEntity('{{ $entity }}', '{{ $id }}')">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
             {{ range $fields }}
-            <td>{{ index $thisResult . | autoFormat }}</td>
+            <!-- Put the onclick on each td, so that clicking on the delete icon doesn't
+            trigger the detail view expand -->
+            <td onclick="fill('/{{ $entity }}/{{ $id }}', 'detail-view')">{{ index $thisResult . | autoFormat }}</td>
             {{end}}
         </tr>
         {{ end }}

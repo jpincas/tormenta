@@ -20,6 +20,11 @@
     --border: 1px solid rgba(0,0,0,0.05);
 }
 
+/* Utility Classes */
+.align-center {
+    text-align: center;
+}
+
 body {
     padding: 0;
     margin: 0;
@@ -58,6 +63,10 @@ button.icon {
     background-color: inherit;
     color: var(--main-text-color);
     padding: 5px 5px;
+}
+
+button.danger {
+    color: var(--color-warning);
 }
 
 button:focus {

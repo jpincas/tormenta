@@ -12,12 +12,17 @@ const fill = (url, target, callback) => {
         });
 }
 
-
-
 const saveEntity = (entity, id) => {
     const data = document.getElementById("entity-json").innerHTML;
     postData(`/api/${entity}/${id}`, data)
         .then(response => saveResult(response, entity));
+}
+
+const deleteEntity = (entity, id) => {
+    if (confirm(`Please confirm that you want to delete ${entity} ${id}`)) {
+        deleteData(`/api/${entity}/${id}`)
+            .then(response => deleteResult(response, entity));
+    }
 }
 
 // Ajax methods
@@ -30,6 +35,12 @@ const postData = (url = ``, data = "") => {
 
         },
         body: data,
+    })
+};
+
+const deleteData = (url = ``) => {
+    return fetch(url, {
+        method: "DELETE",
     })
 };
 
@@ -58,13 +69,28 @@ const saveResult = (response, entity) => {
     }
 }
 
+const deleteResult = (response, entity) => {
+    // For an OK response
+    if (response.ok) {
+        // Decode the JSON
+        response.json().then(
+            _ => {
+                // refresh the list view
+                fill(`/${entity}`, 'list-view', alertDeleteSuccess)
+            }
+        )
+    } else {
+        response.json().then(
+            error => alertDeleteFail(error.errorMessage)
+        )
+    }
+}
+
 // Alerts
 
 const alertSaveSuccess = () => {
     document.getElementById("save-result").classList.add("success");
-    document.getElementById("save-result").innerHTML = `<i class="fas fa-check"></i> Saved`
-
-
+    document.getElementById("save-result").innerHTML = `<i class="fas fa-check"></i> Saved`;
 }
 
 const alertSaveFail = errorMessage => {
@@ -72,4 +98,12 @@ const alertSaveFail = errorMessage => {
     document.getElementById("save-result").innerHTML = `<i class="fas fa-exclamation-triangle"></i> Failed to Save! `;
 
     document.getElementById("save-error-message").innerHTML = errorMessage;
+}
+
+const alertDeleteSuccess = () => {
+    console.log("Delete Success");
+}
+
+const alertDeleteFail = errorMessage => {
+    console.log("Delete Fail");
 }
