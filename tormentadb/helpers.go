@@ -1,6 +1,9 @@
 package tormentadb
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
 
 func RandomiseTormentables(slice []Tormentable) {
 	for i := range slice {
@@ -28,4 +31,10 @@ func removeNonContentWords(strings []string) (results []string) {
 	}
 
 	return
+}
+
+func timerMiliseconds(t time.Time) int {
+	t1 := time.Now()
+	duration := t1.Sub(t)
+	return int(duration.Seconds() * 1000)
 }

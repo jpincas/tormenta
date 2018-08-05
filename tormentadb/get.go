@@ -2,6 +2,7 @@ package tormentadb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
@@ -13,13 +14,16 @@ const (
 
 // Get retrieves an entity, either according to the ID set on the entity,
 // or using a separately specified ID (optional)
-func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
+func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
+	// start the timer
+	t0 := time.Now()
+
 	keyRoot, e := entityTypeAndValue(entity)
 
 	// Check that the model field exists
 	modelField := e.FieldByName("Model")
 	if !modelField.IsValid() {
-		return false, fmt.Errorf(errNoModel, keyRoot)
+		return false, timerMiliseconds(t0), fmt.Errorf(errNoModel, keyRoot)
 	}
 
 	// Assert the model
@@ -31,7 +35,7 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
 		id = ids[0]
 	} else {
 		if model.ID.IsNil() {
-			return false, fmt.Errorf(ErrNoID, keyRoot)
+			return false, timerMiliseconds(t0), fmt.Errorf(ErrNoID, keyRoot)
 		}
 		id = model.ID
 	}
@@ -61,14 +65,14 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, error) {
 	})
 
 	if err == badger.ErrKeyNotFound {
-		return false, nil
+		return false, timerMiliseconds(t0), nil
 	} else if err != nil {
-		return false, err
+		return false, timerMiliseconds(t0), err
 	}
 
 	// Post Get trigger and set Created field
 	entity.GetCreated()
 	entity.PostGet()
 
-	return true, nil
+	return true, timerMiliseconds(t0), nil
 }

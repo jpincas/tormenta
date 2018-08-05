@@ -142,12 +142,32 @@ button:focus {
     box-sizing: border-box;
 }
 
+/* Section Header */
+
+.section-header {
+    text-transform: uppercase;
+    font-weight: 700;
+    border-bottom: var(--border);
+    padding-bottom: calc(var(--space) / 2 );
+    margin-bottom: var(--space);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.section-header:hover {
+    color: var(--accent-color);
+}
+
 /* Data Table */
 
 #list-view {
     flex: 1;
-    overflow: scroll;
     display: flex;
+    flex-direction: column;
+}
+
+#results {
+    overflow: scroll;
     flex-direction: column;
 }
 
@@ -275,6 +295,7 @@ button:focus {
     color: var(--inverted-text-color);
     padding: var(--space);
     border-radius: var(--rounded-corners);
+    margin-bottom: var(--space);
 }
 
 #detail-view #save-result.success{
@@ -291,4 +312,29 @@ button:focus {
     margin-top: var(--space);
     font-weight: 700;
     color: var(--color-warning);
+}
+
+/* Query Form */
+
+#query-form .fields {
+    margin-bottom: calc(var(--space) /2);
+    text-transform: uppercase;
+}
+
+#query-form input {
+    margin-bottom: var(--space);
+    text-transform: uppercase;
+    border: var(--border);
+    font-family: var(--data-font);
+    font-size: 0.9em;
+    padding: 3px;
+    margin: 3px;
+}
+
+#query-form label {
+    margin: 3px;
+}
+
+#query-form select {
+    text-transform: lowercase;
 }

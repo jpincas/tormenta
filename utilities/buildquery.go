@@ -25,6 +25,16 @@ const (
 	end   = "end"
 )
 
+// HasReverseBeenSet indicates whether the 'reverse' parameter has been specified
+func HasReverseBeenSet(r *http.Request) bool {
+	reverseString := r.URL.Query().Get(reverse)
+	if reverseString == "true" || reverseString == "false" {
+		return true
+	}
+
+	return false
+}
+
 func BuildQuery(r *http.Request, q *tormenta.Query) error {
 	// Reverse
 	reverseString := r.URL.Query().Get(reverse)

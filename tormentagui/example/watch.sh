@@ -1,0 +1,1 @@
+find ./*go ../static ../templates | entr ./restart.sh

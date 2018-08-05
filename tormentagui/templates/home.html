@@ -14,6 +14,7 @@
 
     <script src="/static/morphdom.js"></script>
     <script src="/static/main.js"></script>
+    <script src="/static/query.js"></script>
 </head>
 
 <body>
@@ -26,7 +27,7 @@
         <ul id="entity-list">
             {{ range $k, $v := .Entities }}
             <li class="entity-link">
-                <a onclick="fill('/{{ $k }}', 'list-view')">
+                <a onclick="fill('/{{ $k }}?template=list', 'list-view')">
                     <i class="fas fa-table"></i>{{ $k }}
                 </a>
             </li>

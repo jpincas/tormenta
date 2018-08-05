@@ -107,3 +107,29 @@ const alertDeleteSuccess = () => {
 const alertDeleteFail = errorMessage => {
     console.log("Delete Fail");
 }
+
+// DOM
+
+const toggleQueryForm = () => {
+    toggleDiv("query-form")
+}
+
+const toggleSaveNew = () => {
+    toggleDiv("detail")
+}
+
+const toggleStartEnd = () => {
+    var newVal = document.getElementById("match").value;
+    if (newVal) {
+        document.getElementById("start-end").style.display = "none";
+    } else {
+        document.getElementById("start-end").style.display = "block";
+    }
+
+}
+
+
+function toggleDiv(id) {
+    var div = document.getElementById(id);
+    div.style.display = div.style.display == "none" ? "block" : "none";
+}

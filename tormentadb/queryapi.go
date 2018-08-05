@@ -148,19 +148,20 @@ func (q *Query) To(t time.Time) *Query {
 }
 
 // Run actually executes the Query
-func (q *Query) Run() (int, error) {
+func (q *Query) Run() (int, int, error) {
 	return q.execute()
 }
 
 // Count executes the Query in fast, count-only mode
-func (q *Query) Count() (int, error) {
+func (q *Query) Count() (int, int, error) {
 	q.countOnly = true
 	return q.execute()
 }
 
-func (q *Query) Sum(a interface{}) (int, error) {
+// Sum produces a sum aggregation
+func (q *Query) Sum(a interface{}) (int, int, error) {
 	if !q.isIndexQuery || len(q.indexName) == 0 {
-		return 0, errors.New("Aggregation must use an index Query")
+		return 0, 0, errors.New("Aggregation must use an index Query")
 	}
 
 	q.aggTarget = a

@@ -1,6 +1,7 @@
 package tormentadb
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"time"
@@ -279,6 +280,11 @@ func (q *Query) prepareQuery() {
 		q.reverse = false
 	}
 
+	// Lowercase index name
+	if q.isIndexQuery {
+		q.indexName = bytes.ToLower(q.indexName)
+	}
+
 	q.setFromToIfEmpty()
 	q.setRanges()
 }
@@ -294,7 +300,7 @@ func (q *Query) fetchIndexedRecord(item *badger.Item) error {
 	}
 
 	// Get the record
-	ok, err := q.db.Get(entity, key)
+	ok, _, err := q.db.Get(entity, key)
 	if err != nil {
 		return err
 	}
@@ -353,7 +359,10 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 	return nil
 }
 
-func (q *Query) execute() (int, error) {
+func (q *Query) execute() (int, int, error) {
+	// start the timer
+	t0 := time.Now()
+
 	q.prepareQuery()
 	q.resetQuery()
 
@@ -361,7 +370,7 @@ func (q *Query) execute() (int, error) {
 	// something has gone wrong and an error has been set on the query,
 	// we'll return right here and now
 	if q.err != nil {
-		return 0, q.err
+		return 0, 0, q.err
 	}
 
 	// Iterate through records according to calcuted range limits
@@ -423,17 +432,18 @@ func (q *Query) execute() (int, error) {
 
 	// If there was an error from the DB transaction, return 0 now
 	if err != nil {
-		return 0, err
+		return 0, timerMiliseconds(t0), err
 	}
 
 	// For count-only or first-only queries, there's nothing more to do
 	if q.countOnly || q.first {
-		return q.counter, nil
+		return q.counter, timerMiliseconds(t0), nil
 	}
 
 	// Set the results on the target
 	reflect.Indirect(reflect.ValueOf(q.target)).Set(q.rt)
 
 	// Finally, return the number of records found
-	return q.counter, nil
+
+	return q.counter, timerMiliseconds(t0), nil
 }

@@ -28,7 +28,7 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 
 	// Get the record
 	// If you can't find it, again, don't worry
-	_, err := App.DB.Get(result, id)
+	_, timer, err := App.DB.Get(result, id)
 	if err != nil {
 		App.Templates.ExecuteTemplate(w, "error-partial.html", struct{}{})
 		return
@@ -44,9 +44,11 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 	templateData := struct {
 		Result     interface{}
 		EntityName string
+		Timer      int
 	}{
 		Result:     result,
 		EntityName: entityName,
+		Timer:      timer,
 	}
 
 	App.Templates.ExecuteTemplate(w, "detail.html", templateData)
@@ -72,7 +74,15 @@ func getList(w http.ResponseWriter, r *http.Request) {
 
 	// Set up the base query
 	// Reverse as default
-	q := App.DB.Find(results).Reverse()
+	q := App.DB.Find(results)
+
+	// IF this is NOT a query, we will reverse it by default,
+	// so that the most recent records are at the top
+	// IF this is a query (where the 'reverse' param has been set as true or false)
+	// then we will respect that setting
+	if !utilities.HasReverseBeenSet(r) {
+		q.Reverse()
+	}
 
 	// Run the query builder,
 	// to apply query options from the URL parameters
@@ -82,10 +92,17 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Run the query
-	n, err := q.Run()
+	n, timer, err := q.Run()
 	if err != nil {
 		App.Templates.ExecuteTemplate(w, "error-partial.html", struct{}{})
 		return
+	}
+
+	// Template override with URL param
+	template := "results"
+	overrideTemplate := r.URL.Query().Get("template")
+	if r.URL.Query().Get("template") != "" {
+		template = overrideTemplate
 	}
 
 	templateData := struct {
@@ -93,12 +110,14 @@ func getList(w http.ResponseWriter, r *http.Request) {
 		Results    interface{}
 		Fields     []string
 		EntityName string
+		Timer      int
 	}{
 		NoResults:  n,
 		Results:    results,
 		Fields:     tormenta.ListFields(entity),
 		EntityName: entityName,
+		Timer:      timer,
 	}
 
-	App.Templates.ExecuteTemplate(w, "list.html", templateData)
+	App.Templates.ExecuteTemplate(w, template+".html", templateData)
 }
