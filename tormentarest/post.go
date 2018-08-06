@@ -20,13 +20,13 @@ func post(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&toSave)
 	if err != nil {
-		renderError(w, utilities.ErrUnmarshall)
+		renderError(w, utilities.ErrUnmarshall, err)
 		return
 	}
 
 	_, err = App.DB.Save(toSave)
 	if err != nil {
-		renderError(w, utilities.ErrDBConnection)
+		renderError(w, utilities.ErrUnmarshall, err)
 		return
 	}
 

@@ -24,7 +24,7 @@ func deleteByID(w http.ResponseWriter, r *http.Request) {
 	// Delete the record
 	n, err := App.DB.Delete(entityName, id)
 	if err != nil {
-		renderError(w, utilities.ErrDBConnection)
+		renderError(w, utilities.ErrDeleting, err)
 		return
 	}
 

@@ -28,7 +28,7 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 	// Get the record
 	ok, _, err := App.DB.Get(result, id)
 	if err != nil {
-		renderError(w, utilities.ErrDBConnection)
+		renderError(w, utilities.ErrGetting, err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	// Run the query
 	n, _, err := q.Run()
 	if err != nil {
-		renderError(w, utilities.ErrDBConnection)
+		renderError(w, utilities.ErrGetting, err)
 		return
 	}
 
