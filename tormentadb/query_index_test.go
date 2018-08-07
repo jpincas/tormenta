@@ -44,7 +44,7 @@ func Test_Aggregation(t *testing.T) {
 
 	// Int32
 
-	_, err := db.Find(&results).Range("startingstock", 1, 30).Sum(&intSum)
+	_, _, err := db.Find(&results).Range("startingstock", 1, 30).Sum(&intSum)
 	if err != nil {
 		t.Error("Testing int32 agreggation.  Got error")
 	}
@@ -56,7 +56,7 @@ func Test_Aggregation(t *testing.T) {
 
 	// Float64
 
-	_, err = db.Find(&results).Range("price", 1.00, 30.00).Sum(&floatSum)
+	_, _, err = db.Find(&results).Range("price", 1.00, 30.00).Sum(&floatSum)
 	if err != nil {
 		t.Error("Testing float64 agreggation.  Got error")
 	}

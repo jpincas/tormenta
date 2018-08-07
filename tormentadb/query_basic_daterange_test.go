@@ -56,7 +56,7 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 	//Quick check that all orders have saved correctly
 	var results []demo.Order
-	n, _ := db.Find(&results).Run()
+	n, _, _ := db.Find(&results).Run()
 
 	if len(results) != len(orders) || n != len(orders) {
 		t.Errorf("Testing range query. Haven't even got to ranges yet. Just basic query expected %v - got %v/%v", len(orders), len(results), n)
@@ -105,12 +105,12 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 		// FORWARD TESTS
 
-		n, err := query.Run()
+		n, _, err := query.Run()
 		if err != nil {
 			t.Errorf("Testing %s. Got error %s", testCase.testName, err.Error())
 		}
 
-		c, err := query.Count()
+		c, _, err := query.Count()
 		if err != nil {
 			t.Errorf("Testing %s. Got error %s", testCase.testName, err.Error())
 		}
@@ -134,12 +134,12 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 		query = query.Reverse()
 
-		rn, err := query.Run()
+		rn, _, err := query.Run()
 		if err != nil {
 			t.Errorf("Testing REVERSE %s. Got error %s", testCase.testName, err.Error())
 		}
 
-		rc, err := query.Count()
+		rc, _, err := query.Count()
 		if err != nil {
 			t.Errorf("Testing REVERSE %s. Got error %s", testCase.testName, err.Error())
 		}

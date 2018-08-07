@@ -21,14 +21,14 @@ func Test_BasicGet(t *testing.T) {
 	order.ID = gouuidv6.UUID{}
 
 	// Attempt to get entity without ID
-	_, err := db.Get(&order)
+	_, _, err := db.Get(&order)
 	if err == nil || err.Error() != fmt.Sprintf(tormenta.ErrNoID, keyRoot) {
 		t.Error("Testing get entity without ID. Produced wrong error or no error")
 	}
 
 	// Reset the order ID
 	order.ID = orderIDBeforeBlanking
-	ok, err := db.Get(&order)
+	ok, _, err := db.Get(&order)
 	if err != nil {
 		t.Errorf("Testing basic record get. Got error %v", err)
 	}
@@ -48,7 +48,7 @@ func Test_GetByID(t *testing.T) {
 	db.Save(&order)
 
 	// Overwite ID
-	ok, err := db.Get(&order2, order.ID)
+	ok, _, err := db.Get(&order2, order.ID)
 
 	if err != nil {
 		t.Errorf("Testing get by id. Got error %v", err)
@@ -69,7 +69,7 @@ func Test_GetTriggers(t *testing.T) {
 
 	order := demo.Order{}
 	db.Save(&order)
-	ok, err := db.Get(&order)
+	ok, _, err := db.Get(&order)
 
 	if err != nil {
 		t.Errorf("Testing get triggers. Got error %v", err)

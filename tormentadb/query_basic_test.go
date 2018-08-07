@@ -17,7 +17,7 @@ func Test_BasicQuery(t *testing.T) {
 	db.Save(&order1)
 
 	var orders []demo.Order
-	n, err := db.Find(&orders).Run()
+	n, _, err := db.Find(&orders).Run()
 
 	if err != nil {
 		t.Error("Testing basic querying - got error")
@@ -28,7 +28,7 @@ func Test_BasicQuery(t *testing.T) {
 	}
 
 	orders = []demo.Order{}
-	c, err := db.Find(&orders).Count()
+	c, _, err := db.Find(&orders).Count()
 	if c != 1 {
 		t.Errorf("Testing count 1 entity saved. Expecting 1 - got %v", c)
 	}
@@ -38,11 +38,11 @@ func Test_BasicQuery(t *testing.T) {
 	db.Save(&order2)
 
 	orders = []demo.Order{}
-	if n, _ := db.Find(&orders).Run(); n != 2 {
+	if n, _, _ := db.Find(&orders).Run(); n != 2 {
 		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v", n)
 	}
 
-	if c, _ := db.Find(&orders).Count(); c != 2 {
+	if c, _, _ := db.Find(&orders).Count(); c != 2 {
 		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
 	}
 	if order1.ID == order2.ID {
@@ -54,25 +54,25 @@ func Test_BasicQuery(t *testing.T) {
 
 	// Limit
 	orders = []demo.Order{}
-	if n, _ := db.Find(&orders).Limit(1).Run(); n != 1 {
+	if n, _, _ := db.Find(&orders).Limit(1).Run(); n != 1 {
 		t.Errorf("Testing querying with 2 entities saved + limit. Wrong number of results received")
 	}
 
 	// Reverse - simple, only tests number received
 	orders = []demo.Order{}
-	if n, _ := db.Find(&orders).Reverse().Run(); n != 2 {
+	if n, _, _ := db.Find(&orders).Reverse().Run(); n != 2 {
 		t.Errorf("Testing querying with 2 entities saved + reverse. Expected %v, got %v", 2, n)
 	}
 
 	// Reverse + Limit - simple, only tests number received
 	orders = []demo.Order{}
-	if n, _ := db.Find(&orders).Reverse().Limit(1).Run(); n != 1 {
+	if n, _, _ := db.Find(&orders).Reverse().Limit(1).Run(); n != 1 {
 		t.Errorf("Testing querying with 2 entities saved + reverse + limit. Expected %v, got %v", 1, n)
 	}
 
 	// Reverse + Count
 	orders = []demo.Order{}
-	if c, _ := db.Find(&orders).Reverse().Count(); c != 2 {
+	if c, _, _ := db.Find(&orders).Reverse().Count(); c != 2 {
 		t.Errorf("Testing count with 2 entities saved + reverse. Expected %v, got %v", 2, c)
 	}
 
@@ -87,7 +87,7 @@ func Test_BasicQuery_First(t *testing.T) {
 	db.Save(&order1, &order2)
 
 	var order demo.Order
-	n, err := db.First(&order).Run()
+	n, _, err := db.First(&order).Run()
 
 	if err != nil {
 		t.Error("Testing first - got error")
@@ -106,7 +106,7 @@ func Test_BasicQuery_First(t *testing.T) {
 	}
 
 	// Test nothing found (impossible range)
-	n, _ = db.First(&order).From(time.Now()).To(time.Now()).Run()
+	n, _, _ = db.First(&order).From(time.Now()).To(time.Now()).Run()
 	if n != 0 {
 		t.Errorf("Testing first when nothing should be found.  Got n = %v", n)
 	}

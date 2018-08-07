@@ -21,6 +21,11 @@ const (
 	tormentaTagSplit   = "split"
 )
 
+var (
+	typeInt   = reflect.TypeOf(0)
+	typeFloat = reflect.TypeOf(0.99)
+)
+
 func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
 	v := reflect.Indirect(reflect.ValueOf(entity))
 
@@ -114,7 +119,7 @@ func makeIndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent 
 }
 
 func interfaceToBytes(value interface{}) []byte {
-	// Must use BigEndian for correct sorting
+	// Note: must use BigEndian for correct sorting
 
 	// Empty interface -> empty byte slice
 	if value == nil {
@@ -124,17 +129,36 @@ func interfaceToBytes(value interface{}) []byte {
 	// Set up buffer for writing binary values
 	buf := new(bytes.Buffer)
 
-	switch value.(type) {
+	// Rather than doing a simple type switch .(type),
+	// we switch on the Kind
+	// This provides a neat solution to 'defined' or 'named' types
+	// e.g. the kind of 'string' is 'string'
+	// AND the kind of NamedString (with underlying type string) is ALSO just string
+
+	switch reflect.ValueOf(value).Type().Kind() {
+
 	// For ints, cast the interface to int, convert to uint32 (normal ints don't work)
-	case int:
-		binary.Write(buf, binary.BigEndian, uint32(value.(int)))
+	case reflect.Int:
+		i := convertUnderlying(value, typeInt)
+		binary.Write(buf, binary.BigEndian, uint32(i.(int)))
+
 		return buf.Bytes()
+
 	// For floats, write straight to binary
-	case float64:
-		binary.Write(buf, binary.BigEndian, value.(float64))
+	case reflect.Float64:
+		i := convertUnderlying(value, typeFloat)
+		binary.Write(buf, binary.BigEndian, i.(float64))
+
 		return buf.Bytes()
 	}
 
 	// Everything else as a string
 	return []byte(fmt.Sprintf("%v", value))
+}
+
+// convertUnderlying takes an interface and converts its underlying type
+// to the target type.  Obviously the underlying types must be convertible
+// E.g. NamedInt -> Int
+func convertUnderlying(src interface{}, targetType reflect.Type) interface{} {
+	return reflect.ValueOf(src).Convert(targetType).Interface()
 }

@@ -17,7 +17,7 @@ func Test_Delete(t *testing.T) {
 
 	// Test the the order has been saved
 	retrievedOrder := demo.Order{}
-	ok, _ := db.Get(&retrievedOrder, order.ID)
+	ok, _, _ := db.Get(&retrievedOrder, order.ID)
 	if !ok || order.ID != retrievedOrder.ID {
 		t.Error("Testing delete. Test order not saved correctly")
 	}
@@ -34,7 +34,7 @@ func Test_Delete(t *testing.T) {
 	}
 
 	// Attempt to retrieve again
-	ok, _ = db.Get(&retrievedOrder, order.ID)
+	ok, _, _ = db.Get(&retrievedOrder, order.ID)
 	if ok {
 		t.Error("Testing delete. Supposedly deleted order found on 2nd get")
 	}
@@ -62,7 +62,7 @@ func Test_Delete_Multiple(t *testing.T) {
 	}
 
 	var orders []demo.Order
-	c, _ := db.Find(&orders).Count()
+	c, _, _ := db.Find(&orders).Count()
 	if c > 0 {
 		t.Errorf("Testing delete. Should have found any orders, but found %v", c)
 	}
