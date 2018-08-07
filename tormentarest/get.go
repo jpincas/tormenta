@@ -38,7 +38,8 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render JSON
-	App.Render.JSON(w, http.StatusOK, result)
+	renderResults(w, entityName, result)
+	return
 }
 
 func getList(w http.ResponseWriter, r *http.Request) {
@@ -69,9 +70,10 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	// Render JSON
 	// For 0 results, render empty list
 	if n == 0 {
-		App.Render.JSON(w, http.StatusOK, []interface{}{})
+		renderResults(w, entityName, []interface{}{})
 		return
 	}
 
-	App.Render.JSON(w, http.StatusOK, results)
+	renderResults(w, entityName, results)
+	return
 }

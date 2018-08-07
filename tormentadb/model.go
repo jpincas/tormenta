@@ -19,9 +19,9 @@ type Tormentable interface {
 }
 
 type Model struct {
-	ID          gouuidv6.UUID `msg:",extension" tormenta:"noindex"`
-	Created     time.Time     `msg:"-" tormenta:"noindex"`
-	LastUpdated time.Time
+	ID          gouuidv6.UUID `msg:",extension" tormenta:"noindex" json:"id"`
+	Created     time.Time     `msg:"-" tormenta:"noindex" json:"created"`
+	LastUpdated time.Time     `json:"lastUpdated"`
 }
 
 func newID() gouuidv6.UUID {

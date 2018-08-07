@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/jpincas/tormenta/utilities"
+
 	"github.com/jpincas/tormenta/tormentarest"
 
 	"github.com/go-chi/chi"
@@ -39,7 +41,7 @@ func buildRouter(r *chi.Mux, db *tormenta.DB, entities ...tormenta.Tormentable) 
 	tormentarest.WithRouter(r, db, "api", entities...)
 
 	for _, entity := range entities {
-		entityName := tormenta.KeyRootString(entity)
+		entityName := utilities.Pluralise(tormenta.KeyRootString(entity))
 		App.EntityMap[entityName] = entity
 
 		r.Route("/"+entityName, func(r chi.Router) {

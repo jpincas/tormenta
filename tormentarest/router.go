@@ -3,6 +3,7 @@ package tormentarest
 import (
 	"github.com/go-chi/chi"
 	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta/utilities"
 )
 
 // WithRouter builds a REST api on the specified router
@@ -18,7 +19,7 @@ func buildRouter(r *chi.Mux, root string, entities ...tormenta.Tormentable) {
 	r.Route("/"+root, func(r chi.Router) {
 
 		for _, entity := range entities {
-			entityName := tormenta.KeyRootString(entity)
+			entityName := utilities.Pluralise(tormenta.KeyRootString(entity))
 			App.EntityMap[entityName] = entity
 
 			r.Route("/"+entityName, func(r chi.Router) {
