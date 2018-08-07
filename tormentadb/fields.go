@@ -1,6 +1,8 @@
 package tormentadb
 
-import "reflect"
+import (
+	"reflect"
+)
 
 //MapFields returns a map keyed by fieldname with the value of the field as an interface
 func MapFields(entity interface{}) map[string]interface{} {
@@ -13,10 +15,8 @@ func MapFields(entity interface{}) map[string]interface{} {
 		fieldType := v.Type().Field(i)
 		fieldName := fieldType.Name
 
-		// We want to flatten the embedded 'Model'
-		// So recursively run this function on it,
-		// and then merge the resulting map with the main 'fieldMap'
-		if fieldName == "Model" {
+		// Recursively flatten embedded structs
+		if fieldType.Type.Kind() == reflect.Struct && fieldType.Anonymous {
 			modelMap = MapFields(v.Field(i).Interface())
 			for k, v := range modelMap {
 				fieldMap[k] = v
@@ -30,21 +30,29 @@ func MapFields(entity interface{}) map[string]interface{} {
 }
 
 // ListFields returns a list of fields for the entity, with ID, Created and LastUpdated always at the start
-func ListFields(entity Tormentable) []string {
-	v := reflect.Indirect(reflect.ValueOf(entity))
-
+func ListFields(entity interface{}) []string {
 	// We want ID, Created and LastUpdated to appear at the start
 	// so we add those manually
-	fields := []string{"ID", "Created", "LastUpdated"}
+	return append([]string{"ID", "Created", "LastUpdated"}, structFields(entity)...)
+}
 
-	// Run through all the fields, appending them to the list
-	// Don't include 'Model'
+func structFields(entity interface{}) (fields []string) {
+	v := reflect.Indirect(reflect.ValueOf(entity))
+
 	for i := 0; i < v.NumField(); i++ {
 		fieldName := v.Type().Field(i).Name
-		if fieldName != "Model" {
+		fieldType := v.Type().Field(i)
+
+		// Recursively flatten embedded structs - don't include 'Model'
+		if fieldType.Type.Kind() == reflect.Struct &&
+			fieldType.Anonymous &&
+			fieldName != "Model" {
+			l := structFields(v.Field(i).Interface())
+			fields = append(fields, l...)
+		} else if fieldName != "Model" {
 			fields = append(fields, fieldName)
 		}
 	}
 
-	return fields
+	return
 }

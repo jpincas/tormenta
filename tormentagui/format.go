@@ -13,6 +13,11 @@ func printJSONWithoutModel(s interface{}) string {
 	return trimModel(string(res))
 }
 
+func printJSON(s interface{}) string {
+	res, _ := json.MarshalIndent(s, "", " ")
+	return string(res)
+}
+
 func formatTime(t time.Time) string {
 	return t.Format("2006, 2 Jan 15:04:05")
 }
@@ -30,7 +35,7 @@ func autoFormat(i interface{}) string {
 			return "F"
 		}
 	default:
-		return fmt.Sprint(i)
+		return printJSON(i)
 	}
 
 }

@@ -107,8 +107,7 @@ button:focus {
 }
 
 #sidebar ul#entity-list li.entity-link {
-    text-transform: uppercase;
-    font-size: 1.2em;
+    text-transform: lowercase;
     margin: var(--space);
     cursor: pointer;
 }
