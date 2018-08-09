@@ -15,6 +15,10 @@ const (
 // Get retrieves an entity, either according to the ID set on the entity,
 // or using a separately specified ID (optional)
 func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
+	return db.get(entity, ids...)
+}
+
+func (db DB) get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 	// start the timer
 	t0 := time.Now()
 
@@ -70,8 +74,10 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 		return false, timerMiliseconds(t0), err
 	}
 
-	// Post Get trigger and set Created field
+	// Populate the created field
 	entity.GetCreated()
+
+	// Run the 'postGet' trigger
 	entity.PostGet()
 
 	return true, timerMiliseconds(t0), nil
