@@ -1,7 +1,6 @@
 package tormentagui
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/jpincas/tormenta/utilities"
@@ -20,14 +19,6 @@ func Serve(port string, db *tormenta.DB, entities ...tormenta.Tormentable) {
 	// Make the router
 	r := chi.NewRouter()
 	buildRouter(r, db, entities...)
-
-	// Show that we're starting
-	fmt.Println(
-		`
------------------------------------
-	    Starting Tormenta GUI
------------------------------------
-		`)
 
 	// Fire up the router
 	http.ListenAndServe(port, r)

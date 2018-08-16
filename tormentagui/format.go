@@ -35,7 +35,7 @@ func autoFormat(i interface{}) string {
 			return "F"
 		}
 	default:
-		return printJSON(i)
+		return fmt.Sprint(i)
 	}
 
 }
