@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"time"
 
+	"context"
+
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
@@ -72,6 +74,8 @@ type Query struct {
 
 	// Is already prepared?
 	isReversePrepared bool
+
+	ctx context.Context
 }
 
 func (db DB) newQuery(target interface{}, first bool) *Query {
@@ -94,6 +98,9 @@ func (db DB) newQuery(target interface{}, first bool) *Query {
 		q.limit = 1
 		q.first = true
 	}
+
+	// Start with blank context
+	q.ctx = context.TODO()
 
 	return q
 }
@@ -343,7 +350,7 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 
 	// Post Get trigger and set created at
 	entity.GetCreated()
-	entity.PostGet()
+	entity.PostGet(q.ctx)
 
 	// If this is a 'first' Query - then just set the unmarshalled entity on the target
 	// Otherwise, build up the results slice - we'll set on the target later!

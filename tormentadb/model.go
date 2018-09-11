@@ -1,6 +1,7 @@
 package tormentadb
 
 import (
+	"context"
 	"time"
 
 	"github.com/jpincas/gouuidv6"
@@ -13,7 +14,7 @@ type Tormentable interface {
 	UnmarshalMsg([]byte) ([]byte, error)
 	PreSave() error
 	PostSave()
-	PostGet()
+	PostGet(ctx context.Context)
 	GetCreated() time.Time
 	SetID(gouuidv6.UUID)
 }
@@ -41,7 +42,7 @@ func (m Model) PreSave() error {
 
 func (m Model) PostSave() {}
 
-func (m Model) PostGet() {}
+func (m Model) PostGet(ctx context.Context) {}
 
 func (m *Model) SetID(id gouuidv6.UUID) {
 	m.ID = id

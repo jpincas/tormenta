@@ -1,6 +1,7 @@
 package demo
 
 import (
+	"context"
 	"errors"
 
 	"github.com/jpincas/gouuidv6"
@@ -64,7 +65,7 @@ func (o *Order) PostSave() {
 	o.OrderSaved = true
 }
 
-func (o *Order) PostGet() {
+func (o *Order) PostGet(ctx context.Context) {
 	o.OrderRetrieved = true
 }
 

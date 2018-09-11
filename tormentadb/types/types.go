@@ -1,6 +1,10 @@
 package types
 
-import tormenta "github.com/jpincas/tormenta/tormentadb"
+import (
+	"context"
+
+	tormenta "github.com/jpincas/tormenta/tormentadb"
+)
 
 //go:generate msgp
 
@@ -47,4 +51,11 @@ type TestType struct {
 
 	// Embedded struct
 	EmbeddedStruct
+
+	// Fields for trigger testing
+	TriggerString string
+}
+
+func (t *TestType) PostGet(ctx context.Context) {
+	t.TriggerString = ctx.Value("sessionid").(string)
 }

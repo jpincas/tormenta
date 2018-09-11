@@ -1,6 +1,7 @@
 package tormentadb
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -84,6 +85,11 @@ func (q *Query) Offset(n int) *Query {
 // Reverse reverses the order of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
 func (q *Query) Reverse() *Query {
 	q.reverse = true
+	return q
+}
+
+func (q *Query) SetContext(key, val interface{}) *Query {
+	q.ctx = context.WithValue(q.ctx, key, val)
 	return q
 }
 

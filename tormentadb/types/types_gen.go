@@ -598,6 +598,11 @@ func (z *TestType) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
+		case "TriggerString":
+			z.TriggerString, err = dc.ReadString()
+			if err != nil {
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -610,9 +615,9 @@ func (z *TestType) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *TestType) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 18
+	// map header, size 19
 	// write "Model"
-	err = en.Append(0xde, 0x0, 0x12, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	err = en.Append(0xde, 0x0, 0x13, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	if err != nil {
 		return
 	}
@@ -821,15 +826,24 @@ func (z *TestType) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
+	// write "TriggerString"
+	err = en.Append(0xad, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.TriggerString)
+	if err != nil {
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *TestType) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 18
+	// map header, size 19
 	// string "Model"
-	o = append(o, 0xde, 0x0, 0x12, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	o = append(o, 0xde, 0x0, 0x13, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	o, err = z.Model.MarshalMsg(o)
 	if err != nil {
 		return
@@ -912,6 +926,9 @@ func (z *TestType) MarshalMsg(b []byte) (o []byte, err error) {
 	if err != nil {
 		return
 	}
+	// string "TriggerString"
+	o = append(o, 0xad, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67)
+	o = msgp.AppendString(o, z.TriggerString)
 	return
 }
 
@@ -1149,6 +1166,11 @@ func (z *TestType) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "TriggerString":
+			z.TriggerString, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -1170,6 +1192,6 @@ func (z *TestType) Msgsize() (s int) {
 	for za0006 := range z.DefinedStringSliceField {
 		s += msgp.StringPrefixSize + len(string(z.DefinedStringSliceField[za0006]))
 	}
-	s += 23 + msgp.ArrayHeaderSize + (len(z.DefinedFloatSliceField) * (msgp.Float64Size)) + 22 + msgp.ArrayHeaderSize + (len(z.DefinedBoolSliceField) * (msgp.BoolSize)) + 15 + z.EmbeddedStruct.Msgsize()
+	s += 23 + msgp.ArrayHeaderSize + (len(z.DefinedFloatSliceField) * (msgp.Float64Size)) + 22 + msgp.ArrayHeaderSize + (len(z.DefinedBoolSliceField) * (msgp.BoolSize)) + 15 + z.EmbeddedStruct.Msgsize() + 14 + msgp.StringPrefixSize + len(z.TriggerString)
 	return
 }

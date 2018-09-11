@@ -1,6 +1,7 @@
 package tormentadb
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -63,7 +64,9 @@ func (db DB) get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 		}
 
 		// Post Get trigger
-		entity.PostGet()
+		// This seems to be a duplicate action
+		// so commenting for now
+		// entity.PostGet(context.TODO())
 
 		return nil
 	})
@@ -78,7 +81,7 @@ func (db DB) get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 	entity.GetCreated()
 
 	// Run the 'postGet' trigger
-	entity.PostGet()
+	entity.PostGet(context.TODO())
 
 	return true, timerMiliseconds(t0), nil
 }
