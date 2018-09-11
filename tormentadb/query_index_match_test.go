@@ -69,6 +69,8 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 		{"matches 1 exactly with no interference", "pablo", 33, nil},
 		{"matches 1 exactly and 1 prefix", "jon", 34, nil},
 		{"matches 1 exactly and has same prefix as other", "jonathan", 33, nil},
+		{"uppercase - should make no difference", "JON", 34, nil},
+		{"mixed-case - should make no difference", "Jon", 34, nil},
 	}
 
 	for _, testCase := range testCases {

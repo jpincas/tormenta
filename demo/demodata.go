@@ -1,6 +1,7 @@
 package demo
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -50,10 +51,10 @@ func Products(n int) (products []tormenta.Tormentable) {
 
 	for i := 0; i < n; i++ {
 		product := Product{
-			Code:          "SKU000",
-			Name:          "Product Name",
-			Price:         9.99,
-			StartingStock: 50,
+			Code:          fmt.Sprintf("SKU00%v", i),
+			Name:          fmt.Sprintf("Product %v", i),
+			Price:         float64(rand.Intn(100)) + 9.99,
+			StartingStock: rand.Intn(100),
 			Tags:          []string{"tag1", "tag2"},
 			Departments:   []int{1, 2, 3},
 			Description:   DefaultDescription,

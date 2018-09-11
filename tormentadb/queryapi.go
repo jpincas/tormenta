@@ -2,6 +2,7 @@ package tormentadb
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jpincas/gouuidv6"
@@ -94,10 +95,17 @@ func (q *Query) Match(indexName string, param interface{}) *Query {
 		q.err = errors.New(ErrNilInputMatchIndexQuery)
 		return q
 	}
+
+	// If we are matching a string, lower-case it
+	switch param.(type) {
+	case string:
+		param = strings.ToLower(param.(string))
+	}
+
 	q.start = param
 	q.end = param
 	q.isIndexQuery = true
-	q.indexName = []byte(indexName)
+	q.indexName = []byte(strings.ToLower(indexName))
 	return q
 }
 

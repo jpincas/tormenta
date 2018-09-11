@@ -98,7 +98,7 @@ func Test_makeIndexKey(t *testing.T) {
 		{
 			"string index content",
 			[]byte("root"), id, "myindex", "indexContent",
-			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), []byte("indexContent"), id.Bytes()}, []byte(keySeparator)),
+			bytes.Join([][]byte{ikey, []byte("root"), []byte("myindex"), []byte("indexcontent"), id.Bytes()}, []byte(keySeparator)),
 		},
 		{
 			"float index content",

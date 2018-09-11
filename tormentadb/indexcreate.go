@@ -22,8 +22,9 @@ const (
 )
 
 var (
-	typeInt   = reflect.TypeOf(0)
-	typeFloat = reflect.TypeOf(0.99)
+	typeInt    = reflect.TypeOf(0)
+	typeFloat  = reflect.TypeOf(0.99)
+	typeString = reflect.TypeOf("")
 )
 
 func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
@@ -150,6 +151,11 @@ func interfaceToBytes(value interface{}) []byte {
 		binary.Write(buf, binary.BigEndian, i.(float64))
 
 		return buf.Bytes()
+
+	// For strings, lower case before indexing
+	case reflect.String:
+		i := convertUnderlying(value, typeString)
+		return []byte(strings.ToLower(i.(string)))
 	}
 
 	// Everything else as a string
