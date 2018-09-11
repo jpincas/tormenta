@@ -11,6 +11,13 @@ type (
 	DefinedBool   bool
 )
 
+type EmbeddedStruct struct {
+	EmbeddedIntField    int
+	EmbeddedStringField string
+	EmbeddedFloatField  float64
+	EmbeddedBoolField   bool
+}
+
 type TestType struct {
 	tormenta.Model
 
@@ -37,4 +44,7 @@ type TestType struct {
 	DefinedStringSliceField []DefinedString
 	DefinedFloatSliceField  []DefinedFloat
 	DefinedBoolSliceField   []DefinedBool
+
+	// Embedded struct
+	EmbeddedStruct
 }

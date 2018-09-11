@@ -33,6 +33,12 @@ func Test_CreateIndexKeys(t *testing.T) {
 		DefinedStringSliceField: []types.DefinedString{"test1", "test2"},
 		DefinedFloatSliceField:  []types.DefinedFloat{0.99, 1.99},
 		DefinedBoolSliceField:   []types.DefinedBool{true, false},
+		EmbeddedStruct: types.EmbeddedStruct{
+			EmbeddedIntField:    1,
+			EmbeddedStringField: "test",
+			EmbeddedFloatField:  0.99,
+			EmbeddedBoolField:   true,
+		},
 	}
 
 	db.Save(&entity)
@@ -63,6 +69,12 @@ func Test_CreateIndexKeys(t *testing.T) {
 		{"defined string field", "definedstringfield", "test"},
 		{"defined float field", "definedfloatfield", 0.99},
 		{"defined bool field", "definedboolfield", true},
+
+		// Embedded structs
+		{"embedded struct - int field", "embeddedintfield", 1},
+		{"embedded struct - string field", "embeddedstringfield", "test"},
+		{"embedded struct - float field", "embeddedfloatfield", 0.99},
+		{"embedded struct - bool field", "embeddedboolfield", true},
 	}
 
 	db.KV.View(func(txn *badger.Txn) error {

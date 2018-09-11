@@ -29,7 +29,10 @@ var (
 
 func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
 	v := reflect.Indirect(reflect.ValueOf(entity))
+	return indexStruct(v, txn, entity, keyRoot, id)
+}
 
+func indexStruct(v reflect.Value, txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
 	for i := 0; i < v.NumField(); i++ {
 
 		// If the 'tormenta:noindex' tag is present, don't index
@@ -41,10 +44,12 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
 					return err
 				}
+
 			case reflect.Array:
 				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
 					return err
 				}
+
 			case reflect.String:
 				// If the string is tagged with 'split',
 				// then index each of the words separately
@@ -57,6 +62,13 @@ func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID
 						return err
 					}
 				}
+
+			case reflect.Struct:
+				// Recursively index embedded structs
+				if fieldType.Anonymous {
+					indexStruct(v.Field(i), txn, entity, keyRoot, id)
+				}
+
 			default:
 				if err := setIndexKey(txn, keyRoot, id, fieldType.Name, v.Field(i).Interface()); err != nil {
 					return err

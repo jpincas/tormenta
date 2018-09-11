@@ -205,6 +205,166 @@ func (z DefinedString) Msgsize() (s int) {
 }
 
 // DecodeMsg implements msgp.Decodable
+func (z *EmbeddedStruct) DecodeMsg(dc *msgp.Reader) (err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, err = dc.ReadMapHeader()
+	if err != nil {
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, err = dc.ReadMapKeyPtr()
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "EmbeddedIntField":
+			z.EmbeddedIntField, err = dc.ReadInt()
+			if err != nil {
+				return
+			}
+		case "EmbeddedStringField":
+			z.EmbeddedStringField, err = dc.ReadString()
+			if err != nil {
+				return
+			}
+		case "EmbeddedFloatField":
+			z.EmbeddedFloatField, err = dc.ReadFloat64()
+			if err != nil {
+				return
+			}
+		case "EmbeddedBoolField":
+			z.EmbeddedBoolField, err = dc.ReadBool()
+			if err != nil {
+				return
+			}
+		default:
+			err = dc.Skip()
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z *EmbeddedStruct) EncodeMsg(en *msgp.Writer) (err error) {
+	// map header, size 4
+	// write "EmbeddedIntField"
+	err = en.Append(0x84, 0xb0, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x49, 0x6e, 0x74, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.EmbeddedIntField)
+	if err != nil {
+		return
+	}
+	// write "EmbeddedStringField"
+	err = en.Append(0xb3, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.EmbeddedStringField)
+	if err != nil {
+		return
+	}
+	// write "EmbeddedFloatField"
+	err = en.Append(0xb2, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x46, 0x6c, 0x6f, 0x61, 0x74, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteFloat64(z.EmbeddedFloatField)
+	if err != nil {
+		return
+	}
+	// write "EmbeddedBoolField"
+	err = en.Append(0xb1, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x42, 0x6f, 0x6f, 0x6c, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.EmbeddedBoolField)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *EmbeddedStruct) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 4
+	// string "EmbeddedIntField"
+	o = append(o, 0x84, 0xb0, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x49, 0x6e, 0x74, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	o = msgp.AppendInt(o, z.EmbeddedIntField)
+	// string "EmbeddedStringField"
+	o = append(o, 0xb3, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	o = msgp.AppendString(o, z.EmbeddedStringField)
+	// string "EmbeddedFloatField"
+	o = append(o, 0xb2, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x46, 0x6c, 0x6f, 0x61, 0x74, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	o = msgp.AppendFloat64(o, z.EmbeddedFloatField)
+	// string "EmbeddedBoolField"
+	o = append(o, 0xb1, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x42, 0x6f, 0x6f, 0x6c, 0x46, 0x69, 0x65, 0x6c, 0x64)
+	o = msgp.AppendBool(o, z.EmbeddedBoolField)
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *EmbeddedStruct) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "EmbeddedIntField":
+			z.EmbeddedIntField, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				return
+			}
+		case "EmbeddedStringField":
+			z.EmbeddedStringField, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				return
+			}
+		case "EmbeddedFloatField":
+			z.EmbeddedFloatField, bts, err = msgp.ReadFloat64Bytes(bts)
+			if err != nil {
+				return
+			}
+		case "EmbeddedBoolField":
+			z.EmbeddedBoolField, bts, err = msgp.ReadBoolBytes(bts)
+			if err != nil {
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *EmbeddedStruct) Msgsize() (s int) {
+	s = 1 + 17 + msgp.IntSize + 20 + msgp.StringPrefixSize + len(z.EmbeddedStringField) + 19 + msgp.Float64Size + 18 + msgp.BoolSize
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
 func (z *TestType) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
@@ -433,6 +593,11 @@ func (z *TestType) DecodeMsg(dc *msgp.Reader) (err error) {
 					z.DefinedBoolSliceField[za0008] = DefinedBool(zb0017)
 				}
 			}
+		case "EmbeddedStruct":
+			err = z.EmbeddedStruct.DecodeMsg(dc)
+			if err != nil {
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -445,9 +610,9 @@ func (z *TestType) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *TestType) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 17
+	// map header, size 18
 	// write "Model"
-	err = en.Append(0xde, 0x0, 0x11, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	err = en.Append(0xde, 0x0, 0x12, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	if err != nil {
 		return
 	}
@@ -647,15 +812,24 @@ func (z *TestType) EncodeMsg(en *msgp.Writer) (err error) {
 			return
 		}
 	}
+	// write "EmbeddedStruct"
+	err = en.Append(0xae, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74)
+	if err != nil {
+		return
+	}
+	err = z.EmbeddedStruct.EncodeMsg(en)
+	if err != nil {
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *TestType) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 17
+	// map header, size 18
 	// string "Model"
-	o = append(o, 0xde, 0x0, 0x11, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
+	o = append(o, 0xde, 0x0, 0x12, 0xa5, 0x4d, 0x6f, 0x64, 0x65, 0x6c)
 	o, err = z.Model.MarshalMsg(o)
 	if err != nil {
 		return
@@ -731,6 +905,12 @@ func (z *TestType) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.AppendArrayHeader(o, uint32(len(z.DefinedBoolSliceField)))
 	for za0008 := range z.DefinedBoolSliceField {
 		o = msgp.AppendBool(o, bool(z.DefinedBoolSliceField[za0008]))
+	}
+	// string "EmbeddedStruct"
+	o = append(o, 0xae, 0x45, 0x6d, 0x62, 0x65, 0x64, 0x64, 0x65, 0x64, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74)
+	o, err = z.EmbeddedStruct.MarshalMsg(o)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -964,6 +1144,11 @@ func (z *TestType) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					z.DefinedBoolSliceField[za0008] = DefinedBool(zb0017)
 				}
 			}
+		case "EmbeddedStruct":
+			bts, err = z.EmbeddedStruct.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -985,6 +1170,6 @@ func (z *TestType) Msgsize() (s int) {
 	for za0006 := range z.DefinedStringSliceField {
 		s += msgp.StringPrefixSize + len(string(z.DefinedStringSliceField[za0006]))
 	}
-	s += 23 + msgp.ArrayHeaderSize + (len(z.DefinedFloatSliceField) * (msgp.Float64Size)) + 22 + msgp.ArrayHeaderSize + (len(z.DefinedBoolSliceField) * (msgp.BoolSize))
+	s += 23 + msgp.ArrayHeaderSize + (len(z.DefinedFloatSliceField) * (msgp.Float64Size)) + 22 + msgp.ArrayHeaderSize + (len(z.DefinedBoolSliceField) * (msgp.BoolSize)) + 15 + z.EmbeddedStruct.Msgsize()
 	return
 }
