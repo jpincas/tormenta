@@ -1,6 +1,7 @@
 package tormentadb_test
 
 import (
+	"context"
 	"testing"
 
 	tormenta "github.com/jpincas/tormenta/tormentadb"
@@ -41,3 +42,24 @@ func Test_Context_Match(t *testing.T) {
 		t.Errorf("Context was not set correctly.  Expecting: %s; Got: %s", sessionID, entity.TriggerString)
 	}
 }
+
+
+func Test_Context_Get(t *testing.T) {
+	db, _ := tormenta.OpenTest("data/tests")
+	defer db.Close()
+
+	savedEntity := types.TestType{}
+	db.Save(&savedEntity)
+
+	entity := types.TestType{}
+	entity.ID = savedEntity.ID
+
+	sessionID := "session1234"
+	ctx := context.WithValue(context.TODO(), "sessionid", sessionID)
+
+	db.GetWithContext(&entity, ctx)
+	if entity.TriggerString != sessionID {
+		t.Errorf("Context was not set correctly.  Expecting: %s; Got: %s", sessionID, entity.TriggerString)
+	}
+}
+

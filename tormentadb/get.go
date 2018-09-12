@@ -19,6 +19,14 @@ func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 	return db.get(entity, context.TODO(), ids...)
 }
 
+// Get retrieves an entity, either according to the ID set on the entity,
+// or using a separately specified ID (optional), this is the same as the above 'Get'
+// function but allows the passing of a non-empty context.
+func (db DB) GetWithContext(entity Tormentable, ctx context.Context, ids ...gouuidv6.UUID) (bool, int, error) {
+	return db.get(entity, ctx, ids...)
+}
+
+
 func (db DB) get(entity Tormentable, ctx context.Context, ids ...gouuidv6.UUID) (bool, int, error) {
 	// start the timer
 	t0 := time.Now()
