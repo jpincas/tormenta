@@ -1,8 +1,6 @@
 package types
 
 import (
-	"context"
-
 	tormenta "github.com/jpincas/tormenta/tormentadb"
 )
 
@@ -56,6 +54,6 @@ type TestType struct {
 	TriggerString string
 }
 
-func (t *TestType) PostGet(ctx context.Context) {
-	t.TriggerString = ctx.Value("sessionid").(string)
+func (t *TestType) PostGet(ctx map[string]interface{}) {
+	t.TriggerString = ctx["sessionid"].(string)
 }

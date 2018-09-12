@@ -1,7 +1,6 @@
 package tormentadb
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -16,10 +15,18 @@ const (
 // Get retrieves an entity, either according to the ID set on the entity,
 // or using a separately specified ID (optional)
 func (db DB) Get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
-	return db.get(entity, ids...)
+	return db.get(entity, make(map[string]interface{}), ids...)
 }
 
-func (db DB) get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
+// Get retrieves an entity, either according to the ID set on the entity,
+// or using a separately specified ID (optional), this is the same as the above 'Get'
+// function but allows the passing of a non-empty context.
+func (db DB) GetWithContext(entity Tormentable, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, int, error) {
+	return db.get(entity, ctx, ids...)
+}
+
+
+func (db DB) get(entity Tormentable, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, int, error) {
 	// start the timer
 	t0 := time.Now()
 
@@ -66,7 +73,7 @@ func (db DB) get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 		// Post Get trigger
 		// This seems to be a duplicate action
 		// so commenting for now
-		// entity.PostGet(context.TODO())
+		// entity.PostGet(ctx)
 
 		return nil
 	})
@@ -81,7 +88,7 @@ func (db DB) get(entity Tormentable, ids ...gouuidv6.UUID) (bool, int, error) {
 	entity.GetCreated()
 
 	// Run the 'postGet' trigger
-	entity.PostGet(context.TODO())
+	entity.PostGet(ctx)
 
 	return true, timerMiliseconds(t0), nil
 }
