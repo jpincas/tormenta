@@ -1,7 +1,6 @@
 package tormentadb_test
 
 import (
-	"context"
 	"testing"
 
 	tormenta "github.com/jpincas/tormenta/tormentadb"
@@ -55,7 +54,8 @@ func Test_Context_Get(t *testing.T) {
 	entity.ID = savedEntity.ID
 
 	sessionID := "session1234"
-	ctx := context.WithValue(context.TODO(), "sessionid", sessionID)
+	ctx := make(map[string]interface{})
+	ctx["sessionid"] =  sessionID
 
 	db.GetWithContext(&entity, ctx)
 	if entity.TriggerString != sessionID {

@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"context"
-
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
@@ -75,7 +73,7 @@ type Query struct {
 	// Is already prepared?
 	isReversePrepared bool
 
-	ctx context.Context
+	ctx map[string]interface{}
 }
 
 func (db DB) newQuery(target interface{}, first bool) *Query {
@@ -100,7 +98,7 @@ func (db DB) newQuery(target interface{}, first bool) *Query {
 	}
 
 	// Start with blank context
-	q.ctx = context.TODO()
+	q.ctx = make(map[string]interface{})
 
 	return q
 }

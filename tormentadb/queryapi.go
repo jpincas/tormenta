@@ -1,7 +1,6 @@
 package tormentadb
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
@@ -88,8 +87,8 @@ func (q *Query) Reverse() *Query {
 	return q
 }
 
-func (q *Query) SetContext(key, val interface{}) *Query {
-	q.ctx = context.WithValue(q.ctx, key, val)
+func (q *Query) SetContext(key string, val interface{}) *Query {
+	q.ctx[key] = val
 	return q
 }
 
