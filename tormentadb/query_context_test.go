@@ -23,6 +23,9 @@ func Test_Context(t *testing.T) {
 }
 
 
+// Essentially the same test as above but on an indexed match query, this failed previously because an indexed
+// search used the Public 'query.Get' function which did not take a context as a parameter and therefore simply
+// passes the empty context to the PostGet trigger.
 func Test_Context_Match(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
