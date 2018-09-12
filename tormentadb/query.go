@@ -307,7 +307,7 @@ func (q *Query) fetchIndexedRecord(item *badger.Item) error {
 	}
 
 	// Get the record
-	ok, _, err := q.db.Get(entity, key)
+	ok, _, err := q.db.get(entity, q.ctx, key)
 	if err != nil {
 		return err
 	}
