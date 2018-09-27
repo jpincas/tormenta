@@ -336,13 +336,10 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 		entity = reflect.New(q.value.Type().Elem()).Interface().(Tormentable)
 	}
 
-	val, err := item.Value()
-	if err != nil {
-		return err
-	}
-
-	_, err = entity.UnmarshalMsg(val)
-	if err != nil {
+	if err := item.Value(
+		func(val []byte) {
+			entity.UnmarshalMsg(val)
+		}); err != nil {
 		return err
 	}
 

@@ -25,7 +25,6 @@ func (db DB) GetWithContext(entity Tormentable, ctx map[string]interface{}, ids 
 	return db.get(entity, ctx, ids...)
 }
 
-
 func (db DB) get(entity Tormentable, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, int, error) {
 	// start the timer
 	t0 := time.Now()
@@ -60,13 +59,13 @@ func (db DB) get(entity Tormentable, ctx map[string]interface{}, ids ...gouuidv6
 			return err
 		}
 
-		val, err := item.Value()
-		if err != nil {
-			return err
-		}
-
-		_, err = entity.UnmarshalMsg(val)
-		if err != nil {
+		if err := item.Value(
+			// Since the change in the Badger API
+			// There doesn't seem to be a good way
+			// to return an unmarshalling error
+			func(val []byte) {
+				entity.UnmarshalMsg(val)
+			}); err != nil {
 			return err
 		}
 
