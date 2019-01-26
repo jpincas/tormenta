@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/jpincas/gouuidv6"
-	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta"
 )
 
-//go:generate msgp
 // Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
 
 // Define your data.

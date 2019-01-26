@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta"
 )
 
 const (

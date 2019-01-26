@@ -7,7 +7,7 @@ import (
 
 	"github.com/jpincas/gouuidv6"
 
-	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta"
 )
 
 // PopulateWithDemoData fills the provided DB with data

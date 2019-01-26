@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/jpincas/gouuidv6"
-	tormenta "github.com/jpincas/tormenta/tormentadb"
+	"github.com/jpincas/tormenta"
 	"github.com/tinylib/msgp/msgp"
 )
 
@@ -14,8 +14,6 @@ func init() {
 	// a freshly-allocated object of that type
 	msgp.RegisterExtension(99, func() msgp.Extension { return new(gouuidv6.UUID) })
 }
-
-//go:generate msgp
 
 // NoModel does not include the Tormenta, so cannot be saved
 type NoModel struct {
