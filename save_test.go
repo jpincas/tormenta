@@ -120,7 +120,7 @@ func Test_SaveMultiple(t *testing.T) {
 }
 
 func Test_SaveMultipleLarge(t *testing.T) {
-	const noOrders = 10000
+	const noOrders = 1000
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
@@ -146,7 +146,10 @@ func Test_SaveMultipleLarge(t *testing.T) {
 
 }
 
-func Test_SaveMultipleMillion(t *testing.T) {
+// Badger can only take a certain number of entities per transaction -
+// which depends on how large the entities are.
+// It should give back an error if we try to save too many
+func Test_SaveMultipleTooLarge(t *testing.T) {
 	const noOrders = 1000000
 
 	db, _ := tormenta.OpenTest("data/tests")
@@ -160,15 +163,20 @@ func Test_SaveMultipleMillion(t *testing.T) {
 		})
 	}
 
-	n, _ := db.Save(ordersToSave...)
-	if n != noOrders {
-		t.Errorf("Testing save large number of entities. Expected %v, got %v", noOrders, n)
+	n, err := db.Save(ordersToSave...)
+	if err == nil {
+		t.Error("Testing save large number of entities.Expecting an error but did not get one")
+
+	}
+
+	if n != 0 {
+		t.Errorf("Testing save large number of entities. Expected %v, got %v", 0, n)
 	}
 
 	var orders []demo.Order
 	n, _, _ = db.Find(&orders).Run()
-	if n != noOrders {
-		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
+	if n != 0 {
+		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", 0, n)
 	}
 
 }

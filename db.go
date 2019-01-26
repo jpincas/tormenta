@@ -5,7 +5,10 @@ import (
 	"os"
 
 	"github.com/dgraph-io/badger"
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // DB is the wrapper of the BadgerDB connection
 type DB struct {
