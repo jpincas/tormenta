@@ -6,7 +6,7 @@ import (
 	"github.com/jpincas/gouuidv6"
 )
 
-type Tormentable interface {
+type Record interface {
 	PreSave() error
 	PostSave()
 	PostGet(ctx map[string]interface{})

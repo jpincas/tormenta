@@ -173,7 +173,7 @@ func KeyRoot(t interface{}) []byte {
 	return k
 }
 
-func KeyRootString(entity Tormentable) string {
+func KeyRootString(entity Record) string {
 	return string(KeyRoot(entity))
 }
 

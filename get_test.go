@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (

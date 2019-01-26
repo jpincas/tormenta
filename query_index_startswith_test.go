@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -10,7 +12,7 @@ import (
 
 func Test_IndexQuery_StartsWith(t *testing.T) {
 	customers := []string{"j", "jo", "jon", "jonathan", "job", "pablo"}
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for _, customer := range customers {
 		orders = append(orders, &demo.Order{

@@ -2,7 +2,6 @@ package tormenta
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -298,11 +297,11 @@ func (q *Query) prepareQuery() {
 func (q *Query) fetchIndexedRecord(item *badger.Item) error {
 	key := extractID(item.Key())
 
-	var entity Tormentable
+	var entity Record
 	if q.first {
-		entity = reflect.New(q.value.Type()).Interface().(Tormentable)
+		entity = reflect.New(q.value.Type()).Interface().(Record)
 	} else {
-		entity = reflect.New(q.value.Type().Elem()).Interface().(Tormentable)
+		entity = reflect.New(q.value.Type().Elem()).Interface().(Record)
 	}
 
 	// Get the record
@@ -330,11 +329,11 @@ func (q *Query) fetchIndexedRecord(item *badger.Item) error {
 
 func (q *Query) fetchRecord(item *badger.Item) error {
 	// Set up the entity for unmarshalling
-	var entity Tormentable
+	var entity Record
 	if q.first {
-		entity = reflect.New(q.value.Type()).Interface().(Tormentable)
+		entity = reflect.New(q.value.Type()).Interface().(Record)
 	} else {
-		entity = reflect.New(q.value.Type().Elem()).Interface().(Tormentable)
+		entity = reflect.New(q.value.Type().Elem()).Interface().(Record)
 	}
 
 	if err := item.Value(

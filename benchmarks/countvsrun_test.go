@@ -6,13 +6,13 @@ import (
 	"github.com/jpincas/tormenta"
 )
 
-const noOrders = 1000000
+const noOrders = 1000
 
 func Benchmark_Count1M(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormenta.Tormentable
+	var ordersToSave []tormenta.Record
 
 	for i := 0; i < noOrders; i++ {
 		ordersToSave = append(ordersToSave, &tormenta.Order{
@@ -37,7 +37,7 @@ func Benchmark_queryRun1M(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormenta.Tormentable
+	var ordersToSave []tormenta.Record
 
 	for i := 0; i < noOrders; i++ {
 		ordersToSave = append(ordersToSave, &tormenta.Order{

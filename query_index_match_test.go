@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -44,7 +46,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 // Test exact matching on strings
 func Test_IndexQuery_Match_String(t *testing.T) {
 	customers := []string{"jon", "jonathan", "pablo"}
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 0; i < 100; i++ {
 		orders = append(orders, &demo.Order{
@@ -111,7 +113,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 }
 
 func Test_IndexQuery_Match_Int(t *testing.T) {
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 0; i < 100; i++ {
 		orders = append(orders, &demo.Order{
@@ -172,7 +174,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 }
 
 func Test_IndexQuery_Match_Float(t *testing.T) {
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 1; i <= 100; i++ {
 		orders = append(orders, &demo.Order{
@@ -234,7 +236,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 	}
 }
 func Test_IndexQuery_Match_DateRange(t *testing.T) {
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
 		order := &demo.Order{
@@ -247,7 +249,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		orders = append(orders, order)
 	}
 
-	tormenta.RandomiseTormentables(orders)
+	tormenta.RandomiseRecords(orders)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()

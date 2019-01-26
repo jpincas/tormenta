@@ -1,6 +1,8 @@
-package types
+package tormenta_test
 
 import (
+	"errors"
+
 	"github.com/jpincas/tormenta"
 )
 
@@ -20,6 +22,10 @@ type EmbeddedStruct struct {
 
 type TestType struct {
 	tormenta.Model
+
+	// For testing triggers
+	IsSaved         bool
+	ShouldBlockSave bool
 
 	// Basic types
 	IntField    int
@@ -52,6 +58,24 @@ type TestType struct {
 	TriggerString string
 }
 
+func (t TestType) PreSave() error {
+	if t.ShouldBlockSave {
+		return errors.New("presave trigger is blocking save")
+	}
+
+	return nil
+}
+
+func (t *TestType) PostSave() {
+	t.IsSaved = true
+}
+
 func (t *TestType) PostGet(ctx map[string]interface{}) {
-	t.TriggerString = ctx["sessionid"].(string)
+	sessionIdFromContext, ok := ctx["sessionid"]
+	if ok {
+		if sessionId, ok := sessionIdFromContext.(string); ok {
+			t.TriggerString = sessionId
+		}
+	}
+
 }

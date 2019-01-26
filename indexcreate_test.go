@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -6,7 +8,6 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/tormenta"
 	"github.com/jpincas/tormenta/demo"
-	"github.com/jpincas/tormenta/types"
 )
 
 // Index Creation
@@ -16,7 +17,7 @@ func Test_CreateIndexKeys(t *testing.T) {
 
 	// Create basic order and save
 	// Orders have an 'index' on Customer field
-	entity := types.TestType{
+	entity := TestType{
 		IntField:                1,
 		StringField:             "test",
 		FloatField:              0.99,

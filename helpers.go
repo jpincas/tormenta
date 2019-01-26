@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func RandomiseTormentables(slice []Tormentable) {
+func RandomiseRecords(slice []Record) {
 	for i := range slice {
 		j := rand.Intn(i + 1)
 		slice[i], slice[j] = slice[j], slice[i]

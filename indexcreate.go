@@ -27,12 +27,12 @@ var (
 	typeString = reflect.TypeOf("")
 )
 
-func index(txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
+func index(txn *badger.Txn, entity Record, keyRoot []byte, id gouuidv6.UUID) error {
 	v := reflect.Indirect(reflect.ValueOf(entity))
 	return indexStruct(v, txn, entity, keyRoot, id)
 }
 
-func indexStruct(v reflect.Value, txn *badger.Txn, entity Tormentable, keyRoot []byte, id gouuidv6.UUID) error {
+func indexStruct(v reflect.Value, txn *badger.Txn, entity Record, keyRoot []byte, id gouuidv6.UUID) error {
 	for i := 0; i < v.NumField(); i++ {
 
 		// If the 'tormenta:noindex' tag is present, don't index

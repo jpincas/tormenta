@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -9,15 +11,15 @@ import (
 
 func TestRandomise(t *testing.T) {
 	// Make a list of 100 orders
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 	for i := 0; i <= 100; i++ {
 		orders = append(orders, &demo.Order{Department: i})
 	}
 
 	// Make a copy of the list before randomising, then randomise
-	ordersBeforeRand := make([]tormenta.Tormentable, len(orders))
+	ordersBeforeRand := make([]tormenta.Record, len(orders))
 	copy(ordersBeforeRand, orders)
-	tormenta.RandomiseTormentables(orders)
+	tormenta.RandomiseRecords(orders)
 
 	// Go through element by element, compare, and set a flag to true if a difference was found
 	foundDiff := false

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 var zeroValueTime time.Time
@@ -15,13 +14,13 @@ func Test_BasicSave(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	// Create basic order and save
-	order := demo.Order{}
-	n, err := db.Save(&order)
+	// Create basic testType and save
+	testType := TestType{}
+	n, err := db.Save(&testType)
 
 	// Test any error
 	if err != nil {
-		t.Errorf("Testing basic record save. Got error %v", err)
+		t.Errorf("Testing basic record save. Got error: %v", err)
 	}
 
 	// Test that 1 record was reported saved
@@ -30,20 +29,20 @@ func Test_BasicSave(t *testing.T) {
 	}
 
 	// Check ID has been set
-	if order.ID.IsNil() {
+	if testType.ID.IsNil() {
 		t.Error("Testing basic record save with create new ID. ID after save is nil")
 	}
 
 	//  Check that updated field was set
-	if order.LastUpdated == zeroValueTime {
+	if testType.LastUpdated == zeroValueTime {
 		t.Error("Testing basic record save. 'Last Upated' is time zero value")
 	}
 
 	// Take a snapshot
-	orderBeforeSecondSave := order
+	testTypeBeforeSecondSave := testType
 
 	// Save again
-	n2, err2 := db.Save(&order)
+	n2, err2 := db.Save(&testType)
 
 	// Basic tests
 	if err2 != nil {
@@ -56,7 +55,7 @@ func Test_BasicSave(t *testing.T) {
 
 	//  Check that updated field was updated:the new value
 	// should obviously be later
-	if !orderBeforeSecondSave.LastUpdated.Before(order.LastUpdated) {
+	if !testTypeBeforeSecondSave.LastUpdated.Before(testType.LastUpdated) {
 		t.Error("Testing 2nd record save. 'Created' time has changed")
 	}
 }
@@ -65,20 +64,20 @@ func Test_SaveTrigger(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	// Create basic order and save
-	order := demo.Order{}
-	db.Save(&order)
+	// Create basic testType and save
+	testType := TestType{}
+	db.Save(&testType)
 
 	// Test postsave trigger
-	if !order.OrderSaved {
-		t.Error("Testing postsave trigger.  OrderSaved should be true but was not")
+	if !testType.IsSaved {
+		t.Error("Testing postsave trigger.  isSaved should be true but was not")
 	}
 
-	// Set up a condition that will cause the order not to save
-	order.ContainsProhibitedItems = true
+	// Set up a condition that will cause the testType not to save
+	testType.ShouldBlockSave = true
 
 	// Test presave trigger
-	n, err := db.Save(&order)
+	n, err := db.Save(&testType)
 	if n != 0 || err == nil {
 		t.Error("Testing presave trigger.  This record should not have saved, but it did and no error returned")
 	}
@@ -89,30 +88,30 @@ func Test_SaveMultiple(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order1 := demo.Order{}
-	order2 := demo.Order{}
+	testType1 := TestType{}
+	testType2 := TestType{}
 
 	// Multiple argument syntax
-	n, _ := db.Save(&order1, &order2)
+	n, _ := db.Save(&testType1, &testType2)
 	if n != 2 {
 		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
 	}
 
-	if order1.ID == order2.ID {
-		t.Errorf("Testing multiple save. 2 orders have same ID")
+	if testType1.ID == testType2.ID {
+		t.Errorf("Testing multiple save. 2 testTypes have same ID")
 	}
 
 	// Spread syntax
 	// A little akward as you can't just pass in the slice of entities
-	// You have to manually translate to []Tormentable
-	var ordersToSave []tormenta.Tormentable
-	orders := []demo.Order{order1, order2}
+	// You have to manually translate to []Record
+	var testTypesToSave []tormenta.Record
+	testTypes := []TestType{testType1, testType2}
 
-	for _, order := range orders {
-		ordersToSave = append(ordersToSave, &order)
+	for _, testType := range testTypes {
+		testTypesToSave = append(testTypesToSave, &testType)
 	}
 
-	n, _ = db.Save(ordersToSave...)
+	n, _ = db.Save(testTypesToSave...)
 	if n != 2 {
 		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
 	}
@@ -120,28 +119,28 @@ func Test_SaveMultiple(t *testing.T) {
 }
 
 func Test_SaveMultipleLarge(t *testing.T) {
-	const noOrders = 1000
+	const notestTypes = 1000
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormenta.Tormentable
+	var testTypesToSave []tormenta.Record
 
-	for i := 0; i < noOrders; i++ {
-		ordersToSave = append(ordersToSave, &demo.Order{
-			Customer: fmt.Sprintf("customer-%v", i),
+	for i := 0; i < notestTypes; i++ {
+		testTypesToSave = append(testTypesToSave, &TestType{
+			StringField: fmt.Sprintf("customer-%v", i),
 		})
 	}
 
-	n, err := db.Save(ordersToSave...)
-	if n != noOrders {
-		t.Errorf("Testing save large number of entities. Expected %v, got %v.  Err: %s", noOrders, n, err)
+	n, err := db.Save(testTypesToSave...)
+	if n != notestTypes {
+		t.Errorf("Testing save large number of entities. Expected %v, got %v.  Err: %s", notestTypes, n, err)
 	}
 
-	var orders []demo.Order
-	n, _, _ = db.Find(&orders).Run()
-	if n != noOrders {
-		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOrders, n)
+	var testTypes []TestType
+	n, _, _ = db.Find(&testTypes).Run()
+	if n != notestTypes {
+		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", notestTypes, n)
 	}
 
 }
@@ -150,20 +149,18 @@ func Test_SaveMultipleLarge(t *testing.T) {
 // which depends on how large the entities are.
 // It should give back an error if we try to save too many
 func Test_SaveMultipleTooLarge(t *testing.T) {
-	const noOrders = 1000000
+	const notestTypes = 1000000
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormenta.Tormentable
+	var testTypesToSave []tormenta.Record
 
-	for i := 0; i < noOrders; i++ {
-		ordersToSave = append(ordersToSave, &demo.Order{
-			Customer: fmt.Sprintf("customer-%v", i),
-		})
+	for i := 0; i < notestTypes; i++ {
+		testTypesToSave = append(testTypesToSave, &TestType{})
 	}
 
-	n, err := db.Save(ordersToSave...)
+	n, err := db.Save(testTypesToSave...)
 	if err == nil {
 		t.Error("Testing save large number of entities.Expecting an error but did not get one")
 
@@ -173,8 +170,8 @@ func Test_SaveMultipleTooLarge(t *testing.T) {
 		t.Errorf("Testing save large number of entities. Expected %v, got %v", 0, n)
 	}
 
-	var orders []demo.Order
-	n, _, _ = db.Find(&orders).Run()
+	var testTypes []TestType
+	n, _, _ = db.Find(&testTypes).Run()
 	if n != 0 {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", 0, n)
 	}

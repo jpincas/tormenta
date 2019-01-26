@@ -78,7 +78,7 @@ func Example_Main() {
 
 	// Date range query
 	// Make some orders with specific creation times
-	var ordersToSave []tormenta.Tormentable
+	var ordersToSave []tormenta.Record
 	dates := []time.Time{
 		// Specific years
 		time.Date(2009, time.January, 1, 1, 0, 0, 0, time.UTC),

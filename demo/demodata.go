@@ -22,7 +22,7 @@ func PopulateWithDemoData(db *tormenta.DB, n int) {
 }
 
 // Orders creates n demo orders
-func Orders(n int) (orders []tormenta.Tormentable) {
+func Orders(n int) (orders []tormenta.Record) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < n; i++ {
@@ -46,7 +46,7 @@ func Orders(n int) (orders []tormenta.Tormentable) {
 }
 
 // Products creates n demo products
-func Products(n int) (products []tormenta.Tormentable) {
+func Products(n int) (products []tormenta.Record) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < n; i++ {

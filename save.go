@@ -1,7 +1,6 @@
 package tormenta
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -13,7 +12,7 @@ const (
 	errNoModel = "Cannot save entity %s - it does not have a tormenta model"
 )
 
-func (db DB) Save(entities ...Tormentable) (int, error) {
+func (db DB) Save(entities ...Record) (int, error) {
 
 	err := db.KV.Update(func(txn *badger.Txn) error {
 		// a, b := batchStartAndEnd(i, batchSize, len(entities))

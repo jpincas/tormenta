@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/types"
 )
 
 func Test_Context(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	entity := types.TestType{}
+	entity := TestType{}
 	db.Save(&entity)
 
 	sessionID := "session1234"
@@ -29,7 +28,7 @@ func Test_Context_Match(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	entity := types.TestType{}
+	entity := TestType{}
 	entity.IntField = 42
 	db.Save(&entity)
 
@@ -45,10 +44,10 @@ func Test_Context_Get(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	savedEntity := types.TestType{}
+	savedEntity := TestType{}
 	db.Save(&savedEntity)
 
-	entity := types.TestType{}
+	entity := TestType{}
 	entity.ID = savedEntity.ID
 
 	sessionID := "session1234"

@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -20,7 +22,7 @@ func getDept(i int) int {
 
 // Test aggregation on an index
 func Test_Aggregation(t *testing.T) {
-	var products []tormenta.Tormentable
+	var products []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
 		product := &demo.Product{
@@ -31,7 +33,7 @@ func Test_Aggregation(t *testing.T) {
 		products = append(products, product)
 	}
 
-	tormenta.RandomiseTormentables(products)
+	tormenta.RandomiseRecords(products)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()

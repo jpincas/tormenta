@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -11,7 +13,7 @@ import (
 
 func Test_BasicQuery_DateRange(t *testing.T) {
 	// Create a list of orders over a date range
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 	dates := []time.Time{
 		// Now
 		time.Now(),

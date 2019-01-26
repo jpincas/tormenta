@@ -1,3 +1,5 @@
+// +build ignore
+
 package tormenta_test
 
 import (
@@ -15,7 +17,7 @@ import (
 func Test_IndexQuery_Range(t *testing.T) {
 	// Set up 100 orders with increasing department, customer and shipping fee
 	// and save
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 0; i < 100; i++ {
 		orders = append(orders, &demo.Order{
@@ -28,7 +30,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 	// Randomise order before saving,
 	// to ensure save order is not affecting retrieval
 	// in some roundabout way
-	tormenta.RandomiseTormentables(orders)
+	tormenta.RandomiseRecords(orders)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
@@ -158,7 +160,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 // Test index with multiple coinciding values
 func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
 		order := &demo.Order{
@@ -168,7 +170,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 		orders = append(orders, order)
 	}
 
-	tormenta.RandomiseTormentables(orders)
+	tormenta.RandomiseRecords(orders)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
@@ -222,7 +224,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 // Test index queries augmented with a date range
 func Test_IndexQuery_Range_DateRange(t *testing.T) {
-	var orders []tormenta.Tormentable
+	var orders []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
 		order := &demo.Order{
@@ -235,7 +237,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 		orders = append(orders, order)
 	}
 
-	tormenta.RandomiseTormentables(orders)
+	tormenta.RandomiseRecords(orders)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
