@@ -1,5 +1,3 @@
-// +build ignore
-
 package tormenta_test
 
 import (
@@ -7,22 +5,21 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 func Test_IndexQuery_StartsWith(t *testing.T) {
 	customers := []string{"j", "jo", "jon", "jonathan", "job", "pablo"}
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for _, customer := range customers {
-		orders = append(orders, &demo.Order{
-			Customer: customer,
+		tts = append(tts, &TestType{
+			StringField: customer,
 		})
 	}
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName      string
@@ -52,9 +49,9 @@ func Test_IndexQuery_StartsWith(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []demo.Order{}
+		results := []TestType{}
 
-		q := db.Find(&results).StartsWith("customer", testCase.startsWith)
+		q := db.Find(&results).StartsWith("stringfield", testCase.startsWith)
 		if testCase.reverse {
 			q.Reverse()
 		}

@@ -1,5 +1,3 @@
-// +build ignore
-
 package tormenta_test
 
 import (
@@ -9,21 +7,20 @@ import (
 
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 // Simple test of bool indexing
 func Test_IndexQuery_Match_Bool(t *testing.T) {
-	orderFalse := demo.Order{}
-	orderTrue := demo.Order{HasShipped: true}
-	orderTrue2 := demo.Order{HasShipped: true}
+	ttFalse := TestType{}
+	ttTrue := TestType{BoolField: true}
+	ttTrue2 := TestType{BoolField: true}
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(&orderFalse, &orderTrue, &orderTrue2)
+	db.Save(&ttFalse, &ttTrue, &ttTrue2)
 
-	results := []demo.Order{}
+	results := []TestType{}
 	// Test true
-	n, _, err := db.Find(&results).Match("hasshipped", true).Run()
+	n, _, err := db.Find(&results).Match("boolfield", true).Run()
 	if err != nil {
 		t.Error("Testing basic querying - got error")
 	}
@@ -33,7 +30,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 	}
 
 	// Test false + count
-	c, _, err := db.Find(&results).Match("hasshipped", false).Count()
+	c, _, err := db.Find(&results).Match("boolfield", false).Count()
 	if err != nil {
 		t.Error("Testing basic querying - got error")
 	}
@@ -46,17 +43,17 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 // Test exact matching on strings
 func Test_IndexQuery_Match_String(t *testing.T) {
 	customers := []string{"jon", "jonathan", "pablo"}
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 0; i < 100; i++ {
-		orders = append(orders, &demo.Order{
-			Customer: customers[i%len(customers)],
+		tts = append(tts, &TestType{
+			StringField: customers[i%len(customers)],
 		})
 	}
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName string
@@ -76,10 +73,10 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []demo.Order{}
+		results := []TestType{}
 
 		// Forwards
-		q := db.Find(&results).Match("customer", testCase.match)
+		q := db.Find(&results).Match("stringfield", testCase.match)
 		n, _, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -95,7 +92,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 		}
 
 		// Reverse
-		q = db.Find(&results).Match("customer", testCase.match).Reverse()
+		q = db.Find(&results).Match("stringfield", testCase.match).Reverse()
 		rn, _, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -113,17 +110,17 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 }
 
 func Test_IndexQuery_Match_Int(t *testing.T) {
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 0; i < 100; i++ {
-		orders = append(orders, &demo.Order{
-			Department: i % 10,
+		tts = append(tts, &TestType{
+			IntField: i % 10,
 		})
 	}
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName      string
@@ -137,10 +134,10 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []demo.Order{}
+		results := []TestType{}
 
 		// Forwards
-		q := db.Find(&results).Match("department", testCase.match)
+		q := db.Find(&results).Match("intfield", testCase.match)
 		n, _, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -174,17 +171,17 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 }
 
 func Test_IndexQuery_Match_Float(t *testing.T) {
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 1; i <= 100; i++ {
-		orders = append(orders, &demo.Order{
-			ShippingFee: float64(i) / float64(10),
+		tts = append(tts, &TestType{
+			FloatField: float64(i) / float64(10),
 		})
 	}
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName      string
@@ -200,10 +197,10 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []demo.Order{}
+		results := []TestType{}
 
 		// Forwards
-		q := db.Find(&results).Match("shippingfee", testCase.match)
+		q := db.Find(&results).Match("floatfield", testCase.match)
 		n, _, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -236,24 +233,24 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 	}
 }
 func Test_IndexQuery_Match_DateRange(t *testing.T) {
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		order := &demo.Order{
+		tt := &TestType{
 			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
 			},
-			Department: getDept(i),
+			IntField: getDept(i),
 		}
 
-		orders = append(orders, order)
+		tts = append(tts, tt)
 	}
 
-	tormenta.RandomiseRecords(orders)
+	tormenta.RandomiseRecords(tts)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName        string
@@ -274,8 +271,8 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []demo.Order{}
-		query := db.Find(&rangequeryResults).Match("department", testCase.indexRangeStart)
+		rangequeryResults := []TestType{}
+		query := db.Find(&rangequeryResults).Match("intfield", testCase.indexRangeStart)
 
 		if testCase.addFrom {
 			query = query.From(testCase.from)
@@ -292,7 +289,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		}
 
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Backwards
@@ -302,7 +299,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		}
 
 		if rn != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
 		}
 
 	}

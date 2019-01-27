@@ -6,30 +6,30 @@ import (
 	"github.com/jpincas/tormenta"
 )
 
-const noOrders = 1000
+const notts = 1000
 
 func Benchmark_Count1M(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormenta.Record
+	var ttsToSave []tormenta.Record
 
-	for i := 0; i < noOrders; i++ {
-		ordersToSave = append(ordersToSave, &tormenta.Order{
+	for i := 0; i < notts; i++ {
+		ttsToSave = append(ttsToSave, &tormenta.Order{
 			Customer: i,
 		})
 	}
 
-	db.Save(ordersToSave...)
+	db.Save(ttsToSave...)
 
-	var orders []tormenta.Order
+	var tts []tormenta.Order
 
 	// Reset the timer
 	b.ResetTimer()
 
 	// Run the aggregation
 	for i := 0; i < b.N; i++ {
-		db.query(&orders).Count()
+		db.query(&tts).Count()
 	}
 }
 
@@ -37,23 +37,23 @@ func Benchmark_queryRun1M(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	var ordersToSave []tormenta.Record
+	var ttsToSave []tormenta.Record
 
-	for i := 0; i < noOrders; i++ {
-		ordersToSave = append(ordersToSave, &tormenta.Order{
+	for i := 0; i < notts; i++ {
+		ttsToSave = append(ttsToSave, &tormenta.Order{
 			Customer: i,
 		})
 	}
 
-	db.Save(ordersToSave...)
+	db.Save(ttsToSave...)
 
-	var orders []tormenta.Order
+	var tts []tormenta.Order
 
 	// Reset the timer
 	b.ResetTimer()
 
 	// Run the aggregation
 	for i := 0; i < b.N; i++ {
-		db.query(&orders).Run()
+		db.query(&tts).Run()
 	}
 }

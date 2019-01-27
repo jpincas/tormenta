@@ -1,31 +1,28 @@
-// +build ignore
-
 package tormenta_test
 
 import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 func Test_Delete(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order := demo.Order{}
+	tt := TestType{}
 
-	db.Save(&order)
+	db.Save(&tt)
 
-	// Test the the order has been saved
-	retrievedOrder := demo.Order{}
-	ok, _, _ := db.Get(&retrievedOrder, order.ID)
-	if !ok || order.ID != retrievedOrder.ID {
-		t.Error("Testing delete. Test order not saved correctly")
+	// Test the the tt has been saved
+	retrievedtt := TestType{}
+	ok, _, _ := db.Get(&retrievedtt, tt.ID)
+	if !ok || tt.ID != retrievedtt.ID {
+		t.Error("Testing delete. Test tt not saved correctly")
 	}
 
 	// Delete
-	n, err := db.Delete("order", order.ID)
+	n, err := db.Delete("testtype", tt.ID)
 
 	if err != nil {
 		t.Errorf("Testing delete. Got error %v", err)
@@ -36,9 +33,9 @@ func Test_Delete(t *testing.T) {
 	}
 
 	// Attempt to retrieve again
-	ok, _, _ = db.Get(&retrievedOrder, order.ID)
+	ok, _, _ = db.Get(&retrievedtt, tt.ID)
 	if ok {
-		t.Error("Testing delete. Supposedly deleted order found on 2nd get")
+		t.Error("Testing delete. Supposedly deleted tt found on 2nd get")
 	}
 }
 
@@ -46,14 +43,14 @@ func Test_Delete_Multiple(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	order1 := demo.Order{}
-	order2 := demo.Order{}
-	order3 := demo.Order{}
+	tt1 := TestType{}
+	tt2 := TestType{}
+	tt3 := TestType{}
 
-	db.Save(&order1, &order2, &order3)
+	db.Save(&tt1, &tt2, &tt3)
 
 	// Delete
-	n, err := db.Delete("order", order1.ID, order2.ID, order3.ID)
+	n, err := db.Delete("testtype", tt1.ID, tt2.ID, tt3.ID)
 
 	if err != nil {
 		t.Errorf("Testing multiple delete. Got error %v", err)
@@ -63,9 +60,9 @@ func Test_Delete_Multiple(t *testing.T) {
 		t.Errorf("Testing multiple delete. Expected n = %v, got n = %v", 3, n)
 	}
 
-	var orders []demo.Order
-	c, _, _ := db.Find(&orders).Count()
+	var tts []TestType
+	c, _, _ := db.Find(&tts).Count()
 	if c > 0 {
-		t.Errorf("Testing delete. Should have found any orders, but found %v", c)
+		t.Errorf("Testing delete. Should have found any tts, but found %v", c)
 	}
 }

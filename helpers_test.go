@@ -1,30 +1,27 @@
-// +build ignore
-
 package tormenta_test
 
 import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 func TestRandomise(t *testing.T) {
-	// Make a list of 100 orders
-	var orders []tormenta.Record
+	// Make a list of 100 tts
+	var tts []tormenta.Record
 	for i := 0; i <= 100; i++ {
-		orders = append(orders, &demo.Order{Department: i})
+		tts = append(tts, &TestType{IntField: i})
 	}
 
 	// Make a copy of the list before randomising, then randomise
-	ordersBeforeRand := make([]tormenta.Record, len(orders))
-	copy(ordersBeforeRand, orders)
-	tormenta.RandomiseRecords(orders)
+	ttsBeforeRand := make([]tormenta.Record, len(tts))
+	copy(ttsBeforeRand, tts)
+	tormenta.RandomiseRecords(tts)
 
 	// Go through element by element, compare, and set a flag to true if a difference was found
 	foundDiff := false
-	for i := range orders {
-		if orders[i].(*demo.Order).Department != ordersBeforeRand[i].(*demo.Order).Department {
+	for i := range tts {
+		if tts[i].(*TestType).IntField != ttsBeforeRand[i].(*TestType).IntField {
 			foundDiff = true
 		}
 	}

@@ -23,15 +23,12 @@ type EmbeddedStruct struct {
 type TestType struct {
 	tormenta.Model
 
-	// For testing triggers
-	IsSaved         bool
-	ShouldBlockSave bool
-
 	// Basic types
-	IntField    int
-	StringField string
-	FloatField  float64
-	BoolField   bool
+	IntField          int
+	StringField       string
+	MultipleWordField string `tormenta:"split"`
+	FloatField        float64
+	BoolField         bool
 
 	// Slice types
 	IntSliceField    []int
@@ -55,7 +52,10 @@ type TestType struct {
 	EmbeddedStruct
 
 	// Fields for trigger testing
-	TriggerString string
+	TriggerString   string
+	Retrieved       bool
+	IsSaved         bool
+	ShouldBlockSave bool
 }
 
 func (t TestType) PreSave() error {
@@ -78,4 +78,14 @@ func (t *TestType) PostGet(ctx map[string]interface{}) {
 		}
 	}
 
+	t.Retrieved = true
+}
+
+type TestType2 struct {
+	tormenta.Model
+
+	IntField    int
+	StringField string
+	FloatField  float64
+	BoolField   bool
 }

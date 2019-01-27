@@ -74,3 +74,23 @@ func (db DB) Save(entities ...Record) (int, error) {
 
 	return len(entities), nil
 }
+
+// The regular 'Save' function is atomic - if there is any error, the whole thing
+// gets rolled back.  If you don't care about atomicity, you can use SaveIndividually
+
+// SaveIndividually discards atomicity and continues saving entities even if one fails.
+// The total count of saved entities is returned.
+// Badger transactions have a maximum size, so the regular 'Save' function is best used
+// for a small number of entities.  This function could be used to save 1 million entities
+// if required
+func (db DB) SaveIndividually(entities ...Record) (counter int, lastErr error) {
+	for _, entity := range entities {
+		if _, err := db.Save(entity); err != nil {
+			lastErr = err
+		} else {
+			counter++
+		}
+	}
+
+	return counter, lastErr
+}

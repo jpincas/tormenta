@@ -30,7 +30,7 @@ type Query struct {
 	// offsetCounter used to track the offset
 	offset, offsetCounter int
 
-	// Reverse order of searching and returned results
+	// Reverse tt of searching and returned results
 	reverse bool
 
 	// Is this a 'first only' search

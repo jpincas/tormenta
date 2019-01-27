@@ -7,7 +7,6 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 // Index Creation
@@ -15,8 +14,8 @@ func Test_CreateIndexKeys(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	// Create basic order and save
-	// Orders have an 'index' on Customer field
+	// Create basic tt and save
+	// tts have an 'index' on Customer field
 	entity := TestType{
 		IntField:                1,
 		StringField:             "test",
@@ -97,23 +96,23 @@ func Test_CreateIndexKeys_Split(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
 
-	product := demo.Product{
-		Name: "the coolest product in the world",
+	tt := TestType{
+		StringField: "the coolest tt in the world",
 	}
 
-	db.Save(&product)
+	db.Save(&tt)
 
 	// content words
 	expectedKeys := [][]byte{
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "coolest"),
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "product"),
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "world"),
+		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "coolest"),
+		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "tt"),
+		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "world"),
 	}
 
 	// non content words
 	nonExpectedKeys := [][]byte{
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "the"),
-		tormenta.IndexKey([]byte("product"), product.ID, "name", "in"),
+		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "the"),
+		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "in"),
 	}
 
 	db.KV.View(func(txn *badger.Txn) error {

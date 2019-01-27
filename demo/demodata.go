@@ -13,20 +13,20 @@ import (
 // PopulateWithDemoData fills the provided DB with data
 func PopulateWithDemoData(db *tormenta.DB, n int) {
 	// Generate demo data
-	orders := Orders(n)
+	tts := tts(n)
 	products := Products(n)
 
 	// Save it
-	db.Save(orders...)
+	db.Save(tts...)
 	db.Save(products...)
 }
 
-// Orders creates n demo orders
-func Orders(n int) (orders []tormenta.Record) {
+// tts creates n demo tts
+func tts(n int) (tts []tormenta.Record) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < n; i++ {
-		order := Order{
+		tt := Order{
 			Model: tormenta.Model{
 				// Random creation date from now to a year ago
 				ID: gouuidv6.NewFromTime(
@@ -39,7 +39,7 @@ func Orders(n int) (orders []tormenta.Record) {
 			ContainsProhibitedItems: false,
 		}
 
-		orders = append(orders, &order)
+		tts = append(tts, &tt)
 	}
 
 	return

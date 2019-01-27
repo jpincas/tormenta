@@ -79,9 +79,9 @@ func (k key) shouldAppendID() bool {
 	return false
 }
 
-// c:orders:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
-// i:orders:department:3
-// i:orders:department:3:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
+// c:tts:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
+// i:tts:department:3
+// i:tts:department:3:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
 
 func (k key) bytes() []byte {
 	// Use either content/index key prefix

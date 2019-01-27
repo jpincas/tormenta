@@ -81,7 +81,7 @@ func (q *Query) Offset(n int) *Query {
 	return q
 }
 
-// Reverse reverses the order of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
+// Reverse reverses the tt of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
 func (q *Query) Reverse() *Query {
 	q.reverse = true
 	return q

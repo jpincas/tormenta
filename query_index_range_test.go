@@ -1,5 +1,3 @@
-// +build ignore
-
 package tormenta_test
 
 import (
@@ -10,31 +8,30 @@ import (
 
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
-	"github.com/jpincas/tormenta/demo"
 )
 
 // Test range queries across different types
 func Test_IndexQuery_Range(t *testing.T) {
-	// Set up 100 orders with increasing department, customer and shipping fee
+	// Set up 100 tts with increasing department, customer and shipping fee
 	// and save
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 0; i < 100; i++ {
-		orders = append(orders, &demo.Order{
-			Department:  i + 1,
-			Customer:    fmt.Sprintf("customer-%v", string((i%26)+65)),
-			ShippingFee: float64(i) + 0.99,
+		tts = append(tts, &TestType{
+			IntField:    i + 1,
+			StringField: fmt.Sprintf("customer-%v", string((i%26)+65)),
+			FloatField:  float64(i) + 0.99,
 		})
 	}
 
-	// Randomise order before saving,
-	// to ensure save order is not affecting retrieval
+	// Randomise tt before saving,
+	// to ensure save tt is not affecting retrieval
 	// in some roundabout way
-	tormenta.RandomiseRecords(orders)
+	tormenta.RandomiseRecords(tts)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName      string
@@ -50,36 +47,36 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"non existent index", "notanindex", 1, 2, 0, nil},
 
 		// Int
-		{"integer - no range", "department", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"integer - from 1", "department", 1, nil, 100, nil},
-		{"integer - from 2", "department", 2, nil, 99, nil},
-		{"integer - from 50", "department", 50, nil, 51, nil},
-		{"integer - 1 to 2", "department", 1, 2, 2, nil},
-		{"integer - 50 to 59", "department", 50, 59, 10, nil},
-		{"integer - 1 to 100", "department", 1, 100, 100, nil},
-		{"integer - to 50", "department", nil, 50, 50, nil},
+		{"integer - no range", "intfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"integer - from 1", "intfield", 1, nil, 100, nil},
+		{"integer - from 2", "intfield", 2, nil, 99, nil},
+		{"integer - from 50", "intfield", 50, nil, 51, nil},
+		{"integer - 1 to 2", "intfield", 1, 2, 2, nil},
+		{"integer - 50 to 59", "intfield", 50, 59, 10, nil},
+		{"integer - 1 to 100", "intfield", 1, 100, 100, nil},
+		{"integer - to 50", "intfield", nil, 50, 50, nil},
 
 		// String
-		{"string - no range", "customer", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"string", "customer", "customer", nil, 100, nil},
-		{"string - from A", "customer", "customer-A", nil, 100, nil},
-		{"string - from B", "customer", "customer-B", nil, 96, nil},
-		{"string - from Z", "customer", "customer-Z", nil, 3, nil},
-		{"string - from A to Z", "customer", "customer-A", "customer-Z", 100, nil},
-		{"string - to Z", "customer", nil, "customer-Z", 100, nil},
+		{"string - no range", "stringfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"string", "stringfield", "customer", nil, 100, nil},
+		{"string - from A", "stringfield", "customer-A", nil, 100, nil},
+		{"string - from B", "stringfield", "customer-B", nil, 96, nil},
+		{"string - from Z", "stringfield", "customer-Z", nil, 3, nil},
+		{"string - from A to Z", "stringfield", "customer-A", "customer-Z", 100, nil},
+		{"string - to Z", "stringfield", nil, "customer-Z", 100, nil},
 
 		// Float
-		{"float - no range", "shippingfee", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"float", "shippingfee", 0, nil, 100, nil},
-		{"float", "shippingfee", 0.99, nil, 100, nil},
-		{"float - from 1.99", "shippingfee", 1.99, nil, 99, nil},
-		{"float - from 50.99", "shippingfee", 50.99, nil, 50, nil},
-		{"float - from 99.99", "shippingfee", 99.99, nil, 1, nil},
-		{"float - to 20.99", "shippingfee", nil, 20.99, 21, nil},
+		{"float - no range", "floatfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"float", "floatfield", 0, nil, 100, nil},
+		{"float", "floatfield", 0.99, nil, 100, nil},
+		{"float - from 1.99", "floatfield", 1.99, nil, 99, nil},
+		{"float - from 50.99", "floatfield", 50.99, nil, 50, nil},
+		{"float - from 99.99", "floatfield", 99.99, nil, 1, nil},
+		{"float - to 20.99", "floatfield", nil, 20.99, 21, nil},
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []demo.Order{}
+		rangequeryResults := []TestType{}
 		q := db.
 			Find(&rangequeryResults).
 			Range(testCase.indexName, testCase.start, testCase.end)
@@ -97,24 +94,24 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Check each member of the results for nil ID, customer and shipping fee
-		for i, order := range rangequeryResults {
-			if order.ID.IsNil() {
+		for i, tt := range rangequeryResults {
+			if tt.ID.IsNil() {
 				t.Errorf("Testing %s.  Order no %v has nil ID", testCase.testName, i)
 			}
 
-			if order.Department == 0 {
+			if tt.IntField == 0 {
 				t.Errorf("Testing %s.  Order no %v has 0 department", testCase.testName, i)
 			}
 
-			if order.Customer == "" {
+			if tt.StringField == "" {
 				t.Errorf("Testing %s.  Order no %v has blank customer", testCase.testName, i)
 			}
 
-			if order.ShippingFee == 0.0 {
+			if tt.FloatField == 0.0 {
 				t.Errorf("Testing %s.  Order no %v has 0 shipping fee", testCase.testName, i)
 			}
 		}
@@ -132,24 +129,24 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
 		}
 
 		// Check each member of the results for nil ID, customer and shipping fee
-		for i, order := range rangequeryResults {
-			if order.ID.IsNil() {
+		for i, tt := range rangequeryResults {
+			if tt.ID.IsNil() {
 				t.Errorf("Testing %s.  Order no %v has nil ID", testCase.testName, i)
 			}
 
-			if order.Department == 0 {
+			if tt.IntField == 0 {
 				t.Errorf("Testing %s.  Order no %v has 0 department", testCase.testName, i)
 			}
 
-			if order.Customer == "" {
+			if tt.StringField == "" {
 				t.Errorf("Testing %s.  Order no %v has blank customer", testCase.testName, i)
 			}
 
-			if order.ShippingFee == 0.0 {
+			if tt.FloatField == 0.0 {
 				t.Errorf("Testing %s.  Order no %v has 0 shipping fee", testCase.testName, i)
 			}
 		}
@@ -160,21 +157,21 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 // Test index with multiple coinciding values
 func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		order := &demo.Order{
-			Department: getDept(i),
+		tt := &TestType{
+			IntField: getDept(i),
 		}
 
-		orders = append(orders, order)
+		tts = append(tts, tt)
 	}
 
-	tormenta.RandomiseRecords(orders)
+	tormenta.RandomiseRecords(tts)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName   string
@@ -188,10 +185,10 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Forwards
-		rangequeryResults := []demo.Order{}
+		rangequeryResults := []TestType{}
 		n, _, err := db.
 			Find(&rangequeryResults).
-			Range("department", testCase.start, testCase.end).
+			Range("intfield", testCase.start, testCase.end).
 			Run()
 
 		if err != nil {
@@ -200,14 +197,14 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Reverse
-		rangequeryResults = []demo.Order{}
+		rangequeryResults = []TestType{}
 		rn, _, err := db.
 			Find(&rangequeryResults).
-			Range("department", testCase.start, testCase.end).
+			Range("intfield", testCase.start, testCase.end).
 			Reverse().
 			Run()
 
@@ -217,31 +214,31 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
 		}
 	}
 }
 
 // Test index queries augmented with a date range
 func Test_IndexQuery_Range_DateRange(t *testing.T) {
-	var orders []tormenta.Record
+	var tts []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		order := &demo.Order{
+		tt := &TestType{
 			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
 			},
-			Department: getDept(i),
+			IntField: getDept(i),
 		}
 
-		orders = append(orders, order)
+		tts = append(tts, tt)
 	}
 
-	tormenta.RandomiseRecords(orders)
+	tormenta.RandomiseRecords(tts)
 
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
-	db.Save(orders...)
+	db.Save(tts...)
 
 	testCases := []struct {
 		testName        string
@@ -263,8 +260,8 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []demo.Order{}
-		query := db.Find(&rangequeryResults).Range("department", testCase.indexRangeStart, testCase.indexRangeEnd)
+		rangequeryResults := []TestType{}
+		query := db.Find(&rangequeryResults).Range("intfield", testCase.indexRangeStart, testCase.indexRangeEnd)
 
 		if testCase.addFrom {
 			query = query.From(testCase.from)
@@ -281,7 +278,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 		}
 
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Reverse
@@ -292,7 +289,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number orders retrieved). Expected %v - got %v", testCase.testName, testCase.expected, nr)
+			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, nr)
 		}
 
 	}

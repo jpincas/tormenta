@@ -60,6 +60,26 @@ func Test_BasicSave(t *testing.T) {
 	}
 }
 
+func Test_SaveDifferentTypes(t *testing.T) {
+	db, _ := tormenta.OpenTest("data/tests")
+	defer db.Close()
+
+	// Create basic testType and save
+	testType := TestType{}
+	testType2 := TestType2{}
+	n, err := db.Save(&testType, &testType2)
+
+	// Test any error
+	if err != nil {
+		t.Errorf("Testing different records save. Got error: %v", err)
+	}
+
+	// Test that 2 records was reported saved
+	if n != 2 {
+		t.Errorf("Testing basic record save. Expected 1 record saved, got %v", n)
+	}
+}
+
 func Test_SaveTrigger(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests")
 	defer db.Close()
@@ -133,6 +153,10 @@ func Test_SaveMultipleLarge(t *testing.T) {
 	}
 
 	n, err := db.Save(testTypesToSave...)
+	if err != nil {
+		t.Errorf("Testing save large number of entities. Got error: %s", err)
+	}
+
 	if n != notestTypes {
 		t.Errorf("Testing save large number of entities. Expected %v, got %v.  Err: %s", notestTypes, n, err)
 	}
@@ -176,4 +200,26 @@ func Test_SaveMultipleTooLarge(t *testing.T) {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", 0, n)
 	}
 
+}
+
+func Test_SaveMultipleLargeIndividually(t *testing.T) {
+	const notestTypes = 10000
+
+	db, _ := tormenta.OpenTest("data/tests")
+	defer db.Close()
+
+	var testTypesToSave []tormenta.Record
+
+	for i := 0; i < notestTypes; i++ {
+		testTypesToSave = append(testTypesToSave, &TestType{})
+	}
+
+	n, err := db.SaveIndividually(testTypesToSave...)
+	if err != nil {
+		t.Errorf("Testing save large number of entities individually. Got error: %s", err)
+	}
+
+	if n != notestTypes {
+		t.Errorf("Testing save large number of entities. Expected %v, got %v", 0, n)
+	}
 }
