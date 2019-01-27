@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	ErrNoID       = "Cannot get entity %s - ID is nil"
-	ErrTooManyIDs = "You should only specify 1 ID for a get request"
+	ErrNoID = "Cannot get entity %s - ID is nil"
 )
 
 var noCTX = make(map[string]interface{})
@@ -27,26 +26,24 @@ func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...go
 }
 
 func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
-	// Get the key root and cache the value
-	_, value := entityTypeAndValue(target)
-
-	// Set up list results placeholder
-	results := reflect.Indirect(reflect.ValueOf(target))
+	records := newResultsArray(target)
 
 	var counter int
 	for _, id := range ids {
-		var entity Record
-		entity = reflect.New(value.Type().Elem()).Interface().(Record)
+		// Its inefficient creating a new entity target for the result
+		// on every loop, but we can't just create a single one
+		// and reuse it, because there would be risk of data from 'previous'
+		// entities 'infecting' later ones if a certain field wasn't present
+		// in that later entity, but was in the previous one.
+		// Unlikely if the all JSON is saved with the schema, but I don't
+		// think we can risk it
+		record := newRecord(target)
 
-		// For an error, we'll bail,
-		// but if we simply can't find the record, we'll continue
-		if found, err := db.get(entity, noCTX, id); err != nil {
+		// For an error, we'll bail, if we simply can't find the record, we'll continue
+		if found, err := db.get(record, noCTX, id); err != nil {
 			return counter, err
 		} else if found {
-			results = reflect.Append(
-				results,
-				reflect.Indirect(reflect.ValueOf(entity)),
-			)
+			records = reflect.Append(records, recordValue(record))
 			counter++
 		}
 	}
