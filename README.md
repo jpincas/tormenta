@@ -1,16 +1,27 @@
+## Update Jan 2019
+
+I've refactored the repo and remove dthe REST layer and GUI for now.  Going forward, I'll put those in separate repos so that this one is just for the core Tormenta persistence engine, which is currently my priority.  The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).
+
+Another big change is the move away from MessagePack in favour of good old JSON.  Although this will worsen performance, it means no more codegen, so easier to get started, plus it means I can do some pretty cool 'pass straight through to JSON' stuff which might be useful if you're building a JSON api and don't need to do any intermediate processing.
+
+Still WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon.
+
+Currently working on improving the query engine to at least be able to run multiple 'where' clause queries.
+
+Any questions, hit me up.
+
 # TormentaDB (WIP)
 
 Tormenta is a functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some limited data querying capabilities and ORM-like features.  It uses date-tted IDs so is particuarly good for data sets that are natually chronological, like financial transactions, soical media posts etc. Powered by:
 
 - [BadgerDB](https://github.com/dgraph-io/badger)
-- [TinyLib MessagePack](https://github.com/tinylib/msgp)
 - ['V6' UUIDs](https://github.com/bradleypeabody/gouuidv6)
  
 and greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ## Features
 
-- Fast serialisation/de-serialisation with MessagePack
+- Uses good old JSON for persistence (using `jsoniter` for better performance that the stdlib)
 - Date-tted unique IDs - get date range querying and created at field 'for free'
 - Simple basic API for saving and retrieving your objects
 - Automatic secondary indexing on all fields (can be skipped)
@@ -26,8 +37,6 @@ and greatly inspired by [Storm](https://github.com/asdine/storm).
 - Add `tormenta.Model` to structs you want to persist 
 - Add `tormenta:"noindex"` tag to fields you want to exclude from secondary indexing
 - Add `tormenta:"split"` tag to string fields where you'd like to index each word separately instead of the the whole sentence
-- Install [TinyLib MessagePack codegen tool](https://github.com/tinylib/msgp)
-- Add ` ` to the top of your type definition files and run `go generate` whenever you change your structs.
 - Open a DB connection with `db, err := tormenta.Open("mydatadirectory")` (dont forget to `defer db.Close()`). For auto-deleting test DB, use `tormenta.OpenTest`
 - Save a single entity with `db.Save(&MyEntity)` or multiple entities with `db.Save(&MyEntity1, &MyEntity2)`.
 - Get a single entity by ID with `db.Get(&MyEntity, entityID)`.
@@ -49,9 +58,6 @@ import (
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
 )
-
- 
-// Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
 
 // Define your data.
 // Include tormenta.Model to get date tted IDs, last updated field etc
