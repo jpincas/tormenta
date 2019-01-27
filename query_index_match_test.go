@@ -7,18 +7,19 @@ import (
 
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 // Simple test of bool indexing
 func Test_IndexQuery_Match_Bool(t *testing.T) {
-	ttFalse := TestType{}
-	ttTrue := TestType{BoolField: true}
-	ttTrue2 := TestType{BoolField: true}
-	db, _ := tormenta.OpenTest("data/tests")
+	ttFalse := testtypes.FullStruct{}
+	ttTrue := testtypes.FullStruct{BoolField: true}
+	ttTrue2 := testtypes.FullStruct{BoolField: true}
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 	db.Save(&ttFalse, &ttTrue, &ttTrue2)
 
-	results := []TestType{}
+	results := []testtypes.FullStruct{}
 	// Test true
 	n, _, err := db.Find(&results).Match("boolfield", true).Run()
 	if err != nil {
@@ -43,17 +44,17 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 // Test exact matching on strings
 func Test_IndexQuery_Match_String(t *testing.T) {
 	customers := []string{"jon", "jonathan", "pablo"}
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 0; i < 100; i++ {
-		tts = append(tts, &TestType{
+		fullStructs = append(fullStructs, &testtypes.FullStruct{
 			StringField: customers[i%len(customers)],
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName string
@@ -73,7 +74,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []TestType{}
+		results := []testtypes.FullStruct{}
 
 		// Forwards
 		q := db.Find(&results).Match("stringfield", testCase.match)
@@ -110,17 +111,17 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 }
 
 func Test_IndexQuery_Match_Int(t *testing.T) {
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 0; i < 100; i++ {
-		tts = append(tts, &TestType{
+		fullStructs = append(fullStructs, &testtypes.FullStruct{
 			IntField: i % 10,
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName      string
@@ -134,7 +135,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []TestType{}
+		results := []testtypes.FullStruct{}
 
 		// Forwards
 		q := db.Find(&results).Match("intfield", testCase.match)
@@ -171,17 +172,17 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 }
 
 func Test_IndexQuery_Match_Float(t *testing.T) {
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 1; i <= 100; i++ {
-		tts = append(tts, &TestType{
+		fullStructs = append(fullStructs, &testtypes.FullStruct{
 			FloatField: float64(i) / float64(10),
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName      string
@@ -197,7 +198,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []TestType{}
+		results := []testtypes.FullStruct{}
 
 		// Forwards
 		q := db.Find(&results).Match("floatfield", testCase.match)
@@ -233,24 +234,24 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 	}
 }
 func Test_IndexQuery_Match_DateRange(t *testing.T) {
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		tt := &TestType{
+		fullStruct := &testtypes.FullStruct{
 			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
 			},
 			IntField: getDept(i),
 		}
 
-		tts = append(tts, tt)
+		fullStructs = append(fullStructs, fullStruct)
 	}
 
-	tormenta.RandomiseRecords(tts)
+	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName        string
@@ -271,7 +272,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []TestType{}
+		rangequeryResults := []testtypes.FullStruct{}
 		query := db.Find(&rangequeryResults).Match("intfield", testCase.indexRangeStart)
 
 		if testCase.addFrom {
@@ -289,7 +290,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		}
 
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Backwards
@@ -299,7 +300,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		}
 
 		if rn != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
 		}
 
 	}

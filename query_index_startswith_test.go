@@ -5,21 +5,22 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 func Test_IndexQuery_StartsWith(t *testing.T) {
 	customers := []string{"j", "jo", "jon", "jonathan", "job", "pablo"}
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for _, customer := range customers {
-		tts = append(tts, &TestType{
+		fullStructs = append(fullStructs, &testtypes.FullStruct{
 			StringField: customer,
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName      string
@@ -49,7 +50,7 @@ func Test_IndexQuery_StartsWith(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		results := []TestType{}
+		results := []testtypes.FullStruct{}
 
 		q := db.Find(&results).StartsWith("stringfield", testCase.startsWith)
 		if testCase.reverse {

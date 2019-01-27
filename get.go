@@ -1,93 +1,88 @@
 package tormenta
 
 import (
-	"fmt"
-	"time"
+	"reflect"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
 
 const (
-	ErrNoID = "Cannot get entity %s - ID is nil"
+	ErrNoID       = "Cannot get entity %s - ID is nil"
+	ErrTooManyIDs = "You should only specify 1 ID for a get request"
 )
 
-// Get retrieves an entity, either according to the ID set on the entity,
-// or using a separately specified ID (optional)
-func (db DB) Get(entity Record, ids ...gouuidv6.UUID) (bool, int, error) {
-	return db.get(entity, make(map[string]interface{}), ids...)
-}
+var noCTX = make(map[string]interface{})
 
 // Get retrieves an entity, either according to the ID set on the entity,
-// or using a separately specified ID (optional), this is the same as the above 'Get'
-// function but allows the passing of a non-empty context.
-func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, int, error) {
+// or using a separately specified ID (optional, takes priority)
+func (db DB) Get(entity Record, ids ...gouuidv6.UUID) (bool, error) {
+	return db.get(entity, noCTX, ids...)
+}
+
+// GetWithContext retrieves an entity, either according to the ID set on the entity,
+// or using a separately specified ID (optional, takes priority), and allows the passing of a non-empty context.
+func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
 	return db.get(entity, ctx, ids...)
 }
 
-func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, int, error) {
-	// start the timer
-	t0 := time.Now()
+func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
+	// Get the key root and cache the value
+	_, value := entityTypeAndValue(target)
 
-	keyRoot, e := entityTypeAndValue(entity)
+	// Set up list results placeholder
+	results := reflect.Indirect(reflect.ValueOf(target))
 
-	// Check that the model field exists
-	modelField := e.FieldByName("Model")
-	if !modelField.IsValid() {
-		return false, timerMiliseconds(t0), fmt.Errorf(errNoModel, keyRoot)
+	var counter int
+	for _, id := range ids {
+		var entity Record
+		entity = reflect.New(value.Type().Elem()).Interface().(Record)
+
+		// For an error, we'll bail,
+		// but if we simply can't find the record, we'll continue
+		if found, err := db.get(entity, noCTX, id); err != nil {
+			return counter, err
+		} else if found {
+			results = reflect.Append(
+				results,
+				reflect.Indirect(reflect.ValueOf(entity)),
+			)
+			counter++
+		}
 	}
 
-	// Assert the model
-	model := modelField.Interface().(Model)
+	return counter, nil
+}
 
-	// If an ID has been specified, overwrite the one on the entity
-	var id gouuidv6.UUID
+func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
+	// If an override id has been specified, set it on the entity
 	if len(ids) > 0 {
-		id = ids[0]
-	} else {
-		if model.ID.IsNil() {
-			return false, timerMiliseconds(t0), fmt.Errorf(ErrNoID, keyRoot)
-		}
-		id = model.ID
+		entity.SetID(ids[0])
 	}
 
 	err := db.KV.View(func(txn *badger.Txn) error {
-		key := newContentKey(keyRoot, id).bytes()
-		item, err := txn.Get(key)
-
+		item, err := txn.Get(newContentKey(KeyRoot(entity), entity.GetID()).bytes())
 		if err != nil {
 			return err
 		}
 
-		if err := item.Value(
-			// Since the change in the Badger API
-			// There doesn't seem to be a good way
-			// to return an unmarshalling error
-			func(val []byte) {
-				json.Unmarshal(val, entity)
-			}); err != nil {
-			return err
-		}
-
-		// Post Get trigger
-		// This seems to be a duplicate action
-		// so commenting for now
-		// entity.PostGet(ctx)
-
-		return nil
+		return item.Value(func(val []byte) {
+			// TODO: unmarshalling error?
+			db.json.Unmarshal(val, entity)
+		})
 	})
 
+	// We are not treating 'not found' as an actual error,
+	// instead we return 'false' and nil (unless there is an actual error)
 	if err == badger.ErrKeyNotFound {
-		return false, timerMiliseconds(t0), nil
+		return false, nil
 	} else if err != nil {
-		return false, timerMiliseconds(t0), err
+		return false, err
 	}
 
-	// Populate the created field
+	// Get triggers
 	entity.GetCreated()
-
-	// Run the 'postGet' trigger
 	entity.PostGet(ctx)
 
-	return true, timerMiliseconds(t0), nil
+	return true, nil
 }

@@ -7,16 +7,17 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 // Index Creation
 func Test_CreateIndexKeys(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	// Create basic tt and save
-	// tts have an 'index' on Customer field
-	entity := TestType{
+	// Create basic fullStruct and save
+	// fullStructs have an 'index' on Customer field
+	entity := testtypes.FullStruct{
 		IntField:                1,
 		StringField:             "test",
 		FloatField:              0.99,
@@ -80,7 +81,7 @@ func Test_CreateIndexKeys(t *testing.T) {
 	db.KV.View(func(txn *badger.Txn) error {
 
 		for _, testCase := range testCases {
-			i := tormenta.IndexKey([]byte("testtype"), entity.ID, testCase.indexName, testCase.indexValue)
+			i := tormenta.IndexKey([]byte("fullstruct"), entity.ID, testCase.indexName, testCase.indexValue)
 
 			_, err := txn.Get(i)
 			if err == badger.ErrKeyNotFound {
@@ -93,26 +94,26 @@ func Test_CreateIndexKeys(t *testing.T) {
 }
 
 func Test_CreateIndexKeys_Split(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	tt := TestType{
-		StringField: "the coolest tt in the world",
+	fullStruct := testtypes.FullStruct{
+		StringField: "the coolest fullStruct in the world",
 	}
 
-	db.Save(&tt)
+	db.Save(&fullStruct)
 
 	// content words
 	expectedKeys := [][]byte{
-		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "coolest"),
-		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "tt"),
-		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "world"),
+		tormenta.IndexKey([]byte("fullStruct"), fullStruct.ID, "name", "coolest"),
+		tormenta.IndexKey([]byte("fullStruct"), fullStruct.ID, "name", "fullStruct"),
+		tormenta.IndexKey([]byte("fullStruct"), fullStruct.ID, "name", "world"),
 	}
 
 	// non content words
 	nonExpectedKeys := [][]byte{
-		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "the"),
-		tormenta.IndexKey([]byte("tt"), tt.ID, "name", "in"),
+		tormenta.IndexKey([]byte("fullStruct"), fullStruct.ID, "name", "the"),
+		tormenta.IndexKey([]byte("fullStruct"), fullStruct.ID, "name", "in"),
 	}
 
 	db.KV.View(func(txn *badger.Txn) error {

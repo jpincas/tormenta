@@ -13,7 +13,7 @@ import (
 
 // Index format
 // i:indexname:root:indexcontent:entityID
-// i:tt:customer:5:324ds-3werwf-234wef-23wef
+// i:fullStruct:customer:5:324ds-3werwf-234wef-23wef
 
 const (
 	tormentaTag        = "tormenta"

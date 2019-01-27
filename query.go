@@ -30,7 +30,7 @@ type Query struct {
 	// offsetCounter used to track the offset
 	offset, offsetCounter int
 
-	// Reverse tt of searching and returned results
+	// Reverse fullStruct of searching and returned results
 	reverse bool
 
 	// Is this a 'first only' search
@@ -305,7 +305,7 @@ func (q *Query) fetchIndexedRecord(item *badger.Item) error {
 	}
 
 	// Get the record
-	ok, _, err := q.db.get(entity, q.ctx, key)
+	ok, err := q.db.get(entity, q.ctx, key)
 	if err != nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func (q *Query) fetchRecord(item *badger.Item) error {
 
 	if err := item.Value(
 		func(val []byte) {
-			json.Unmarshal(val, entity)
+			q.db.json.Unmarshal(val, entity)
 		}); err != nil {
 		return err
 	}

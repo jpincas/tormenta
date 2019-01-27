@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 func Test_Context(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	entity := TestType{}
+	entity := testtypes.FullStruct{}
 	db.Save(&entity)
 
 	sessionID := "session1234"
@@ -25,10 +26,10 @@ func Test_Context(t *testing.T) {
 // search used the Public 'query.Get' function which did not take a context as a parameter and therefore simply
 // passes the empty context to the PostGet trigger.
 func Test_Context_Match(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	entity := TestType{}
+	entity := testtypes.FullStruct{}
 	entity.IntField = 42
 	db.Save(&entity)
 
@@ -41,13 +42,13 @@ func Test_Context_Match(t *testing.T) {
 }
 
 func Test_Context_Get(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	savedEntity := TestType{}
+	savedEntity := testtypes.FullStruct{}
 	db.Save(&savedEntity)
 
-	entity := TestType{}
+	entity := testtypes.FullStruct{}
 	entity.ID = savedEntity.ID
 
 	sessionID := "session1234"

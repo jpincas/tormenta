@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 // Helper for making groups of depatments
@@ -19,24 +20,24 @@ func getDept(i int) int {
 
 // Test aggregation on an index
 func Test_Aggregation(t *testing.T) {
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		tt := &TestType{
+		fullStruct := &testtypes.FullStruct{
 			FloatField: float64(i),
 			IntField:   i,
 		}
 
-		tts = append(tts, tt)
+		fullStructs = append(fullStructs, fullStruct)
 	}
 
-	tormenta.RandomiseRecords(tts)
+	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
-	results := []TestType{}
+	results := []testtypes.FullStruct{}
 	var intSum int32
 	var floatSum float64
 	expected := 465

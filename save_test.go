@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 var zeroValueTime time.Time
 
 func Test_BasicSave(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	// Create basic testType and save
-	testType := TestType{}
-	n, err := db.Save(&testType)
+	// Create basic testtypes.FullStruct and save
+	fullStruct := testtypes.FullStruct{}
+	n, err := db.Save(&fullStruct)
 
 	// Test any error
 	if err != nil {
@@ -29,20 +30,20 @@ func Test_BasicSave(t *testing.T) {
 	}
 
 	// Check ID has been set
-	if testType.ID.IsNil() {
+	if fullStruct.ID.IsNil() {
 		t.Error("Testing basic record save with create new ID. ID after save is nil")
 	}
 
 	//  Check that updated field was set
-	if testType.LastUpdated == zeroValueTime {
+	if fullStruct.LastUpdated == zeroValueTime {
 		t.Error("Testing basic record save. 'Last Upated' is time zero value")
 	}
 
 	// Take a snapshot
-	testTypeBeforeSecondSave := testType
+	fullStructBeforeSecondSave := fullStruct
 
 	// Save again
-	n2, err2 := db.Save(&testType)
+	n2, err2 := db.Save(&fullStruct)
 
 	// Basic tests
 	if err2 != nil {
@@ -55,19 +56,19 @@ func Test_BasicSave(t *testing.T) {
 
 	//  Check that updated field was updated:the new value
 	// should obviously be later
-	if !testTypeBeforeSecondSave.LastUpdated.Before(testType.LastUpdated) {
+	if !fullStructBeforeSecondSave.LastUpdated.Before(fullStruct.LastUpdated) {
 		t.Error("Testing 2nd record save. 'Created' time has changed")
 	}
 }
 
 func Test_SaveDifferentTypes(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	// Create basic testType and save
-	testType := TestType{}
-	testType2 := TestType2{}
-	n, err := db.Save(&testType, &testType2)
+	// Create basic testtypes.FullStruct and save
+	fullStruct := testtypes.FullStruct{}
+	miniStruct := testtypes.MiniStruct{}
+	n, err := db.Save(&fullStruct, &miniStruct)
 
 	// Test any error
 	if err != nil {
@@ -81,23 +82,23 @@ func Test_SaveDifferentTypes(t *testing.T) {
 }
 
 func Test_SaveTrigger(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	// Create basic testType and save
-	testType := TestType{}
-	db.Save(&testType)
+	// Create basic testtypes.FullStruct and save
+	fullStruct := testtypes.FullStruct{}
+	db.Save(&fullStruct)
 
 	// Test postsave trigger
-	if !testType.IsSaved {
+	if !fullStruct.IsSaved {
 		t.Error("Testing postsave trigger.  isSaved should be true but was not")
 	}
 
-	// Set up a condition that will cause the testType not to save
-	testType.ShouldBlockSave = true
+	// Set up a condition that will cause the testtypes.FullStruct not to save
+	fullStruct.ShouldBlockSave = true
 
 	// Test presave trigger
-	n, err := db.Save(&testType)
+	n, err := db.Save(&fullStruct)
 	if n != 0 || err == nil {
 		t.Error("Testing presave trigger.  This record should not have saved, but it did and no error returned")
 	}
@@ -105,33 +106,26 @@ func Test_SaveTrigger(t *testing.T) {
 }
 
 func Test_SaveMultiple(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	testType1 := TestType{}
-	testType2 := TestType{}
+	fullStruct1 := testtypes.FullStruct{}
+	fullStruct2 := testtypes.FullStruct{}
 
 	// Multiple argument syntax
-	n, _ := db.Save(&testType1, &testType2)
+	n, _ := db.Save(&fullStruct1, &fullStruct2)
 	if n != 2 {
 		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
 	}
 
-	if testType1.ID == testType2.ID {
-		t.Errorf("Testing multiple save. 2 testTypes have same ID")
+	if fullStruct1.ID == fullStruct2.ID {
+		t.Errorf("Testing multiple save. 2 testtypes.FullStructs have same ID")
 	}
 
 	// Spread syntax
 	// A little akward as you can't just pass in the slice of entities
 	// You have to manually translate to []Record
-	var testTypesToSave []tormenta.Record
-	testTypes := []TestType{testType1, testType2}
-
-	for _, testType := range testTypes {
-		testTypesToSave = append(testTypesToSave, &testType)
-	}
-
-	n, _ = db.Save(testTypesToSave...)
+	n, _ = db.Save([]tormenta.Record{&fullStruct1, &fullStruct2}...)
 	if n != 2 {
 		t.Errorf("Testing multiple save. Expected %v, got %v", 2, n)
 	}
@@ -139,32 +133,32 @@ func Test_SaveMultiple(t *testing.T) {
 }
 
 func Test_SaveMultipleLarge(t *testing.T) {
-	const notestTypes = 1000
+	const noOfTests = 1000
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	var testTypesToSave []tormenta.Record
+	var fullStructsToSave []tormenta.Record
 
-	for i := 0; i < notestTypes; i++ {
-		testTypesToSave = append(testTypesToSave, &TestType{
+	for i := 0; i < noOfTests; i++ {
+		fullStructsToSave = append(fullStructsToSave, &testtypes.FullStruct{
 			StringField: fmt.Sprintf("customer-%v", i),
 		})
 	}
 
-	n, err := db.Save(testTypesToSave...)
+	n, err := db.Save(fullStructsToSave...)
 	if err != nil {
 		t.Errorf("Testing save large number of entities. Got error: %s", err)
 	}
 
-	if n != notestTypes {
-		t.Errorf("Testing save large number of entities. Expected %v, got %v.  Err: %s", notestTypes, n, err)
+	if n != noOfTests {
+		t.Errorf("Testing save large number of entities. Expected %v, got %v.  Err: %s", noOfTests, n, err)
 	}
 
-	var testTypes []TestType
-	n, _, _ = db.Find(&testTypes).Run()
-	if n != notestTypes {
-		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", notestTypes, n)
+	var fullStructs []testtypes.FullStruct
+	n, _, _ = db.Find(&fullStructs).Run()
+	if n != noOfTests {
+		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOfTests, n)
 	}
 
 }
@@ -173,18 +167,18 @@ func Test_SaveMultipleLarge(t *testing.T) {
 // which depends on how large the entities are.
 // It should give back an error if we try to save too many
 func Test_SaveMultipleTooLarge(t *testing.T) {
-	const notestTypes = 1000000
+	const noOfTests = 1000000
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	var testTypesToSave []tormenta.Record
+	var fullStructsToSave []tormenta.Record
 
-	for i := 0; i < notestTypes; i++ {
-		testTypesToSave = append(testTypesToSave, &TestType{})
+	for i := 0; i < noOfTests; i++ {
+		fullStructsToSave = append(fullStructsToSave, &testtypes.FullStruct{})
 	}
 
-	n, err := db.Save(testTypesToSave...)
+	n, err := db.Save(fullStructsToSave...)
 	if err == nil {
 		t.Error("Testing save large number of entities.Expecting an error but did not get one")
 
@@ -194,8 +188,8 @@ func Test_SaveMultipleTooLarge(t *testing.T) {
 		t.Errorf("Testing save large number of entities. Expected %v, got %v", 0, n)
 	}
 
-	var testTypes []TestType
-	n, _, _ = db.Find(&testTypes).Run()
+	var fullStructs []testtypes.FullStruct
+	n, _, _ = db.Find(&fullStructs).Run()
 	if n != 0 {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", 0, n)
 	}
@@ -203,23 +197,23 @@ func Test_SaveMultipleTooLarge(t *testing.T) {
 }
 
 func Test_SaveMultipleLargeIndividually(t *testing.T) {
-	const notestTypes = 10000
+	const noOfTests = 10000
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	var testTypesToSave []tormenta.Record
+	var fullStructsToSave []tormenta.Record
 
-	for i := 0; i < notestTypes; i++ {
-		testTypesToSave = append(testTypesToSave, &TestType{})
+	for i := 0; i < noOfTests; i++ {
+		fullStructsToSave = append(fullStructsToSave, &testtypes.FullStruct{})
 	}
 
-	n, err := db.SaveIndividually(testTypesToSave...)
+	n, err := db.SaveIndividually(fullStructsToSave...)
 	if err != nil {
 		t.Errorf("Testing save large number of entities individually. Got error: %s", err)
 	}
 
-	if n != notestTypes {
+	if n != noOfTests {
 		t.Errorf("Testing save large number of entities. Expected %v, got %v", 0, n)
 	}
 }

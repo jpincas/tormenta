@@ -45,7 +45,7 @@ func (db DB) Save(entities ...Record) (int, error) {
 			// Set the new model back on the entity
 			modelField.Set(reflect.ValueOf(model))
 
-			data, err := json.Marshal(entity)
+			data, err := db.json.Marshal(entity)
 			if err != nil {
 				return err
 			}

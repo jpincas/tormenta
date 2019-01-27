@@ -12,6 +12,7 @@ type Record interface {
 	PostGet(ctx map[string]interface{})
 	GetCreated() time.Time
 	SetID(gouuidv6.UUID)
+	GetID() gouuidv6.UUID
 }
 
 type Model struct {
@@ -41,6 +42,10 @@ func (m Model) PostGet(ctx map[string]interface{}) {}
 
 func (m *Model) SetID(id gouuidv6.UUID) {
 	m.ID = id
+}
+
+func (m Model) GetID() gouuidv6.UUID {
+	return m.ID
 }
 
 func (m *Model) GetCreated() time.Time {

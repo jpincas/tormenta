@@ -4,24 +4,25 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 func TestRandomise(t *testing.T) {
-	// Make a list of 100 tts
-	var tts []tormenta.Record
+	// Make a list of 100 fullStructs
+	var fullStructs []tormenta.Record
 	for i := 0; i <= 100; i++ {
-		tts = append(tts, &TestType{IntField: i})
+		fullStructs = append(fullStructs, &testtypes.FullStruct{IntField: i})
 	}
 
 	// Make a copy of the list before randomising, then randomise
-	ttsBeforeRand := make([]tormenta.Record, len(tts))
-	copy(ttsBeforeRand, tts)
-	tormenta.RandomiseRecords(tts)
+	ttsBeforeRand := make([]tormenta.Record, len(fullStructs))
+	copy(ttsBeforeRand, fullStructs)
+	tormenta.RandomiseRecords(fullStructs)
 
 	// Go through element by element, compare, and set a flag to true if a difference was found
 	foundDiff := false
-	for i := range tts {
-		if tts[i].(*TestType).IntField != ttsBeforeRand[i].(*TestType).IntField {
+	for i := range fullStructs {
+		if fullStructs[i].(*testtypes.FullStruct).IntField != ttsBeforeRand[i].(*testtypes.FullStruct).IntField {
 			foundDiff = true
 		}
 	}

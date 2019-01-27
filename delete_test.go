@@ -4,25 +4,26 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 func Test_Delete(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	tt := TestType{}
+	fullStruct := testtypes.FullStruct{}
 
-	db.Save(&tt)
+	db.Save(&fullStruct)
 
-	// Test the the tt has been saved
-	retrievedtt := TestType{}
-	ok, _, _ := db.Get(&retrievedtt, tt.ID)
-	if !ok || tt.ID != retrievedtt.ID {
-		t.Error("Testing delete. Test tt not saved correctly")
+	// Test the the fullStruct has been saved
+	retrievedFullStruct := testtypes.FullStruct{}
+	ok, _ := db.Get(&retrievedFullStruct, fullStruct.ID)
+	if !ok || fullStruct.ID != retrievedFullStruct.ID {
+		t.Error("Testing delete. Test fullStruct not saved correctly")
 	}
 
 	// Delete
-	n, err := db.Delete("testtype", tt.ID)
+	n, err := db.Delete("fullstruct", fullStruct.ID)
 
 	if err != nil {
 		t.Errorf("Testing delete. Got error %v", err)
@@ -33,24 +34,24 @@ func Test_Delete(t *testing.T) {
 	}
 
 	// Attempt to retrieve again
-	ok, _, _ = db.Get(&retrievedtt, tt.ID)
+	ok, _ = db.Get(&retrievedFullStruct, fullStruct.ID)
 	if ok {
-		t.Error("Testing delete. Supposedly deleted tt found on 2nd get")
+		t.Error("Testing delete. Supposedly deleted fullStruct found on 2nd get")
 	}
 }
 
 func Test_Delete_Multiple(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	tt1 := TestType{}
-	tt2 := TestType{}
-	tt3 := TestType{}
+	fullStruct1 := testtypes.FullStruct{}
+	fullStruct2 := testtypes.FullStruct{}
+	fullStruct3 := testtypes.FullStruct{}
 
-	db.Save(&tt1, &tt2, &tt3)
+	db.Save(&fullStruct1, &fullStruct2, &fullStruct3)
 
 	// Delete
-	n, err := db.Delete("testtype", tt1.ID, tt2.ID, tt3.ID)
+	n, err := db.Delete("fullstruct", fullStruct1.ID, fullStruct2.ID, fullStruct3.ID)
 
 	if err != nil {
 		t.Errorf("Testing multiple delete. Got error %v", err)
@@ -60,9 +61,9 @@ func Test_Delete_Multiple(t *testing.T) {
 		t.Errorf("Testing multiple delete. Expected n = %v, got n = %v", 3, n)
 	}
 
-	var tts []TestType
-	c, _, _ := db.Find(&tts).Count()
+	var fullStructs []testtypes.FullStruct
+	c, _, _ := db.Find(&fullStructs).Count()
 	if c > 0 {
-		t.Errorf("Testing delete. Should have found any tts, but found %v", c)
+		t.Errorf("Testing delete. Should have found any fullStructs, but found %v", c)
 	}
 }

@@ -8,30 +8,31 @@ import (
 
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
 )
 
 // Test range queries across different types
 func Test_IndexQuery_Range(t *testing.T) {
-	// Set up 100 tts with increasing department, customer and shipping fee
+	// Set up 100 fullStructs with increasing department, customer and shipping fee
 	// and save
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 0; i < 100; i++ {
-		tts = append(tts, &TestType{
+		fullStructs = append(fullStructs, &testtypes.FullStruct{
 			IntField:    i + 1,
 			StringField: fmt.Sprintf("customer-%v", string((i%26)+65)),
 			FloatField:  float64(i) + 0.99,
 		})
 	}
 
-	// Randomise tt before saving,
-	// to ensure save tt is not affecting retrieval
+	// Randomise fullStruct before saving,
+	// to ensure save fullStruct is not affecting retrieval
 	// in some roundabout way
-	tormenta.RandomiseRecords(tts)
+	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName      string
@@ -76,7 +77,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []TestType{}
+		rangequeryResults := []testtypes.FullStruct{}
 		q := db.
 			Find(&rangequeryResults).
 			Range(testCase.indexName, testCase.start, testCase.end)
@@ -94,24 +95,24 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Check each member of the results for nil ID, customer and shipping fee
-		for i, tt := range rangequeryResults {
-			if tt.ID.IsNil() {
+		for i, fullStruct := range rangequeryResults {
+			if fullStruct.ID.IsNil() {
 				t.Errorf("Testing %s.  Order no %v has nil ID", testCase.testName, i)
 			}
 
-			if tt.IntField == 0 {
+			if fullStruct.IntField == 0 {
 				t.Errorf("Testing %s.  Order no %v has 0 department", testCase.testName, i)
 			}
 
-			if tt.StringField == "" {
+			if fullStruct.StringField == "" {
 				t.Errorf("Testing %s.  Order no %v has blank customer", testCase.testName, i)
 			}
 
-			if tt.FloatField == 0.0 {
+			if fullStruct.FloatField == 0.0 {
 				t.Errorf("Testing %s.  Order no %v has 0 shipping fee", testCase.testName, i)
 			}
 		}
@@ -129,24 +130,24 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
 		}
 
 		// Check each member of the results for nil ID, customer and shipping fee
-		for i, tt := range rangequeryResults {
-			if tt.ID.IsNil() {
+		for i, fullStruct := range rangequeryResults {
+			if fullStruct.ID.IsNil() {
 				t.Errorf("Testing %s.  Order no %v has nil ID", testCase.testName, i)
 			}
 
-			if tt.IntField == 0 {
+			if fullStruct.IntField == 0 {
 				t.Errorf("Testing %s.  Order no %v has 0 department", testCase.testName, i)
 			}
 
-			if tt.StringField == "" {
+			if fullStruct.StringField == "" {
 				t.Errorf("Testing %s.  Order no %v has blank customer", testCase.testName, i)
 			}
 
-			if tt.FloatField == 0.0 {
+			if fullStruct.FloatField == 0.0 {
 				t.Errorf("Testing %s.  Order no %v has 0 shipping fee", testCase.testName, i)
 			}
 		}
@@ -157,21 +158,21 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 // Test index with multiple coinciding values
 func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		tt := &TestType{
+		fullStruct := &testtypes.FullStruct{
 			IntField: getDept(i),
 		}
 
-		tts = append(tts, tt)
+		fullStructs = append(fullStructs, fullStruct)
 	}
 
-	tormenta.RandomiseRecords(tts)
+	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName   string
@@ -185,7 +186,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Forwards
-		rangequeryResults := []TestType{}
+		rangequeryResults := []testtypes.FullStruct{}
 		n, _, err := db.
 			Find(&rangequeryResults).
 			Range("intfield", testCase.start, testCase.end).
@@ -197,11 +198,11 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Reverse
-		rangequeryResults = []TestType{}
+		rangequeryResults = []testtypes.FullStruct{}
 		rn, _, err := db.
 			Find(&rangequeryResults).
 			Range("intfield", testCase.start, testCase.end).
@@ -214,31 +215,31 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
 		}
 	}
 }
 
 // Test index queries augmented with a date range
 func Test_IndexQuery_Range_DateRange(t *testing.T) {
-	var tts []tormenta.Record
+	var fullStructs []tormenta.Record
 
 	for i := 1; i <= 30; i++ {
-		tt := &TestType{
+		fullStruct := &testtypes.FullStruct{
 			Model: tormenta.Model{
 				ID: gouuidv6.NewFromTime(time.Date(2009, time.November, i, 23, 0, 0, 0, time.UTC)),
 			},
 			IntField: getDept(i),
 		}
 
-		tts = append(tts, tt)
+		fullStructs = append(fullStructs, fullStruct)
 	}
 
-	tormenta.RandomiseRecords(tts)
+	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
-	db.Save(tts...)
+	db.Save(fullStructs...)
 
 	testCases := []struct {
 		testName        string
@@ -260,7 +261,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		rangequeryResults := []TestType{}
+		rangequeryResults := []testtypes.FullStruct{}
 		query := db.Find(&rangequeryResults).Range("intfield", testCase.indexRangeStart, testCase.indexRangeEnd)
 
 		if testCase.addFrom {
@@ -278,7 +279,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 		}
 
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, n)
 		}
 
 		// Reverse
@@ -289,7 +290,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 
 		// Check for correct number of returned results
 		if n != testCase.expected {
-			t.Errorf("Testing %s (number tts retrieved). Expected %v - got %v", testCase.testName, testCase.expected, nr)
+			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, nr)
 		}
 
 	}

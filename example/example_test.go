@@ -32,7 +32,7 @@ type Order struct {
 
 func Example_Main() {
 	// Open the DB
-	db, _ := tormenta.OpenTest("data/tests")
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
 	// Create some products
@@ -77,7 +77,7 @@ func Example_Main() {
 	log.Println("Find: ", n) // 2 (-> products)
 
 	// Date range query
-	// Make some tts with specific creation times
+	// Make some fullStructs with specific creation times
 	var ttsToSave []tormenta.Record
 	dates := []time.Time{
 		// Specific years
@@ -100,66 +100,66 @@ func Example_Main() {
 		})
 	}
 
-	// Save the tts
+	// Save the fullStructs
 	db.Save(ttsToSave...)
 
-	var tts []Order
-	var tt Order
+	var fullStructs []Order
+	var fullStruct Order
 
 	mid2009 := time.Date(2009, time.June, 1, 1, 0, 0, 0, time.UTC)
 	mid2010 := time.Date(2010, time.June, 1, 1, 0, 0, 0, time.UTC)
 	mid2012 := time.Date(2012, time.June, 1, 1, 0, 0, 0, time.UTC)
 
 	// Basic date range query
-	n, _ = db.Find(&tts).From(mid2009).To(mid2012).Run()
-	log.Println("Basic - date range: ", n) // 3 (-> tts )
+	n, _ = db.Find(&fullStructs).From(mid2009).To(mid2012).Run()
+	log.Println("Basic - date range: ", n) // 3 (-> fullStructs )
 
 	// First
-	n, _ = db.First(&tt).From(mid2009).To(mid2012).Run()
-	log.Println("First - found: ", n) // 1 (-> tt )
+	n, _ = db.First(&fullStruct).From(mid2009).To(mid2012).Run()
+	log.Println("First - found: ", n) // 1 (-> fullStruct )
 
 	// First (not found)
-	n, _ = db.First(&tt).From(time.Now()).To(time.Now()).Run()
+	n, _ = db.First(&fullStruct).From(time.Now()).To(time.Now()).Run()
 	log.Println("First - not found: ", n) // 0
 
 	// Count only (fast!)
-	c, _ := db.Find(&tts).From(mid2009).To(mid2012).Count()
+	c, _ := db.Find(&fullStructs).From(mid2009).To(mid2012).Count()
 	log.Println("Count: ", c) // 3
 
 	// Limit
-	n, _ = db.Find(&tts).From(mid2009).To(mid2012).Limit(2).Run()
+	n, _ = db.Find(&fullStructs).From(mid2009).To(mid2012).Limit(2).Run()
 	log.Println("Limit: ", n) // 2
 
 	// Offset
-	n, _ = db.Find(&tts).From(mid2009).To(mid2012).Limit(2).Offset(1).Run()
+	n, _ = db.Find(&fullStructs).From(mid2009).To(mid2012).Limit(2).Offset(1).Run()
 	log.Println("Limit and offset: ", n) // 2 (same count, different results)
 
 	// Reverse
-	c, _ = db.Find(&tts).Reverse().From(mid2009).To(mid2012).Count()
+	c, _ = db.Find(&fullStructs).Reverse().From(mid2009).To(mid2012).Count()
 	log.Println("Reverse: ", c) // 3
 
 	// Secondary index on 'customer' - exact index match
-	n, _ = db.First(&tt).Match("customer", "customer-2").Run()
-	log.Println("Index - exact match: ", n) // 1 (-> tt )
+	n, _ = db.First(&fullStruct).Match("customer", "customer-2").Run()
+	log.Println("Index - exact match: ", n) // 1 (-> fullStruct )
 
 	// Secondary index on 'customer' - prefix match
-	n, _ = db.First(&tt).StartsWith("customer", "customer-").Run()
-	log.Println("Index - prefix match: ", n) // 5 (-> tt )
+	n, _ = db.First(&fullStruct).StartsWith("customer", "customer-").Run()
+	log.Println("Index - prefix match: ", n) // 5 (-> fullStruct )
 
 	// Sum (based on index)
 	var sum float64
-	db.Find(&tts).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum)
+	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum)
 	log.Println("Sum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
 
 	// Secondary index on 'customer' - index range and count
-	c, _ = db.Find(&tts).Range("customer", "customer-1", "customer-3").Count()
+	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").Count()
 	log.Println("Index - range: ", c) // 3
 
 	// Secondary index on 'customer' - exact index match, count and date range
-	c, _ = db.Find(&tts).Match("customer", "customer-3").From(mid2009).To(time.Now()).Count()
+	c, _ = db.Find(&fullStructs).Match("customer", "customer-3").From(mid2009).To(time.Now()).Count()
 	log.Println("Index - exact match and date range: ", c) // 1
 
 	// Secondary index on 'customer' - index range AND date range
-	c, _ = db.Find(&tts).Range("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
+	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
 	log.Println("Index - range and date range", c) // 1
 }

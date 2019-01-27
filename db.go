@@ -8,11 +8,20 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
 // DB is the wrapper of the BadgerDB connection
 type DB struct {
-	KV *badger.DB
+	KV   *badger.DB
+	json jsoniter.API
+}
+
+type Options struct {
+	json jsoniter.API
+}
+
+var DefaultOptions = Options{
+	// Use the fasted JSONiter option by default
+	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
+	json: jsoniter.ConfigFastest,
 }
 
 // testDirectory alters a specified data directory to mark it as for tests
@@ -21,7 +30,7 @@ func testDirectory(dir string) string {
 }
 
 // Open returns a connection to TormentDB connection
-func Open(dir string) (*DB, error) {
+func Open(dir string, options Options) (*DB, error) {
 	if dir == "" {
 		return nil, errors.New("No valid data directory provided")
 	}
@@ -42,11 +51,14 @@ func Open(dir string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{db}, nil
+	return &DB{
+		KV:   db,
+		json: options.json,
+	}, nil
 }
 
 // OpenTest is a convenience function to wipe the existing data at the specified location and create a new connection.  As a safety measure against production use, it will append "-test" to the directory name
-func OpenTest(dir string) (*DB, error) {
+func OpenTest(dir string, options Options) (*DB, error) {
 	testDir := testDirectory(dir)
 
 	// Attempt to remove the existing directory
@@ -57,7 +69,7 @@ func OpenTest(dir string) (*DB, error) {
 		return nil, errors.New("Could not remove existing data directory")
 	}
 
-	return Open(testDir)
+	return Open(testDir, options)
 }
 
 // Close closes the connection to the DB

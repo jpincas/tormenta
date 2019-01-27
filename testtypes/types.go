@@ -1,4 +1,4 @@
-package tormenta_test
+package testtypes
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ type EmbeddedStruct struct {
 	EmbeddedBoolField   bool
 }
 
-type TestType struct {
+type FullStruct struct {
 	tormenta.Model
 
 	// Basic types
@@ -58,7 +58,7 @@ type TestType struct {
 	ShouldBlockSave bool
 }
 
-func (t TestType) PreSave() error {
+func (t FullStruct) PreSave() error {
 	if t.ShouldBlockSave {
 		return errors.New("presave trigger is blocking save")
 	}
@@ -66,11 +66,11 @@ func (t TestType) PreSave() error {
 	return nil
 }
 
-func (t *TestType) PostSave() {
+func (t *FullStruct) PostSave() {
 	t.IsSaved = true
 }
 
-func (t *TestType) PostGet(ctx map[string]interface{}) {
+func (t *FullStruct) PostGet(ctx map[string]interface{}) {
 	sessionIdFromContext, ok := ctx["sessionid"]
 	if ok {
 		if sessionId, ok := sessionIdFromContext.(string); ok {
@@ -81,7 +81,7 @@ func (t *TestType) PostGet(ctx map[string]interface{}) {
 	t.Retrieved = true
 }
 
-type TestType2 struct {
+type MiniStruct struct {
 	tormenta.Model
 
 	IntField    int
