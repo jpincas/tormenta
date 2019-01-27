@@ -2,6 +2,7 @@ package tormenta
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
@@ -25,30 +26,87 @@ func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...go
 	return db.get(entity, ctx, ids...)
 }
 
-func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
-	records := newResultsArray(target)
+type getResult struct {
+	id     gouuidv6.UUID
+	record Record
+	found  bool
+	err    error
+}
 
-	var counter int
+func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
+	ch := make(chan getResult)
+	var wg sync.WaitGroup
+
 	for _, id := range ids {
-		// Its inefficient creating a new entity target for the result
+		wg.Add(1)
+
+		// It's inefficient creating a new entity target for the result
 		// on every loop, but we can't just create a single one
 		// and reuse it, because there would be risk of data from 'previous'
 		// entities 'infecting' later ones if a certain field wasn't present
 		// in that later entity, but was in the previous one.
 		// Unlikely if the all JSON is saved with the schema, but I don't
 		// think we can risk it
-		record := newRecord(target)
+		go func(thisRecord Record, thisID gouuidv6.UUID) {
+			found, err := db.get(thisRecord, noCTX, thisID)
+			ch <- getResult{
+				id:     thisID,
+				record: thisRecord,
+				found:  found,
+				err:    err,
+			}
+		}(newRecord(target), id)
+	}
 
-		// For an error, we'll bail, if we simply can't find the record, we'll continue
-		if found, err := db.get(record, noCTX, id); err != nil {
-			return counter, err
-		} else if found {
+	var resultsList []Record
+	var errorsList []error
+	go func() {
+		for getResult := range ch {
+			if getResult.err != nil {
+				errorsList = append(errorsList, getResult.err)
+			} else if getResult.found {
+				resultsList = append(resultsList, getResult.record)
+			}
+
+			// Only signal to the wait group that a record has been fetched
+			// at this point rather than the anonymous func above, otherwise
+			// you tend to lose the last result
+			wg.Done()
+		}
+	}()
+
+	// Once all the results are in, we need to
+	// sort them according to the original order
+	// But we'll bail now if there were any errors
+	wg.Wait()
+
+	if len(errorsList) > 0 {
+		return 0, errorsList[0]
+	}
+
+	return sortToOriginalIDsOrder(target, resultsList, ids), nil
+}
+
+func sortToOriginalIDsOrder(target interface{}, resultList []Record, ids []gouuidv6.UUID) (counter int) {
+	resultMap := map[gouuidv6.UUID]Record{}
+	for _, record := range resultList {
+		resultMap[record.GetID()] = record
+	}
+
+	records := newResultsArray(target)
+
+	// Remember, we didn't bail if a record was not found
+	// so there is a chance it won't be in the map - thats ok - just keep count
+	// of the ones that are there
+	for _, id := range ids {
+		record, found := resultMap[id]
+		if found {
 			records = reflect.Append(records, recordValue(record))
 			counter++
 		}
 	}
 
-	return counter, nil
+	return counter
 }
 
 func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
@@ -82,4 +140,32 @@ func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID
 	entity.PostGet(ctx)
 
 	return true, nil
+}
+
+// For benchmarking / comparison with parallel get
+
+func (db DB) GetIDsSerial(target interface{}, ids ...gouuidv6.UUID) (int, error) {
+	records := newResultsArray(target)
+
+	var counter int
+	for _, id := range ids {
+		// It's inefficient creating a new entity target for the result
+		// on every loop, but we can't just create a single one
+		// and reuse it, because there would be risk of data from 'previous'
+		// entities 'infecting' later ones if a certain field wasn't present
+		// in that later entity, but was in the previous one.
+		// Unlikely if the all JSON is saved with the schema, but I don't
+		// think we can risk it
+		record := newRecord(target)
+
+		// For an error, we'll bail, if we simply can't find the record, we'll continue
+		if found, err := db.get(record, noCTX, id); err != nil {
+			return counter, err
+		} else if found {
+			records = reflect.Append(records, recordValue(record))
+			counter++
+		}
+	}
+
+	return counter, nil
 }

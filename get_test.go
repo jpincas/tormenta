@@ -2,6 +2,7 @@ package tormenta_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
@@ -71,21 +72,30 @@ func Test_GetByMultipleIDs(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	fullStruct := testtypes.FullStruct{}
-	tt2 := testtypes.FullStruct{}
-	tt3 := testtypes.FullStruct{}
-	toSave := []tormenta.Record{&fullStruct, &tt2, &tt3}
+	noOfTests := 1000
+
+	var toSave []tormenta.Record
+	var ids []gouuidv6.UUID
+
+	for i := 0; i < noOfTests; i++ {
+		id := gouuidv6.NewFromTime(time.Now())
+		record := testtypes.FullStruct{}
+		record.SetID(id)
+		toSave = append(toSave, &record)
+		ids = append(ids, id)
+	}
+
 	db.Save(toSave...)
 
 	var results []testtypes.FullStruct
-	n, err := db.GetIDs(&results, fullStruct.ID, tt2.ID, tt3.ID)
+	n, err := db.GetIDs(&results, ids...)
 
 	if err != nil {
 		t.Errorf("Testing get by multiple ids. Got error %v", err)
 	}
 
-	if n != 3 {
-		t.Errorf("Testing get by multiple ids. Wanted 3 results, got %v", n)
+	if n != len(ids) {
+		t.Errorf("Testing get by multiple ids. Wanted %v results, got %v", len(ids), n)
 	}
 
 	for i, _ := range results {

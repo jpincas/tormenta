@@ -2,6 +2,9 @@ package benchmarks
 
 import (
 	"testing"
+	"time"
+
+	"github.com/jpincas/gouuidv6"
 
 	"github.com/jpincas/tormenta"
 	"github.com/jpincas/tormenta/testtypes"
@@ -28,25 +31,63 @@ func Benchmark_QueryGet(b *testing.B) {
 }
 
 func Benchmark_QueryGetIDs(b *testing.B) {
+	noOfTests := 50
+
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	toSave1 := stdRecord()
-	toSave2 := stdRecord()
-	toSave3 := stdRecord()
-	toSave4 := stdRecord()
-	toSave5 := stdRecord()
+	var toSave []tormenta.Record
+	var ids []gouuidv6.UUID
 
-	db.Save(toSave1, toSave2, toSave2, toSave4, toSave5)
+	for i := 0; i <= noOfTests; i++ {
+		id := gouuidv6.NewFromTime(time.Now())
+		record := stdRecord()
+		record.SetID(id)
+		toSave = append(toSave, record)
+		ids = append(ids, id)
+	}
+
+	db.Save(toSave...)
 
 	// Reuse the same results
-	result := []testtypes.FullStruct{}
+	results := []testtypes.FullStruct{}
 
 	// Reset the timer
 	b.ResetTimer()
 
 	// Run the aggregation
 	for i := 0; i < b.N; i++ {
-		db.GetIDs(&result, toSave1.GetID(), toSave2.GetID(), toSave3.GetID(), toSave4.GetID(), toSave5.GetID())
+		db.GetIDs(&results, ids...)
+	}
+}
+
+func Benchmark_QueryGetIDsSerial(b *testing.B) {
+	noOfTests := 50
+
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	defer db.Close()
+
+	var toSave []tormenta.Record
+	var ids []gouuidv6.UUID
+
+	for i := 0; i <= noOfTests; i++ {
+		id := gouuidv6.NewFromTime(time.Now())
+		record := stdRecord()
+		record.SetID(id)
+		toSave = append(toSave, record)
+		ids = append(ids, id)
+	}
+
+	db.Save(toSave...)
+
+	// Reuse the same results
+	results := []testtypes.FullStruct{}
+
+	// Reset the timer
+	b.ResetTimer()
+
+	// Run the aggregation
+	for i := 0; i < b.N; i++ {
+		db.GetIDsSerial(&results, ids...)
 	}
 }
