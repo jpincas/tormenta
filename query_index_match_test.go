@@ -21,7 +21,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 
 	results := []testtypes.FullStruct{}
 	// Test true
-	n, _, err := db.Find(&results).Match("boolfield", true).Run()
+	n, err := db.Find(&results).Match("boolfield", true).Run()
 	if err != nil {
 		t.Error("Testing basic querying - got error")
 	}
@@ -31,7 +31,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 	}
 
 	// Test false + count
-	c, _, err := db.Find(&results).Match("boolfield", false).Count()
+	c, err := db.Find(&results).Match("boolfield", false).Count()
 	if err != nil {
 		t.Error("Testing basic querying - got error")
 	}
@@ -78,7 +78,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 
 		// Forwards
 		q := db.Find(&results).Match("stringfield", testCase.match)
-		n, _, err := q.Run()
+		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -94,7 +94,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 
 		// Reverse
 		q = db.Find(&results).Match("stringfield", testCase.match).Reverse()
-		rn, _, err := q.Run()
+		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -139,7 +139,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 
 		// Forwards
 		q := db.Find(&results).Match("intfield", testCase.match)
-		n, _, err := q.Run()
+		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -155,7 +155,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 
 		// Reverse
 		q = db.Find(&results).Match("customer", testCase.match).Reverse()
-		rn, _, err := q.Run()
+		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -202,7 +202,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 
 		// Forwards
 		q := db.Find(&results).Match("floatfield", testCase.match)
-		n, _, err := q.Run()
+		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -218,7 +218,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 
 		// Reverse
 		q = db.Find(&results).Match("customer", testCase.match).Reverse()
-		rn, _, err := q.Run()
+		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -284,7 +284,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		}
 
 		// Forwards
-		n, _, err := query.Run()
+		n, err := query.Run()
 		if err != nil {
 			t.Error("Testing basic querying - got error")
 		}
@@ -294,7 +294,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 		}
 
 		// Backwards
-		rn, _, err := query.Reverse().Run()
+		rn, err := query.Reverse().Run()
 		if err != nil {
 			t.Error("Testing basic querying - got error")
 		}

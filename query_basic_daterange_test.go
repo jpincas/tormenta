@@ -54,7 +54,7 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 	//Quick check that all fullStructs have saved correctly
 	var results []testtypes.FullStruct
-	n, _, _ := db.Find(&results).Run()
+	n, _ := db.Find(&results).Run()
 
 	if len(results) != len(fullStructs) || n != len(fullStructs) {
 		t.Errorf("Testing range query. Haven't even got to ranges yet. Just basic query expected %v - got %v/%v", len(fullStructs), len(results), n)
@@ -103,12 +103,12 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 		// FORWARD TESTS
 
-		n, _, err := query.Run()
+		n, err := query.Run()
 		if err != nil {
 			t.Errorf("Testing %s. Got error %s", testCase.testName, err.Error())
 		}
 
-		c, _, err := query.Count()
+		c, err := query.Count()
 		if err != nil {
 			t.Errorf("Testing %s. Got error %s", testCase.testName, err.Error())
 		}
@@ -132,12 +132,12 @@ func Test_BasicQuery_DateRange(t *testing.T) {
 
 		query = query.Reverse()
 
-		rn, _, err := query.Run()
+		rn, err := query.Run()
 		if err != nil {
 			t.Errorf("Testing REVERSE %s. Got error %s", testCase.testName, err.Error())
 		}
 
-		rc, _, err := query.Count()
+		rc, err := query.Count()
 		if err != nil {
 			t.Errorf("Testing REVERSE %s. Got error %s", testCase.testName, err.Error())
 		}

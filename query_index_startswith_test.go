@@ -57,7 +57,7 @@ func Test_IndexQuery_StartsWith(t *testing.T) {
 			q.Reverse()
 		}
 
-		n, _, err := q.Run()
+		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)

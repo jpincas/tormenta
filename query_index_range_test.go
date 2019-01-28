@@ -83,7 +83,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 			Range(testCase.indexName, testCase.start, testCase.end)
 
 		// Forwards
-		n, _, err := q.Run()
+		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -118,7 +118,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		}
 
 		// Reverse
-		rn, _, err := q.Reverse().Run()
+		rn, err := q.Reverse().Run()
 
 		if testCase.expectedError != nil && err == nil {
 			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
@@ -187,7 +187,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 	for _, testCase := range testCases {
 		// Forwards
 		rangequeryResults := []testtypes.FullStruct{}
-		n, _, err := db.
+		n, err := db.
 			Find(&rangequeryResults).
 			Range("intfield", testCase.start, testCase.end).
 			Run()
@@ -203,7 +203,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 		// Reverse
 		rangequeryResults = []testtypes.FullStruct{}
-		rn, _, err := db.
+		rn, err := db.
 			Find(&rangequeryResults).
 			Range("intfield", testCase.start, testCase.end).
 			Reverse().
@@ -273,7 +273,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 		}
 
 		// Forwards
-		n, _, err := query.Run()
+		n, err := query.Run()
 		if err != nil {
 			t.Error("Testing basic querying - got error")
 		}
@@ -283,7 +283,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 		}
 
 		// Reverse
-		nr, _, err := query.Reverse().Run()
+		nr, err := query.Reverse().Run()
 		if err != nil {
 			t.Error("Testing basic querying - got error")
 		}

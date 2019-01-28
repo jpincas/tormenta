@@ -17,7 +17,7 @@ func Test_BasicQuery(t *testing.T) {
 	db.Save(&tt1)
 
 	var fullStructs []testtypes.FullStruct
-	n, _, err := db.Find(&fullStructs).Run()
+	n, err := db.Find(&fullStructs).Run()
 
 	if err != nil {
 		t.Error("Testing basic querying - got error")
@@ -28,7 +28,7 @@ func Test_BasicQuery(t *testing.T) {
 	}
 
 	fullStructs = []testtypes.FullStruct{}
-	c, _, err := db.Find(&fullStructs).Count()
+	c, err := db.Find(&fullStructs).Count()
 	if c != 1 {
 		t.Errorf("Testing count 1 entity saved. Expecting 1 - got %v", c)
 	}
@@ -38,11 +38,11 @@ func Test_BasicQuery(t *testing.T) {
 	db.Save(&tt2)
 
 	fullStructs = []testtypes.FullStruct{}
-	if n, _, _ := db.Find(&fullStructs).Run(); n != 2 {
+	if n, _ := db.Find(&fullStructs).Run(); n != 2 {
 		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v", n)
 	}
 
-	if c, _, _ := db.Find(&fullStructs).Count(); c != 2 {
+	if c, _ := db.Find(&fullStructs).Count(); c != 2 {
 		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
 	}
 	if tt1.ID == tt2.ID {
@@ -54,25 +54,25 @@ func Test_BasicQuery(t *testing.T) {
 
 	// Limit
 	fullStructs = []testtypes.FullStruct{}
-	if n, _, _ := db.Find(&fullStructs).Limit(1).Run(); n != 1 {
+	if n, _ := db.Find(&fullStructs).Limit(1).Run(); n != 1 {
 		t.Errorf("Testing querying with 2 entities saved + limit. Wrong number of results received")
 	}
 
 	// Reverse - simple, only tests number received
 	fullStructs = []testtypes.FullStruct{}
-	if n, _, _ := db.Find(&fullStructs).Reverse().Run(); n != 2 {
+	if n, _ := db.Find(&fullStructs).Reverse().Run(); n != 2 {
 		t.Errorf("Testing querying with 2 entities saved + reverse. Expected %v, got %v", 2, n)
 	}
 
 	// Reverse + Limit - simple, only tests number received
 	fullStructs = []testtypes.FullStruct{}
-	if n, _, _ := db.Find(&fullStructs).Reverse().Limit(1).Run(); n != 1 {
+	if n, _ := db.Find(&fullStructs).Reverse().Limit(1).Run(); n != 1 {
 		t.Errorf("Testing querying with 2 entities saved + reverse + limit. Expected %v, got %v", 1, n)
 	}
 
 	// Reverse + Count
 	fullStructs = []testtypes.FullStruct{}
-	if c, _, _ := db.Find(&fullStructs).Reverse().Count(); c != 2 {
+	if c, _ := db.Find(&fullStructs).Reverse().Count(); c != 2 {
 		t.Errorf("Testing count with 2 entities saved + reverse. Expected %v, got %v", 2, c)
 	}
 
@@ -87,7 +87,7 @@ func Test_BasicQuery_First(t *testing.T) {
 	db.Save(&tt1, &tt2)
 
 	var fullStruct testtypes.FullStruct
-	n, _, err := db.First(&fullStruct).Run()
+	n, err := db.First(&fullStruct).Run()
 
 	if err != nil {
 		t.Error("Testing first - got error")
@@ -106,7 +106,7 @@ func Test_BasicQuery_First(t *testing.T) {
 	}
 
 	// Test nothing found (impossible range)
-	n, _, _ = db.First(&fullStruct).From(time.Now()).To(time.Now()).Run()
+	n, _ = db.First(&fullStruct).From(time.Now()).To(time.Now()).Run()
 	if n != 0 {
 		t.Errorf("Testing first when nothing should be found.  Got n = %v", n)
 	}

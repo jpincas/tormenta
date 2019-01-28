@@ -156,7 +156,7 @@ func Test_SaveMultipleLarge(t *testing.T) {
 	}
 
 	var fullStructs []testtypes.FullStruct
-	n, _, _ = db.Find(&fullStructs).Run()
+	n, _ = db.Find(&fullStructs).Run()
 	if n != noOfTests {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", noOfTests, n)
 	}
@@ -189,7 +189,7 @@ func Test_SaveMultipleTooLarge(t *testing.T) {
 	}
 
 	var fullStructs []testtypes.FullStruct
-	n, _, _ = db.Find(&fullStructs).Run()
+	n, _ = db.Find(&fullStructs).Run()
 	if n != 0 {
 		t.Errorf("Testing save large number of entities, then retrieve. Expected %v, got %v", 0, n)
 	}

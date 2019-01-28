@@ -62,7 +62,7 @@ func Test_Delete_Multiple(t *testing.T) {
 	}
 
 	var fullStructs []testtypes.FullStruct
-	c, _, _ := db.Find(&fullStructs).Count()
+	c, _ := db.Find(&fullStructs).Count()
 	if c > 0 {
 		t.Errorf("Testing delete. Should have found any fullStructs, but found %v", c)
 	}
