@@ -33,7 +33,11 @@ type getResult struct {
 	err    error
 }
 
-func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
+func (db DB) GetIDs(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
+	return db.GetIDsWithContext(target, noCTX, ids...)
+}
+
+func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
 	ch := make(chan getResult)
 	var wg sync.WaitGroup
 
@@ -48,7 +52,7 @@ func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
 		// Unlikely if the all JSON is saved with the schema, but I don't
 		// think we can risk it
 		go func(thisRecord Record, thisID gouuidv6.UUID) {
-			found, err := db.get(thisRecord, noCTX, thisID)
+			found, err := db.get(thisRecord, ctx, thisID)
 			ch <- getResult{
 				id:     thisID,
 				record: thisRecord,
