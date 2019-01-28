@@ -56,9 +56,6 @@ type Query struct {
 	// Ranges and comparision key
 	seekFrom, validTo, compareTo []byte
 
-	// Counter
-	counter int
-
 	// Is this an aggregation Query?
 	isAggQuery bool
 	aggTarget  interface{}
@@ -68,6 +65,11 @@ type Query struct {
 
 	// Pass-through context
 	ctx map[string]interface{}
+
+	// Ids for retrieval
+	ids []gouuidv6.UUID
+
+	alreadyExecuted bool
 }
 
 func (db DB) newQuery(target interface{}, first bool) *Query {
@@ -140,7 +142,7 @@ func (q Query) isEndOfRange(it *badger.Iterator) bool {
 }
 
 func (q Query) isLimitMet() bool {
-	return q.limit > 0 && q.counter >= q.limit
+	return q.limit > 0 && len(q.ids) >= q.limit
 }
 
 func (q Query) endIteration(it *badger.Iterator) bool {
@@ -217,9 +219,13 @@ func (q *Query) setRanges() {
 func (q *Query) resetQuery() {
 	// Counter should always be reset before executing a Query.
 	// Just in case a Query is built then executed twice.
-	q.counter = 0
 	q.offsetCounter = q.offset
 
+	// Also, id list should be reset -
+	// UNLESS this is an 'already executed' query!!!
+	if !q.alreadyExecuted {
+		q.ids = idList{}
+	}
 }
 
 func (q *Query) setFromToIfEmpty() {
@@ -281,16 +287,15 @@ func (q *Query) prepareQuery() {
 	q.setRanges()
 }
 
-func (q *Query) queryIDs() (idList, error) {
+func (q *Query) queryIDs() error {
 	q.prepareQuery()
 	q.resetQuery()
-	var ids idList
 
 	// Now, if during the query planning and preparation,
 	// something has gone wrong and an error has been set on the query,
 	// we'll return right here and now
 	if q.err != nil {
-		return ids, q.err
+		return q.err
 	}
 
 	// Iterate through records according to calcuted range limits
@@ -318,21 +323,16 @@ func (q *Query) queryIDs() (idList, error) {
 				continue
 			}
 
-			q.counter++
-
 			// For non-count-only queries, we'll actually get the record
 			// How this is done depends on whether this is an index-based search or not
 			item := it.Item()
-			if !q.countOnly && !q.isAggQuery {
-				ids = append(ids, extractID(item.Key()))
-			}
+			q.ids = append(q.ids, extractID(item.Key()))
 
 			if q.isAggQuery {
 				q.aggregate(item)
 			}
 
 			// If this is a first-only search, break out of the iteration now
-			// The counter has been incremented, so will read 1
 			if q.first {
 				return nil
 			}
@@ -341,33 +341,36 @@ func (q *Query) queryIDs() (idList, error) {
 		return nil
 	})
 
-	return ids, err
+	return err
 }
 
 func (q *Query) execute() (int, error) {
-	// Step 1: get the IDs returned for this query
-	ids, err := q.queryIDs()
-	if err != nil {
-		return 0, err
+	if !q.alreadyExecuted {
+		// Step 1: get the IDs returned for this query
+		err := q.queryIDs()
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	// For count-only, there's nothing more to do
 	if q.countOnly {
-		return q.counter, nil
+		return len(q.ids), nil
 	}
 
 	// Step 2:
+	// For 'First' type queries
 	if q.first {
 		// For 'first' queries, we should check that there is at least 1 record found
 		// before trying to set it
-		if len(ids) == 0 {
-			return q.counter, nil
+		if len(q.ids) == 0 {
+			return 0, nil
 		}
 
 		// db.get ususally takes a 'Record', so we need to set a new one up
 		// and then set the result of get to the target aftwards
 		record := newRecord(q.target)
-		id := ids[0]
+		id := q.ids[0]
 		if found, err := q.db.get(record, q.ctx, id); err != nil {
 			return 0, err
 		} else if !found {
@@ -375,10 +378,13 @@ func (q *Query) execute() (int, error) {
 		}
 
 		setSingleResultOntoTarget(q.target, record)
-	} else {
-		q.db.GetIDsWithContext(q.target, q.ctx, ids...)
+		return 1, nil
 	}
 
-	// Finally, return the number of records found
-	return q.counter, nil
+	// For non 'first' type queries
+	n, err := q.db.GetIDsWithContext(q.target, q.ctx, q.ids...)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
 }

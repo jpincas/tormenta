@@ -181,3 +181,36 @@ func (q *Query) Sum(a interface{}) (int, error) {
 	q.isAggQuery = true
 	return q.execute()
 }
+
+// Query Combination
+
+// Or takes any number of queries and combines their results (as IDs) in a logical OR manner,
+// returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
+// can be run, or combined further
+func Or(queries ...*Query) *Query {
+
+	// TODO: parallelise
+
+	firstQuery := queries[0]
+	combinedQuery := &Query{
+		db:              firstQuery.db,
+		alreadyExecuted: true,
+		target:          firstQuery.target,
+		ctx:             firstQuery.ctx,
+	}
+
+	var queryIDs []idList
+	for _, query := range queries {
+		if !query.alreadyExecuted {
+			err := query.queryIDs()
+			if err != nil {
+				return nil
+			}
+
+			queryIDs = append(queryIDs, query.ids)
+		}
+	}
+
+	combinedQuery.ids = union(queryIDs...)
+	return combinedQuery
+}
