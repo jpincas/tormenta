@@ -3,7 +3,6 @@ package tormenta
 import (
 	"bytes"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -16,9 +15,6 @@ type Query struct {
 
 	// The entity type being searched
 	keyRoot []byte
-
-	// The Go 'value' for the entity type being searched
-	value reflect.Value
 
 	// Target is the pointer passed into the Query where results will be set
 	target interface{}
@@ -60,9 +56,6 @@ type Query struct {
 	// Ranges and comparision key
 	seekFrom, validTo, compareTo []byte
 
-	// List results placeholder
-	rt reflect.Value
-
 	// Counter
 	counter int
 
@@ -73,23 +66,17 @@ type Query struct {
 	// Is already prepared?
 	isReversePrepared bool
 
+	// Pass-through context
 	ctx map[string]interface{}
 }
 
 func (db DB) newQuery(target interface{}, first bool) *Query {
-	// Get the key root and cache the value
-	keyRoot, value := entityTypeAndValue(target)
-
 	// Create the base Query
 	q := &Query{
 		db:      db,
-		keyRoot: keyRoot,
-		value:   value,
+		keyRoot: KeyRoot(target),
 		target:  target,
 	}
-
-	// Set up list results placeholder
-	q.rt = reflect.Indirect(reflect.ValueOf(q.target))
 
 	// If this is a 'first only' Query
 	if first {
@@ -294,82 +281,16 @@ func (q *Query) prepareQuery() {
 	q.setRanges()
 }
 
-func (q *Query) fetchIndexedRecord(item *badger.Item) error {
-	key := extractID(item.Key())
-
-	var entity Record
-	if q.first {
-		entity = reflect.New(q.value.Type()).Interface().(Record)
-	} else {
-		entity = reflect.New(q.value.Type().Elem()).Interface().(Record)
-	}
-
-	// Get the record
-	ok, err := q.db.get(entity, q.ctx, key)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return fmt.Errorf("Could not retrieve entity %s", key)
-	}
-
-	// If this is a 'first' Query - then just set the unmarshalled entity on the target
-	// Otherwise, build up the results slice - we'll set on the target later!
-	if q.first {
-		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
-	} else {
-		q.rt = reflect.Append(
-			q.rt,
-			reflect.Indirect(reflect.ValueOf(entity)),
-		)
-	}
-
-	return nil
-}
-
-func (q *Query) fetchRecord(item *badger.Item) error {
-	// Set up the entity for unmarshalling
-	var entity Record
-	if q.first {
-		entity = reflect.New(q.value.Type()).Interface().(Record)
-	} else {
-		entity = reflect.New(q.value.Type().Elem()).Interface().(Record)
-	}
-
-	if err := item.Value(
-		func(val []byte) {
-			q.db.json.Unmarshal(val, entity)
-		}); err != nil {
-		return err
-	}
-
-	// Post Get trigger and set created at
-	entity.GetCreated()
-	entity.PostGet(q.ctx)
-
-	// If this is a 'first' Query - then just set the unmarshalled entity on the target
-	// Otherwise, build up the results slice - we'll set on the target later!
-	if q.first {
-		reflect.Indirect(reflect.ValueOf(q.target)).Set(reflect.Indirect(reflect.ValueOf(entity)))
-	} else {
-		q.rt = reflect.Append(
-			q.rt,
-			reflect.Indirect(reflect.ValueOf(entity)),
-		)
-	}
-
-	return nil
-}
-
-func (q *Query) execute() (int, error) {
+func (q *Query) queryIDs() (idList, error) {
 	q.prepareQuery()
 	q.resetQuery()
+	var ids idList
 
 	// Now, if during the query planning and preparation,
 	// something has gone wrong and an error has been set on the query,
 	// we'll return right here and now
 	if q.err != nil {
-		return 0, q.err
+		return ids, q.err
 	}
 
 	// Iterate through records according to calcuted range limits
@@ -403,16 +324,7 @@ func (q *Query) execute() (int, error) {
 			// How this is done depends on whether this is an index-based search or not
 			item := it.Item()
 			if !q.countOnly && !q.isAggQuery {
-				if q.isIndexQuery {
-					if err := q.fetchIndexedRecord(item); err != nil {
-						return err
-					}
-
-				} else {
-					if err := q.fetchRecord(item); err != nil {
-						return err
-					}
-				}
+				ids = append(ids, extractID(item.Key()))
 			}
 
 			if q.isAggQuery {
@@ -429,18 +341,43 @@ func (q *Query) execute() (int, error) {
 		return nil
 	})
 
-	// If there was an error from the DB transaction, return 0 now
+	return ids, err
+}
+
+func (q *Query) execute() (int, error) {
+	// Step 1: get the IDs returned for this query
+	ids, err := q.queryIDs()
 	if err != nil {
 		return 0, err
 	}
 
-	// For count-only or first-only queries, there's nothing more to do
-	if q.countOnly || q.first {
+	// For count-only, there's nothing more to do
+	if q.countOnly {
 		return q.counter, nil
 	}
 
-	// Set the results on the target
-	reflect.Indirect(reflect.ValueOf(q.target)).Set(q.rt)
+	// Step 2:
+	if q.first {
+		// For 'first' queries, we should check that there is at least 1 record found
+		// before trying to set it
+		if len(ids) == 0 {
+			return q.counter, nil
+		}
+
+		// db.get ususally takes a 'Record', so we need to set a new one up
+		// and then set the result of get to the target aftwards
+		record := newRecord(q.target)
+		id := ids[0]
+		if found, err := q.db.get(record, q.ctx, id); err != nil {
+			return 0, err
+		} else if !found {
+			return 0, fmt.Errorf("Could not retrieve record with id: %v", id)
+		}
+
+		setSingleResultOntoTarget(q.target, record)
+	} else {
+		q.db.GetIDsWithContext(q.target, q.ctx, ids...)
+	}
 
 	// Finally, return the number of records found
 	return q.counter, nil

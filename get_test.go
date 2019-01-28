@@ -94,6 +94,10 @@ func Test_GetByMultipleIDs(t *testing.T) {
 		t.Errorf("Testing get by multiple ids. Got error %v", err)
 	}
 
+	if n != len(results) {
+		t.Errorf("Testing get by multiple ids. Mismatch between reported n (%v) and length of results slice (%v)", n, len(results))
+	}
+
 	if n != len(ids) {
 		t.Errorf("Testing get by multiple ids. Wanted %v results, got %v", len(ids), n)
 	}

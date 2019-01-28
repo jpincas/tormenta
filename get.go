@@ -59,7 +59,7 @@ func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, i
 				found:  found,
 				err:    err,
 			}
-		}(newRecord(target), id)
+		}(newRecordFromSlice(target), id)
 	}
 
 	var resultsList []Record
@@ -109,6 +109,9 @@ func sortToOriginalIDsOrder(target interface{}, resultList []Record, ids []gouui
 			counter++
 		}
 	}
+
+	// Set the accumulated results back onto the target
+	setResultsArrayOntoTarget(target, records)
 
 	return counter
 }
@@ -160,7 +163,7 @@ func (db DB) GetIDsSerial(target interface{}, ids ...gouuidv6.UUID) (int, error)
 		// in that later entity, but was in the previous one.
 		// Unlikely if the all JSON is saved with the schema, but I don't
 		// think we can risk it
-		record := newRecord(target)
+		record := newRecordFromSlice(target)
 
 		// For an error, we'll bail, if we simply can't find the record, we'll continue
 		if found, err := db.get(record, noCTX, id); err != nil {
