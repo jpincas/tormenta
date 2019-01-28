@@ -10,7 +10,7 @@ import (
 	"github.com/jpincas/tormenta/testtypes"
 )
 
-func Benchmark_QueryGet(b *testing.B) {
+func Benchmark_Get(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
@@ -30,16 +30,14 @@ func Benchmark_QueryGet(b *testing.B) {
 	}
 }
 
-func Benchmark_QueryGetIDs(b *testing.B) {
-	noOfTests := 50
-
+func Benchmark_GetIDs(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
 	var toSave []tormenta.Record
 	var ids []gouuidv6.UUID
 
-	for i := 0; i <= noOfTests; i++ {
+	for i := 0; i <= nRecords; i++ {
 		id := gouuidv6.NewFromTime(time.Now())
 		record := stdRecord()
 		record.SetID(id)
@@ -61,16 +59,14 @@ func Benchmark_QueryGetIDs(b *testing.B) {
 	}
 }
 
-func Benchmark_QueryGetIDsSerial(b *testing.B) {
-	noOfTests := 50
-
+func Benchmark_GetIDsSerial(b *testing.B) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
 	var toSave []tormenta.Record
 	var ids []gouuidv6.UUID
 
-	for i := 0; i <= noOfTests; i++ {
+	for i := 0; i <= nRecords; i++ {
 		id := gouuidv6.NewFromTime(time.Now())
 		record := stdRecord()
 		record.SetID(id)

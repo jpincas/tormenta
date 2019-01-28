@@ -33,7 +33,7 @@ type getResult struct {
 	err    error
 }
 
-func (db DB) GetIDs(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
+func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
 	return db.GetIDsWithContext(target, noCTX, ids...)
 }
 
