@@ -8,15 +8,18 @@ Still WIP, but being used in two projects, both in dev and going to production i
 
 Any questions, hit me up.
 
-# TormentaDB
+# ⚡ Tormenta
 
 Tormenta is a functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some data querying capabilities and ORM-like features.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm) and powered by:
 
 - [BadgerDB](https://github.com/dgraph-io/badger)
 - ['V6' UUIDs](https://github.com/bradleypeabody/gouuidv6)
 - [JSONIter](https://github.com/json-iterator/go)
- 
 
+## Why would you use this?
+
+Becuase you want to simplify your data persistence and you don't forsee the need for a mult-server setup in the future.  Tormenta relies on the excellent, embedded key/value store 'Badger'.  It's fast and simple, but embedded, so you won't be able to go multi-server and talk to a central DB.  If you can live with that, and without the querying power of SQL, Tormenta gives you simplicty - there are no database servers to run, configure and maintain, no schemas, no SQL, no ORMs etc.  You just open a connection to the DB, feed in your Go structs and get normal Go functions with which to persist, retrieve and query your data.  If you've been burned by complex database setups, errors in SQL strings or overly complex ORMs, you might appreciate Tormenta's simplicity.
+ 
 ## Features
 
 - Uses good old JSON for serialisation of data
@@ -30,7 +33,6 @@ Tormenta is a functionality layer over BadgerDB key/value store.  It provides si
 - Combine queries with AND/OR to arbitrary depth
 - Fast counts and sums using Badger's 'key only' iteration
 - Business logic using 'triggers' on save and get, including the ability to pass a 'context' through a query
-
 
 ## Quick How To
 
