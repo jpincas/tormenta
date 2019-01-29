@@ -1,12 +1,12 @@
-### Update Jan 2019
+### (Update Jan 2019)
 
-_I've refactored the repo and remove dthe REST layer and GUI for now.  Going forward, I'll put those in separate repos so that this one is just for the core Tormenta persistence engine, which is currently my priority.  The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).
+I've refactored the repo and remove dthe REST layer and GUI for now.  Going forward, I'll put those in separate repos so that this one is just for the core Tormenta persistence engine, which is currently my priority.  The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).
 
 Another big change is the move away from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, so easier to get started, which is kind of the philosophy of this project. Also, it means we could do some pretty cool 'pass straight through to JSON' stuff which might be useful if you're building a JSON api and don't need to do any intermediate processing.
 
 Still WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon.
 
-Any questions, hit me up._
+Any questions, hit me up.
 
 # ⚡ Tormenta
 
