@@ -197,7 +197,7 @@ func Test_And_Basic(t *testing.T) {
 			t.Errorf("Testing basic AND (%s,run). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedAndN, n)
 		}
 
-		for i, _ := range results {
+		for i, result := range results {
 			if results[i].IntField != testCase.expectedAndResults[i].IntField {
 				t.Errorf("Testing basic AND (%s,run). Mismatch in array member %v", testCase.testName, i)
 			}
@@ -214,7 +214,6 @@ func Test_And_Basic(t *testing.T) {
 		if c != testCase.expectedAndN {
 			t.Errorf("Testing basic AND (%s,count). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedAndN, c)
 		}
-
 	}
 }
 

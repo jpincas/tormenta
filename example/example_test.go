@@ -146,10 +146,10 @@ func Example_Main() {
 	n, _ = db.First(&fullStruct).StartsWith("customer", "customer-").Run()
 	log.Println("Index - prefix match: ", n) // 5 (-> fullStruct )
 
-	// Sum (based on index)
+	// QuickSum (based on index)
 	var sum float64
-	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum)
-	log.Println("Sum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
+	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).QuickSum(&sum)
+	log.Println("QuickSum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
 
 	// Secondary index on 'customer' - index range and count
 	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").Count()

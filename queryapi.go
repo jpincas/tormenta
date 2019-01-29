@@ -171,8 +171,9 @@ func (q *Query) Count() (int, error) {
 	return q.execute()
 }
 
-// Sum produces a sum aggregation
-func (q *Query) Sum(a interface{}) (int, error) {
+// QuickSum produces a sum aggregation using the index only, which is much faster
+// than accessing every record, but requires an index query
+func (q *Query) QuickSum(a interface{}) (int, error) {
 	if !q.isIndexQuery || len(q.indexName) == 0 {
 		return 0, errors.New("Aggregation must use an index Query")
 	}
@@ -184,64 +185,16 @@ func (q *Query) Sum(a interface{}) (int, error) {
 
 // Query Combination
 
-// TODO - refactor these as they only difference is the list combining function
-
 // Or takes any number of queries and combines their results (as IDs) in a logical OR manner,
 // returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
 // can be run, or combined further
 func Or(queries ...*Query) *Query {
-
-	// TODO: parallelise
-
-	firstQuery := queries[0]
-	combinedQuery := &Query{
-		db:              firstQuery.db,
-		alreadyExecuted: true,
-		target:          firstQuery.target,
-		ctx:             firstQuery.ctx,
-	}
-
-	var queryIDs []idList
-	for _, query := range queries {
-		if !query.alreadyExecuted {
-			err := query.queryIDs()
-			if err != nil {
-				return nil
-			}
-
-			queryIDs = append(queryIDs, query.ids)
-		}
-	}
-
-	combinedQuery.ids = union(queryIDs...)
-	return combinedQuery
+	return queryCombine(union, queries...)
 }
 
+// Or takes any number of queries and combines their results (as IDs) in a logical AND manner,
+// returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
+// can be run, or combined further
 func And(queries ...*Query) *Query {
-
-	// TODO: parallelise
-
-	firstQuery := queries[0]
-	combinedQuery := &Query{
-		db:              firstQuery.db,
-		alreadyExecuted: true,
-		target:          firstQuery.target,
-		ctx:             firstQuery.ctx,
-	}
-
-	var queryIDs []idList
-	for _, query := range queries {
-		if !query.alreadyExecuted {
-			err := query.queryIDs()
-			if err != nil {
-				return nil
-			}
-
-			queryIDs = append(queryIDs, query.ids)
-		}
-	}
-
-	combinedQuery.ids = intersection(queryIDs...)
-
-	return combinedQuery
+	return queryCombine(intersection, queries...)
 }

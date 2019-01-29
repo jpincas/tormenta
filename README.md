@@ -42,7 +42,7 @@ and greatly inspired by [Storm](https://github.com/asdine/storm).
 - Get a single entity by ID with `db.Get(&MyEntity, entityID)`.
 - Construct a query to find single or mutliple entities with `db.First(&MyEntity)` or `db.Find(&MyEntities)` respectively. 
 - Build up the query by chaining methods: `From()/.To()` to add a date range, `Match("indexName", value)` to add an exact match index search, `Range("indexname", start, end)` to add a range search, `StartsWith("indexname", "prefix")` for a text prefix search, `.Reverse()` to reverse the fullStruct of searching/results and `.Limit()/.Offset()` to limit the number of results.
-- Kick off the query with `.Run()`, or `.Count()` if you just need the count.  `.Sum()` is also available for float/int index searches.
+- Kick off the query with `.Run()`, or `.Count()` if you just need the count.  `.QuickSum()` is also available for float/int index searches.
 - Add business logic by specifying `.PreSave()`, `.PostSave()` and `.PostGet()` methods on your structs.
 	
 ## Example
@@ -194,10 +194,10 @@ func Example_Main() {
 	n, _ = db.First(&fullStruct).StartsWith("customer", "customer-").Run()
 	log.Println("Index - prefix match: ", n) // 5 (-> fullStruct )
 
-	// Sum (based on index)
+	// QuickSum (based on index)
 	var sum float64
-	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum)
-	log.Println("Sum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
+	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).QuickSum(&sum)
+	log.Println("QuickSum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
 
 	// Secondary index on 'customer' - index range and count
 	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").Count()
