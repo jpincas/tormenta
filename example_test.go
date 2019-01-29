@@ -1,21 +1,16 @@
-package example
+package tormenta_test
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta"
 )
 
-// Include 'go:generate msgp' in your file and run 'go generate' to generate MessagePack marshall/unmarshall methods
-
-// Define your data.
-// Include tormenta.Model to get date tted IDs, last updated field etc
-// Tag with 'tormenta:"noindex"' to skip secondary index creation
 type Product struct {
 	tormenta.Model
+
 	Code          string
 	Name          string
 	Price         float32
@@ -25,12 +20,17 @@ type Product struct {
 
 type Order struct {
 	tormenta.Model
+
 	Customer    string
 	Department  int
 	ShippingFee float64
 }
 
-func Example_Main() {
+func printlinef(formatString string, x interface{}) {
+	fmt.Println(fmt.Sprintf(formatString, x))
+}
+
+func Example() {
 	// Open the DB
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
@@ -49,7 +49,7 @@ func Example_Main() {
 
 	// Save
 	n, _ := db.Save(&product1, &product2)
-	log.Println("Saved: ", n) // 2
+	printlinef("Saved %v records", n)
 
 	// Get
 	var nonExistentID gouuidv6.UUID
@@ -57,24 +57,24 @@ func Example_Main() {
 
 	// No such record
 	ok, _ := db.Get(&product, nonExistentID)
-	log.Println("Get: ", ok) // false
+	printlinef("Get record? %v", ok)
 
-	// Get by entity ID
+	// Get by entity
 	ok, _ = db.Get(&product1)
-	log.Println("Get entity: ", ok) // true ( -> product 1)
+	printlinef("Got record? %v", ok)
 
 	// Get with optional separately specified ID
 	ok, _ = db.Get(&product, product1.ID)
-	log.Println("Get by entity ID: ", ok) // true ( -> product 1)
+	printlinef("Get record with separately specified ID? %v", ok)
 
 	// Delete
 	n, _ = db.Delete("product", product1.ID)
-	log.Println("Delete: ", n) // 1
+	printlinef("Deleted %v record(s)", n)
 
 	// Basic query
 	var products []Product
 	n, _ = db.Find(&products).Run()
-	log.Println("Find: ", n) // 2 (-> products)
+	printlinef("Found %v record(s)", n)
 
 	// Date range query
 	// Make some fullStructs with specific creation times
@@ -112,54 +112,75 @@ func Example_Main() {
 
 	// Basic date range query
 	n, _ = db.Find(&fullStructs).From(mid2009).To(mid2012).Run()
-	log.Println("Basic - date range: ", n) // 3 (-> fullStructs )
+	printlinef("Basic date range query: %v records found", n)
 
 	// First
 	n, _ = db.First(&fullStruct).From(mid2009).To(mid2012).Run()
-	log.Println("First - found: ", n) // 1 (-> fullStruct )
+	printlinef("Basic date range query, first only: %v record(s) found", n)
 
 	// First (not found)
 	n, _ = db.First(&fullStruct).From(time.Now()).To(time.Now()).Run()
-	log.Println("First - not found: ", n) // 0
+	printlinef("Basic date range query, first only: %v record(s) found", n)
 
 	// Count only (fast!)
 	c, _ := db.Find(&fullStructs).From(mid2009).To(mid2012).Count()
-	log.Println("Count: ", c) // 3
+	printlinef("Basic date range query, count only: counted %v", c)
 
 	// Limit
 	n, _ = db.Find(&fullStructs).From(mid2009).To(mid2012).Limit(2).Run()
-	log.Println("Limit: ", n) // 2
+	printlinef("Basic date range query, 2 limit: %v record(s) found", n)
 
 	// Offset
 	n, _ = db.Find(&fullStructs).From(mid2009).To(mid2012).Limit(2).Offset(1).Run()
-	log.Println("Limit and offset: ", n) // 2 (same count, different results)
+	printlinef("Basic date range query, 2 limit, 1 offset: %v record(s) found", n)
 
-	// Reverse
+	// Reverse, count
 	c, _ = db.Find(&fullStructs).Reverse().From(mid2009).To(mid2012).Count()
-	log.Println("Reverse: ", c) // 3
+	printlinef("Basic date range query, reverse, count: %v record(s) counted", c)
 
 	// Secondary index on 'customer' - exact index match
 	n, _ = db.First(&fullStruct).Match("customer", "customer-2").Run()
-	log.Println("Index - exact match: ", n) // 1 (-> fullStruct )
+	printlinef("Index query, exact match: %v record(s) found", n)
 
 	// Secondary index on 'customer' - prefix match
 	n, _ = db.First(&fullStruct).StartsWith("customer", "customer-").Run()
-	log.Println("Index - prefix match: ", n) // 5 (-> fullStruct )
+	printlinef("Index query, starts with: %v record(s) found", n)
 
-	// QuickSum (based on index)
+	// Index range, QuickSum (based on index)
 	var sum float64
 	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).QuickSum(&sum)
-	log.Println("QuickSum: ", sum) // 6.00 (1.00 + 2.00 + 3.00)
+	printlinef("Index range, date range, index sum query. Sum: %v", sum)
 
 	// Secondary index on 'customer' - index range and count
 	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").Count()
-	log.Println("Index - range: ", c) // 3
+	printlinef("Index range, count: %v record(s) counted", c)
 
 	// Secondary index on 'customer' - exact index match, count and date range
 	c, _ = db.Find(&fullStructs).Match("customer", "customer-3").From(mid2009).To(time.Now()).Count()
-	log.Println("Index - exact match and date range: ", c) // 1
+	printlinef("Index exact match, date range, count: %v record(s) counted", c)
 
 	// Secondary index on 'customer' - index range AND date range
 	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
-	log.Println("Index - range and date range", c) // 1
+	printlinef("Index range, date range, count: %v record(s) counted", c)
+
+	// Output:
+	// Saved 2 records
+	// Get record? false
+	// Got record? true
+	// Get record with separately specified ID? true
+	// Deleted 1 record(s)
+	// Found 1 record(s)
+	// Basic date range query: 3 records found
+	// Basic date range query, first only: 1 record(s) found
+	// Basic date range query, first only: 0 record(s) found
+	// Basic date range query, count only: counted 3
+	// Basic date range query, 2 limit: 2 record(s) found
+	// Basic date range query, 2 limit, 1 offset: 2 record(s) found
+	// Basic date range query, reverse, count: 3 record(s) counted
+	// Index query, exact match: 1 record(s) found
+	// Index query, starts with: 1 record(s) found
+	// Index range, date range, index sum query. Sum: 6
+	// Index range, count: 3 record(s) counted
+	// Index exact match, date range, count: 1 record(s) counted
+	// Index range, date range, count: 1 record(s) counted
 }
