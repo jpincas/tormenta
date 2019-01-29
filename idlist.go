@@ -8,16 +8,14 @@ import (
 
 type idList []gouuidv6.UUID
 
-func (ids idList) sort(oldestFirst bool) {
-	// Default sorting order is by id (date),
-	// with newest first
+func (ids idList) sort(reverse bool) {
 	compareFunc := func(i, j int) bool {
-		return ids[j].Compare(ids[i])
+		return ids[i].Compare(ids[j])
 	}
 
-	if oldestFirst {
+	if reverse {
 		compareFunc = func(i, j int) bool {
-			return ids[i].Compare(ids[j])
+			return ids[j].Compare(ids[i])
 		}
 	}
 
@@ -38,7 +36,6 @@ func union(listsOfIDs ...idList) (result idList) {
 		result = append(result, id)
 	}
 
-	result.sort(false)
 	return result
 }
 
@@ -51,7 +48,6 @@ func intersection(listsOfIDs ...idList) (result idList) {
 
 	if len(listsOfIDs) == 1 {
 		result = listsOfIDs[0]
-		result.sort(false)
 		return
 	}
 
@@ -81,6 +77,5 @@ func intersection(listsOfIDs ...idList) (result idList) {
 		}
 	}
 
-	result.sort(false)
-	return result
+	return
 }

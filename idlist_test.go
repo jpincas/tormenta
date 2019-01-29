@@ -23,51 +23,51 @@ var (
 func Test_Sort(t *testing.T) {
 
 	testCases := []struct {
-		testName    string
-		unsorted    idList
-		expected    idList
-		oldestFirst bool
+		testName string
+		unsorted idList
+		expected idList
+		reverse  bool
 	}{
 		{
 			"empty list",
 			idList{},
 			idList{},
-			false,
+			true,
 		},
 		{
 			"single member",
 			idList{id1},
 			idList{id1},
-			false,
+			true,
 		},
 		{
 			"multiple members - preserve order",
 			idList{id5, id4, id3, id2, id1},
 			idList{id5, id4, id3, id2, id1},
-			false,
+			true,
 		},
 		{
 			"multiple members - change order",
 			idList{id1, id2, id3, id4, id5},
 			idList{id5, id4, id3, id2, id1},
-			false,
+			true,
 		},
 		{
 			"multiple members - change order - oldest first",
 			idList{id5, id4, id3, id2, id1},
 			idList{id1, id2, id3, id4, id5},
-			true,
+			false,
 		},
 		{
 			"multiple members - preserve order - oldest first",
 			idList{id1, id2, id3, id4, id5},
 			idList{id1, id2, id3, id4, id5},
-			true,
+			false,
 		},
 	}
 
 	for _, testCase := range testCases {
-		testCase.unsorted.sort(testCase.oldestFirst)
+		testCase.unsorted.sort(testCase.reverse)
 		if err := compareIDLists(testCase.unsorted, testCase.expected); err != nil {
 			t.Errorf("Testing: %s. Got error: %v", testCase.testName, err)
 		}
@@ -147,6 +147,9 @@ func Test_Union(t *testing.T) {
 
 	for _, testCase := range testCases {
 		result := union(testCase.idLists...)
+		// The expected results implicate a reverse sort of the results -
+		// that's just how I wrote them originally
+		result.sort(true)
 		if err := compareIDLists(result, testCase.expected); err != nil {
 			t.Errorf("Testing: %s. Got error: %v", testCase.testName, err)
 		}
@@ -237,6 +240,9 @@ func Test_Intersection(t *testing.T) {
 
 	for _, testCase := range testCases {
 		result := intersection(testCase.idLists...)
+		// The expected results implicate a reverse sort of the results -
+		// that's just how I wrote them originally
+		result.sort(true)
 		if err := compareIDLists(result, testCase.expected); err != nil {
 			t.Errorf("Testing: %s. Got error: %v", testCase.testName, err)
 		}

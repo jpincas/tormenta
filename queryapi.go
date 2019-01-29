@@ -81,7 +81,7 @@ func (q *Query) Offset(n int) *Query {
 	return q
 }
 
-// Reverse reverses the fullStruct of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
+// Reverse reverses the order of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
 func (q *Query) Reverse() *Query {
 	q.reverse = true
 	return q
@@ -125,6 +125,17 @@ func (q *Query) Range(indexName string, start, end interface{}) *Query {
 	}
 	q.start = start
 	q.end = end
+	q.isIndexQuery = true
+	q.indexName = []byte(indexName)
+	return q
+}
+
+// OrderBy specifies an index by which to order results.  Note that this cannot be combined with
+// other index-based queries like 'Range' or 'Match', where the index used for that query will necessarily
+// determine order; nor can it be used with combined queries (and/or) which are always ordered by date.
+func (q *Query) OrderBy(indexName string) *Query {
+	q.start = nil
+	q.end = nil
 	q.isIndexQuery = true
 	q.indexName = []byte(indexName)
 	return q

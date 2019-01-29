@@ -46,8 +46,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			2,
 			[]testtypes.FullStruct{
-				{IntField: 2},
 				{IntField: 1},
+				{IntField: 2},
 			},
 			0,
 			[]testtypes.FullStruct{},
@@ -61,9 +61,9 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			3,
 			[]testtypes.FullStruct{
-				{IntField: 3},
-				{IntField: 2},
 				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
 			},
 			0,
 			[]testtypes.FullStruct{},
@@ -77,9 +77,9 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			3,
 			[]testtypes.FullStruct{
-				{IntField: 3},
-				{IntField: 2},
 				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
 			},
 			0,
 			[]testtypes.FullStruct{},
@@ -93,9 +93,9 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			3,
 			[]testtypes.FullStruct{
-				{IntField: 3},
-				{IntField: 2},
 				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
 			},
 			0,
 			[]testtypes.FullStruct{},
@@ -108,10 +108,10 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			4,
 			[]testtypes.FullStruct{
-				{IntField: 5},
-				{IntField: 4},
-				{IntField: 3},
 				{IntField: 1},
+				{IntField: 3},
+				{IntField: 4},
+				{IntField: 5},
 			},
 			0,
 			[]testtypes.FullStruct{},
@@ -124,11 +124,11 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			5,
 			[]testtypes.FullStruct{
-				{IntField: 5},
-				{IntField: 4},
-				{IntField: 3},
-				{IntField: 2},
 				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
+				{IntField: 4},
+				{IntField: 5},
 			},
 			1,
 			[]testtypes.FullStruct{
@@ -143,17 +143,17 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			5,
 			[]testtypes.FullStruct{
-				{IntField: 5},
-				{IntField: 4},
-				{IntField: 3},
-				{IntField: 2},
 				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
+				{IntField: 4},
+				{IntField: 5},
 			},
 			3,
 			[]testtypes.FullStruct{
-				{IntField: 4},
-				{IntField: 3},
 				{IntField: 2},
+				{IntField: 3},
+				{IntField: 4},
 			},
 		},
 	}
@@ -197,7 +197,7 @@ func Test_And_Basic(t *testing.T) {
 			t.Errorf("Testing basic AND (%s,run). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedAndN, n)
 		}
 
-		for i, result := range results {
+		for i, _ := range results {
 			if results[i].IntField != testCase.expectedAndResults[i].IntField {
 				t.Errorf("Testing basic AND (%s,run). Mismatch in array member %v", testCase.testName, i)
 			}

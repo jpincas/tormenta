@@ -10,10 +10,10 @@ type queryResult struct {
 func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query {
 	firstQuery := queries[0]
 	combinedQuery := &Query{
-		db:              firstQuery.db,
-		alreadyExecuted: true,
-		target:          firstQuery.target,
-		ctx:             firstQuery.ctx,
+		db:            firstQuery.db,
+		combinedQuery: true,
+		target:        firstQuery.target,
+		ctx:           firstQuery.ctx,
 	}
 
 	ch := make(chan queryResult)
@@ -22,7 +22,7 @@ func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query 
 	for _, query := range queries {
 		wg.Add(1)
 
-		if !query.alreadyExecuted {
+		if !query.combinedQuery {
 			go func(thisQuery *Query) {
 				err := thisQuery.queryIDs()
 				ch <- queryResult{

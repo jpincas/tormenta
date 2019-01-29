@@ -67,9 +67,9 @@ type Query struct {
 	ctx map[string]interface{}
 
 	// Ids for retrieval
-	ids []gouuidv6.UUID
+	ids idList
 
-	alreadyExecuted bool
+	combinedQuery bool
 }
 
 func (db DB) newQuery(target interface{}, first bool) *Query {
@@ -100,7 +100,7 @@ func (q Query) getIteratorOptions(getValues bool) badger.IteratorOptions {
 }
 
 func (q Query) isExactIndexMatchSearch() bool {
-	return q.start == q.end
+	return q.start == q.end && q.start != nil && q.end != nil
 }
 
 func (q Query) isIndexRangeSearch() bool {
@@ -223,7 +223,7 @@ func (q *Query) resetQuery() {
 
 	// Also, id list should be reset -
 	// UNLESS this is an 'already executed' query!!!
-	if !q.alreadyExecuted {
+	if !q.combinedQuery {
 		q.ids = idList{}
 	}
 }
@@ -345,7 +345,9 @@ func (q *Query) queryIDs() error {
 }
 
 func (q *Query) execute() (int, error) {
-	if !q.alreadyExecuted {
+	// Combined queries have already had their IDs retrieved,
+	// so we can skip this step
+	if !q.combinedQuery {
 		// Step 1: get the IDs returned for this query
 		err := q.queryIDs()
 		if err != nil {
@@ -382,9 +384,16 @@ func (q *Query) execute() (int, error) {
 	}
 
 	// For non 'first' type queries
+	// In the case of combined queries, the IDs are going to be mixed up because they come
+	// from a combination of multiple queries, so lets remedy that first
+	if q.combinedQuery {
+		q.ids.sort(q.reverse)
+	}
+
 	n, err := q.db.GetIDsWithContext(q.target, q.ctx, q.ids...)
 	if err != nil {
 		return 0, err
 	}
+
 	return n, nil
 }
