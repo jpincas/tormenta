@@ -19,10 +19,14 @@ func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query 
 	ch := make(chan queryResult)
 	var wg sync.WaitGroup
 
-	for _, query := range queries {
-		wg.Add(1)
+	var queryIDs []idList
+	var errorsList []error
 
+	for _, query := range queries {
+		// Regular, non-combined queries need to be run
+		// through the id fether.  We fire those off in parallel
 		if !query.combinedQuery {
+			wg.Add(1)
 			go func(thisQuery *Query) {
 				err := thisQuery.queryIDs()
 				ch <- queryResult{
@@ -30,11 +34,12 @@ func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query 
 					err: err,
 				}
 			}(query)
+		} else {
+			// Otherwise, if this is a nested combined query,
+			// we can just add the list of ids as is
+			queryIDs = append(queryIDs, query.ids)
 		}
 	}
-
-	var queryIDs []idList
-	var errorsList []error
 
 	go func() {
 		for queryResult := range ch {

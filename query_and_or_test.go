@@ -156,6 +156,107 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 				{IntField: 4},
 			},
 		},
+		{
+			"nested OR",
+			[]*tormenta.Query{
+				tormenta.Or(
+					db.Find(results).Range("intfield", 1, 3),
+					db.Find(results).Range("stringfield", "int-1", "int-2"),
+					// -> 1, 2, 3
+				),
+				tormenta.Or(
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
+					// -> 4, 5
+				),
+			},
+			5,
+			[]testtypes.FullStruct{
+				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
+				{IntField: 4},
+				{IntField: 5},
+			},
+			0,
+			[]testtypes.FullStruct{},
+		},
+		{
+			"nested OR",
+			[]*tormenta.Query{
+				tormenta.Or(
+					db.Find(results).Range("intfield", 1, 4),
+					db.Find(results).Range("stringfield", "int-1", "int-2"),
+					// -> 1, 2, 3, 4
+				),
+				tormenta.Or(
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
+					// -> 4, 5
+				),
+			},
+			5,
+			[]testtypes.FullStruct{
+				{IntField: 1},
+				{IntField: 2},
+				{IntField: 3},
+				{IntField: 4},
+				{IntField: 5},
+			},
+			1,
+			[]testtypes.FullStruct{
+				{IntField: 4},
+			},
+		},
+		{
+			"nested AND",
+			[]*tormenta.Query{
+				tormenta.And(
+					db.Find(results).Range("intfield", 1, 4),
+					db.Find(results).Range("stringfield", "int-1", "int-2"),
+					// -> 1, 2
+				),
+				tormenta.And(
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
+					// -> 5
+				),
+			},
+			3,
+			[]testtypes.FullStruct{
+				{IntField: 1},
+				{IntField: 2},
+				{IntField: 5},
+			},
+			0,
+			[]testtypes.FullStruct{},
+		},
+		{
+			"nested AND",
+			[]*tormenta.Query{
+				tormenta.And(
+					db.Find(results).Range("intfield", 2, 4),
+					db.Find(results).Range("stringfield", "int-1", "int-4"),
+					// -> 2, 3, 4
+				),
+				tormenta.Or(
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
+					// -> 4, 5
+				),
+			},
+			4,
+			[]testtypes.FullStruct{
+				{IntField: 2},
+				{IntField: 3},
+				{IntField: 4},
+				{IntField: 5},
+			},
+			1,
+			[]testtypes.FullStruct{
+				{IntField: 4},
+			},
+		},
 	}
 }
 
