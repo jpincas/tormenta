@@ -23,14 +23,10 @@ func Test_Delete_EntityID(t *testing.T) {
 	}
 
 	// Delete by entity id
-	n, err := db.Delete(&fullStruct)
+	err := db.Delete(&fullStruct)
 
 	if err != nil {
 		t.Errorf("Testing delete. Got error %v", err)
-	}
-
-	if n != 1 {
-		t.Errorf("Testing delete. Expected n = 1, got n = %v", n)
 	}
 
 	// Attempt to retrieve again
@@ -66,14 +62,10 @@ func Test_Delete_SeparateID(t *testing.T) {
 	// Delete by separate id
 	// We're being tricky here - we're passing in the entity #2,
 	// but specifying the ID of #1 to delete
-	n, err := db.Delete(&fullStruct2, fullStruct.ID)
+	err := db.Delete(&fullStruct2, fullStruct.ID)
 
 	if err != nil {
 		t.Errorf("Testing delete. Got error %v", err)
-	}
-
-	if n != 1 {
-		t.Errorf("Testing delete. Expected n = 1, got n = %v", n)
 	}
 
 	// Attempt to retrieve again

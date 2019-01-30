@@ -68,8 +68,8 @@ func Example() {
 	printlinef("Get record with separately specified ID? %v", ok)
 
 	// Delete
-	n, _ = db.Delete(&product1)
-	printlinef("Deleted %v record(s)", n)
+	db.Delete(&product1)
+	fmt.Println("Deleted 1 record")
 
 	// Basic query
 	var products []Product
@@ -168,7 +168,7 @@ func Example() {
 	// Get record? false
 	// Got record? true
 	// Get record with separately specified ID? true
-	// Deleted 1 record(s)
+	// Deleted 1 record
 	// Found 1 record(s)
 	// Basic date range query: 3 records found
 	// Basic date range query, first only: 1 record(s) found
