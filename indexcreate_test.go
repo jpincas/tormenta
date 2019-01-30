@@ -15,8 +15,6 @@ func Test_CreateIndexKeys(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	// Create basic fullStruct and save
-	// fullStructs have an 'index' on Customer field
 	entity := testtypes.FullStruct{
 		IntField:                1,
 		StringField:             "test",
@@ -34,11 +32,11 @@ func Test_CreateIndexKeys(t *testing.T) {
 		DefinedStringSliceField: []types.DefinedString{"test1", "test2"},
 		DefinedFloatSliceField:  []types.DefinedFloat{0.99, 1.99},
 		DefinedBoolSliceField:   []types.DefinedBool{true, false},
-		EmbeddedStruct: types.EmbeddedStruct{
-			EmbeddedIntField:    1,
-			EmbeddedStringField: "test",
-			EmbeddedFloatField:  0.99,
-			EmbeddedBoolField:   true,
+		MyStruct: types.MyStruct{
+			StructIntField:    1,
+			StructStringField: "test",
+			StructFloatField:  0.99,
+			StructBoolField:   true,
 		},
 	}
 
@@ -71,7 +69,7 @@ func Test_CreateIndexKeys(t *testing.T) {
 		{"defined float field", "definedfloatfield", 0.99},
 		{"defined bool field", "definedboolfield", true},
 
-		// Embedded structs
+		// Struct structs
 		{"embedded struct - int field", "embeddedintfield", 1},
 		{"embedded struct - string field", "embeddedstringfield", "test"},
 		{"embedded struct - float field", "embeddedfloatfield", 0.99},

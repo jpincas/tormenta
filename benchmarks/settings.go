@@ -17,11 +17,11 @@ func stdRecord() *testtypes.FullStruct {
 		StringSliceField:  []string{"string", "slice", "field"},
 		FloatSliceField:   []float64{0.1, 0.2, 0.3, 0.4, 0.5},
 		BoolSliceField:    []bool{true, false, true, false},
-		EmbeddedStruct: testtypes.EmbeddedStruct{
-			EmbeddedIntField:    100,
-			EmbeddedFloatField:  999.999,
-			EmbeddedBoolField:   false,
-			EmbeddedStringField: "embedded string field",
+		MyStruct: testtypes.MyStruct{
+			StructIntField:    100,
+			StructFloatField:  999.999,
+			StructBoolField:   false,
+			StructStringField: "embedded string field",
 		},
 	}
 }
