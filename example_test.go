@@ -68,7 +68,7 @@ func Example() {
 	printlinef("Get record with separately specified ID? %v", ok)
 
 	// Delete
-	n, _ = db.Delete("product", product1.ID)
+	n, _ = db.Delete(&product1)
 	printlinef("Deleted %v record(s)", n)
 
 	// Basic query

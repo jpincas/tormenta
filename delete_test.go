@@ -7,7 +7,7 @@ import (
 	"github.com/jpincas/tormenta/testtypes"
 )
 
-func Test_Delete(t *testing.T) {
+func Test_Delete_EntityID(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
@@ -22,8 +22,8 @@ func Test_Delete(t *testing.T) {
 		t.Error("Testing delete. Test fullStruct not saved correctly")
 	}
 
-	// Delete
-	n, err := db.Delete("fullstruct", fullStruct.ID)
+	// Delete by entity id
+	n, err := db.Delete(&fullStruct)
 
 	if err != nil {
 		t.Errorf("Testing delete. Got error %v", err)
@@ -40,30 +40,45 @@ func Test_Delete(t *testing.T) {
 	}
 }
 
-func Test_Delete_Multiple(t *testing.T) {
+func Test_Delete_SeparateID(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	fullStruct1 := testtypes.FullStruct{}
+	fullStruct := testtypes.FullStruct{}
 	fullStruct2 := testtypes.FullStruct{}
-	fullStruct3 := testtypes.FullStruct{}
 
-	db.Save(&fullStruct1, &fullStruct2, &fullStruct3)
+	db.Save(&fullStruct, &fullStruct2)
 
-	// Delete
-	n, err := db.Delete("fullstruct", fullStruct1.ID, fullStruct2.ID, fullStruct3.ID)
+	// Test the the fullStruct has been saved
+	retrievedFullStruct := testtypes.FullStruct{}
+	ok, _ := db.Get(&retrievedFullStruct, fullStruct.ID)
+	if !ok || fullStruct.ID != retrievedFullStruct.ID {
+		t.Error("Testing delete. Test fullStruct not saved correctly")
+	}
+
+	// Test the the fullStruct has been saved
+	retrievedFullStruct2 := testtypes.FullStruct{}
+	ok, _ = db.Get(&retrievedFullStruct2, fullStruct2.ID)
+	if !ok || fullStruct2.ID != retrievedFullStruct2.ID {
+		t.Error("Testing delete. Test fullStruct not saved correctly")
+	}
+
+	// Delete by separate id
+	// We're being tricky here - we're passing in the entity #2,
+	// but specifying the ID of #1 to delete
+	n, err := db.Delete(&fullStruct2, fullStruct.ID)
 
 	if err != nil {
-		t.Errorf("Testing multiple delete. Got error %v", err)
+		t.Errorf("Testing delete. Got error %v", err)
 	}
 
-	if n != 3 {
-		t.Errorf("Testing multiple delete. Expected n = %v, got n = %v", 3, n)
+	if n != 1 {
+		t.Errorf("Testing delete. Expected n = 1, got n = %v", n)
 	}
 
-	var fullStructs []testtypes.FullStruct
-	c, _ := db.Find(&fullStructs).Count()
-	if c > 0 {
-		t.Errorf("Testing delete. Should have found any fullStructs, but found %v", c)
+	// Attempt to retrieve again
+	ok, _ = db.Get(&retrievedFullStruct, fullStruct.ID)
+	if ok {
+		t.Error("Testing delete. Supposedly deleted fullStruct found on 2nd get")
 	}
 }
