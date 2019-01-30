@@ -46,15 +46,18 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 
 ## To Do
 
-- [ ] Documentation
+- [ ] Index deletion on reecord deletion (URGENT)
+- [ ] Date field indexing (URGENT)
+- [ ] More tests for indexes: more fields, post deletion, interrupted save transactions
+- [ ] Nuke/rebuild indices command
+- [ ] Documentation / Examples
 - [x] Delete
 - [x] Logic triggers (preSave, postSave, postGet)
-- [ ] Easy joins
+- [ ] Easy relational data loading
 - [ ] Better error reporting from query construction
 - [ ] Better protection against unsupported types being passed around as interfaces
 - [ ] Fully benchmarked simulation of a real-world use case
 - [x] Slices as indexes -> multiple index entries
-- [ ] Nuke/rebuild indices command
 - [x] Stack multiple queries, execute as AND/OR, execute in parallel
 - [x] Split-string indexing with 'split' tag
 - [x] 'Starts with' index match

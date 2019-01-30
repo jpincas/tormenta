@@ -27,94 +27,62 @@ var (
 	typeString = reflect.TypeOf("")
 )
 
-func index(txn *badger.Txn, entity Record, keyRoot []byte, id gouuidv6.UUID) error {
-	v := reflect.Indirect(reflect.ValueOf(entity))
-	return indexStruct(v, txn, entity, keyRoot, id)
+func index(txn *badger.Txn, entity Record) error {
+	keys := indexStruct(
+		recordValue(entity),
+		entity,
+		KeyRoot(entity),
+		entity.GetID(),
+	)
+
+	for i := range keys {
+		if err := txn.Set(keys[i], []byte{}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func indexStruct(v reflect.Value, txn *badger.Txn, entity Record, keyRoot []byte, id gouuidv6.UUID) error {
+func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUID) (keys [][]byte) {
 	for i := 0; i < v.NumField(); i++ {
 
 		// If the 'tormenta:noindex' tag is present, don't index
 		fieldType := v.Type().Field(i)
 		if idx := fieldType.Tag.Get(tormentaTag); idx != tormentaTagNoIndex {
-
 			switch fieldType.Type.Kind() {
 			case reflect.Slice:
-				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
-					return err
-				}
+				keys = append(keys, getMultipleIndexKeys(v.Field(i), keyRoot, id, fieldType.Name)...)
 
 			case reflect.Array:
-				if err := setMultipleIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
-					return err
-				}
+				keys = append(keys, getMultipleIndexKeys(v.Field(i), keyRoot, id, fieldType.Name)...)
 
 			case reflect.String:
 				// If the string is tagged with 'split',
 				// then index each of the words separately
 				if idx == tormentaTagSplit {
-					if err := setSplitStringIndexes(txn, v.Field(i), keyRoot, id, fieldType.Name); err != nil {
-						return err
-					}
+					keys = append(keys, getSplitStringIndexes(v.Field(i), keyRoot, id, fieldType.Name)...)
 				} else {
-					if err := setIndexKey(txn, keyRoot, id, fieldType.Name, v.Field(i).Interface()); err != nil {
-						return err
-					}
+					keys = append(keys, makeIndexKey(keyRoot, id, fieldType.Name, v.Field(i).Interface()))
 				}
 
 			case reflect.Struct:
 				// Recursively index embedded structs
 				if fieldType.Anonymous {
-					indexStruct(v.Field(i), txn, entity, keyRoot, id)
+					keys = append(keys, indexStruct(v.Field(i), entity, keyRoot, id)...)
 				}
 
 			default:
-				if err := setIndexKey(txn, keyRoot, id, fieldType.Name, v.Field(i).Interface()); err != nil {
-					return err
-				}
+				keys = append(keys, makeIndexKey(keyRoot, id, fieldType.Name, v.Field(i).Interface()))
 			}
-
 		}
 	}
 
-	return nil
+	return
 }
 
-func setSplitStringIndexes(txn *badger.Txn, v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) error {
-	strings := strings.Split(v.String(), " ")
-
-	// Clean non-content words
-	strings = removeNonContentWords(strings)
-
-	for _, s := range strings {
-		if err := setIndexKey(txn, root, id, indexName, s); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func setMultipleIndexes(txn *badger.Txn, v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) error {
-	for i := 0; i < v.Len(); i++ {
-		if err := setIndexKey(txn, root, id, indexName, v.Index(i).Interface()); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func setIndexKey(txn *badger.Txn, root []byte, id gouuidv6.UUID, indexName string, indexContent interface{}) error {
-	key := makeIndexKey(root, id, indexName, indexContent)
-
-	// Set the index key with no content
-	return txn.Set(key, []byte{})
-}
-
-// IndexKey returns the bytes of an index key constructed for a particular root, id, index name and index content
-func IndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent interface{}) []byte {
+// MakeIndexKey constructs an index key
+func MakeIndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent interface{}) []byte {
 	return makeIndexKey(root, id, indexName, indexContent)
 }
 
@@ -129,6 +97,29 @@ func makeIndexKey(root []byte, id gouuidv6.UUID, indexName string, indexContent 
 		},
 		[]byte(keySeparator),
 	)
+}
+
+func getMultipleIndexKeys(v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) (keys [][]byte) {
+	for i := 0; i < v.Len(); i++ {
+		key := makeIndexKey(root, id, indexName, v.Index(i).Interface())
+		keys = append(keys, key)
+	}
+
+	return
+}
+
+func getSplitStringIndexes(v reflect.Value, root []byte, id gouuidv6.UUID, indexName string) (keys [][]byte) {
+	strings := strings.Split(v.String(), " ")
+
+	// Clean non-content words
+	strings = removeNonContentWords(strings)
+
+	for _, s := range strings {
+		key := makeIndexKey(root, id, indexName, s)
+		keys = append(keys, key)
+	}
+
+	return
 }
 
 func interfaceToBytes(value interface{}) []byte {

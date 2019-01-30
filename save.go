@@ -59,7 +59,7 @@ func (db DB) Save(entities ...Record) (int, error) {
 			entity.PostSave()
 
 			// indexing
-			if err := index(txn, entity, keyRoot, model.ID); err != nil {
+			if err := index(txn, entity); err != nil {
 				return err
 			}
 
