@@ -74,6 +74,7 @@ func Test_MakeIndexKeys(t *testing.T) {
 		{"embedded struct - bool field", "structboolfield", true},
 	}
 
+	// Step 1 - make sure that the keys that we expect are present after saving
 	db.KV.View(func(txn *badger.Txn) error {
 
 		for _, testCase := range testCases {
@@ -87,6 +88,90 @@ func Test_MakeIndexKeys(t *testing.T) {
 
 		return nil
 	})
+
+	// Step 2 - delete the record and test that it has been deindexed
+	err := db.Delete(&entity)
+
+	if err != nil {
+		t.Errorf("Testing delete. Got error %v", err)
+	}
+
+	db.KV.View(func(txn *badger.Txn) error {
+
+		for _, testCase := range testCases {
+			i := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, testCase.indexName, testCase.indexValue)
+
+			if _, err := txn.Get(i); err != badger.ErrKeyNotFound {
+				t.Errorf("Testing %s after deletion. Should not find index key but did", testCase.testName)
+			}
+		}
+
+		return nil
+	})
+}
+
+func Test_ReIndex(t *testing.T) {
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	defer db.Close()
+
+	entity := testtypes.FullStruct{
+		IntField:    1,
+		StringField: "test",
+	}
+
+	// Save the entity first
+	db.Save(&entity)
+
+	// Step 1 - test that the 2 basic indexes have been created
+	db.KV.View(func(txn *badger.Txn) error {
+		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, "intField", 1)
+		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
+			t.Errorf("Testing %s. Could not get index key", "int field indexing")
+		}
+
+		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, "stringField", "test")
+		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
+			t.Errorf("Testing %s. Could not get index key", "string field indexing")
+		}
+
+		return nil
+	})
+
+	// Stpe 2 - Now make some changes and update
+	entity.IntField = 2
+	entity.StringField = "test_update"
+	db.Save(&entity)
+
+	// Step 3 - test that the 2 previous indices are gone
+	db.KV.View(func(txn *badger.Txn) error {
+		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, "intField", 1)
+		if _, err := txn.Get(key); err != badger.ErrKeyNotFound {
+			t.Errorf("Testing %s. Found index key when shouldn't have", "int field indexing")
+		}
+
+		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, "stringField", "test")
+		if _, err := txn.Get(key); err != badger.ErrKeyNotFound {
+			t.Errorf("Testing %s. Found index key when shouldn't have", "string field indexing")
+		}
+
+		return nil
+	})
+
+	// Step 4 - test that the 2 new indices are present
+	db.KV.View(func(txn *badger.Txn) error {
+		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, "intField", 2)
+		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
+			t.Errorf("Testing %s. Could not get index key after update", "int field indexing")
+		}
+
+		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, "stringField", "test_update")
+		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
+			t.Errorf("Testing %s. Could not get index key after update", "string field indexing")
+		}
+
+		return nil
+	})
+
 }
 
 func Test_MakeIndexKeys_Split(t *testing.T) {

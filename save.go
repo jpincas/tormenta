@@ -15,10 +15,23 @@ const (
 func (db DB) Save(entities ...Record) (int, error) {
 
 	err := db.KV.Update(func(txn *badger.Txn) error {
-		// a, b := batchStartAndEnd(i, batchSize, len(entities))
-		// batch := entities[a:b]
-
 		for _, entity := range entities {
+			// Make a copy of the entity and attempt to get the old
+			// version from the DB for deindexing
+			newEntity := newRecord(entity)
+			found, err := db.Get(newEntity, entity.GetID())
+			if err != nil {
+				return err
+			}
+
+			// If it does exist, then we'll need to deindex it.
+			// If it's a new entity then deindexing is not necessary
+			if found {
+				if err := deIndex(txn, newEntity); err != nil {
+					return err
+				}
+			}
+
 			// Presave trigger
 			if err := entity.PreSave(); err != nil {
 				return err

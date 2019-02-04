@@ -46,8 +46,8 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 
 ## To Do
 
-- [ ] Index deletion on reecord deletion (URGENT)
-- [ ] Index update on record edit (URGENT)
+- [x] Index deletion on reecord deletion
+- [x] Index update on record edit
 - [ ] Date field indexing (URGENT)
 - [ ] More tests for indexes: more fields, post deletion, interrupted save transactions
 - [ ] Nuke/rebuild indices command

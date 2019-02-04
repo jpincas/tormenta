@@ -32,9 +32,9 @@ func (db DB) Delete(entity Record, ids ...gouuidv6.UUID) error {
 			return err
 		}
 
-		// if err := deIndexRecord(txn, entity); err != nil {
-		// 	return err
-		// }
+		if err := deIndex(txn, entity); err != nil {
+			return err
+		}
 
 		return nil
 	})

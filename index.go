@@ -44,6 +44,23 @@ func index(txn *badger.Txn, entity Record) error {
 	return nil
 }
 
+func deIndex(txn *badger.Txn, entity Record) error {
+	keys := indexStruct(
+		recordValue(entity),
+		entity,
+		KeyRoot(entity),
+		entity.GetID(),
+	)
+
+	for i := range keys {
+		if err := txn.Delete(keys[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUID) (keys [][]byte) {
 	for i := 0; i < v.NumField(); i++ {
 
