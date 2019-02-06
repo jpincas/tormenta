@@ -2,7 +2,7 @@
 
 I've refactored the repo and removed the REST API layer and GUI for now. The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).  Another big change is the move away from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, making Tormenta easier to get started with, which fits with the philosophy of the project. Also, it means we could do some pretty cool 'pass-straight-through-to JSON' stuff in the future, which could be handy for building a JSON api when you just need to spit out a record without any intermediate processing.  Still a WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon! Any questions, hit me up.
 
-# ⚡ Tormenta
+# ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)  [![Coverage Status](https://coveralls.io/repos/github/jpincas/tormenta/badge.svg?branch=master)](https://coveralls.io/github/jpincas/tormenta?branch=master)
 
 Tormenta is a functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some data querying capabilities and ORM-like features.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm) and powered by:
 
