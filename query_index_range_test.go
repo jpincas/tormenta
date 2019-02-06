@@ -62,7 +62,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 			AnotherIntField:   (-50) + i,
 			StringField:       fmt.Sprintf("customer-%v", string((i%26)+65)),
 			FloatField:        float64(i) + 0.99,
-			AnotherFloatField: float64(-50.99) + float64(i),
+			AnotherFloatField: float64(-50) + float64(i),
 			DateField:         dateWithYear(i),
 		})
 	}
@@ -151,15 +151,18 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"float - from 99.99", "floatfield", 99.99, nil, 1, nil},
 		{"float - to 20.99", "floatfield", nil, 20.99, 21, nil},
 
-		// Negative floats TODO
-		// {"float - start at -1, full range", "floatfield", -1.00, 99.99, 100, nil},
-		// {"float - start at -100, full range", "floatfield", -100.00, 99.99, 100, nil},
-		// {"float - start at -100, limited range ", "floatfield", -100.00, -20.00, 0, nil},
-		// {"float - negatives - just out of range", "anotherfloatfield", -100, -51, 0, nil},
-		// {"float - negatives - just in range", "anotherfloatfield", -100, -50, 1, nil},
-		// {"float - negatives - first half of range", "anotherfloatfield", -50, -1, 50, nil},
-		// {"float- negatives - span neg and pos", "anotherfloatfield", -50, 50, 100, nil},
+		// Negative floats
+		// using regular floatField which has no negatives
+		{"float - start at -1, full range", "floatfield", -1.00, 99.99, 100, nil},
+		{"float - start at -100, full range", "floatfield", -100.00, 99.99, 100, nil},
+		{"float - start at -100, limited range ", "floatfield", -100.00, -20.00, 0, nil},
 
+		// now using anotherFloatField which does have negatives starting at -50
+		{"float - negatives - just out of range", "anotherfloatfield", -100.00, -51.00, 0, nil},
+		{"float - negatives - just in range", "anotherfloatfield", -100.00, -50.00, 1, nil},
+		{"float - negatives - first half of range", "anotherfloatfield", -50.00, -1.00, 50, nil},
+		{"float- negatives - span neg and pos", "anotherfloatfield", -50.00, 50.00, 100, nil},
+		{"float- negatives - span neg and pos 2", "anotherfloatfield", -20.00, 30.00, 51, nil},
 	}
 
 	for _, testCase := range testCases {

@@ -119,8 +119,9 @@ func extractIndexValue(b []byte, i interface{}) {
 	// For unsigned ints, we need to flip the sign bit back
 	switch i.(type) {
 	case *int, *int8, *int16, *int32, *int64:
-		flipIntSign(indexValueBytes)
-
+		flipInt(indexValueBytes)
+	case *float64, *float32:
+		revertFloat(indexValueBytes)
 	}
 
 	buf := bytes.NewBuffer(indexValueBytes)

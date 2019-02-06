@@ -163,15 +163,15 @@ func interfaceToBytes(value interface{}) []byte {
 	switch reflect.ValueOf(value).Type().Kind() {
 	case reflect.Int:
 		binary.Write(buf, binary.BigEndian, intInterfaceToInt32(value))
-		return flipIntSign(buf.Bytes())
+		return flipInt(buf.Bytes())
 
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		binary.Write(buf, binary.BigEndian, value)
-		return flipIntSign(buf.Bytes())
+		return flipInt(buf.Bytes())
 
 	case reflect.Float64, reflect.Float32:
 		binary.Write(buf, binary.BigEndian, value)
-		return buf.Bytes()
+		return flipFloat(buf.Bytes())
 
 	case reflect.Uint:
 		binary.Write(buf, binary.BigEndian, intInterfaceToUInt32(value))
@@ -189,7 +189,7 @@ func interfaceToBytes(value interface{}) []byte {
 		// time.Time is a struct, so we encode/decode as int64 (unix seconds)
 		if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
 			binary.Write(buf, binary.BigEndian, t.Unix())
-			return flipIntSign(buf.Bytes())
+			return flipInt(buf.Bytes())
 		}
 
 	}
@@ -198,8 +198,32 @@ func interfaceToBytes(value interface{}) []byte {
 	return []byte(strings.ToLower(fmt.Sprintf("%v", value)))
 }
 
-func flipIntSign(b []byte) []byte {
+func flipInt(b []byte) []byte {
 	b[0] ^= 1 << 7
+	return b
+}
+
+func flipFloat(b []byte) []byte {
+	if b[0]>>7 > 0 {
+		for i, bb := range b {
+			b[i] = ^bb
+		}
+	} else {
+		b[0] ^= 0x80
+	}
+
+	return b
+}
+
+func revertFloat(b []byte) []byte {
+	if b[0]>>7 > 0 {
+		b[0] ^= 0x80
+	} else {
+		for i, bb := range b {
+			b[i] = ^bb
+		}
+	}
+
 	return b
 }
 

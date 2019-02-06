@@ -47,7 +47,8 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 
 ## To Do
 
-- [ ] Byte-ordered floats (UREGENT BUG)
+- [ ] Correct indexing and aggregation on defined fields
+- [x] Byte-ordered floats (UREGENT)
 - [x] Index deletion on reecord deletion
 - [x] Index update on record edit
 - [x] Date field indexing (URGENT)
