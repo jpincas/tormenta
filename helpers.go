@@ -1,7 +1,10 @@
 package tormenta
 
 import (
+	"encoding/json"
+	"log"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -37,4 +40,12 @@ func timerMiliseconds(t time.Time) int {
 	t1 := time.Now()
 	duration := t1.Sub(t)
 	return int(duration.Seconds() * 1000)
+}
+
+func toJSON(m interface{}) string {
+	js, err := json.Marshal(m)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return strings.Replace(string(js), ",", ", ", -1)
 }

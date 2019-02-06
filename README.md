@@ -27,6 +27,7 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - Combine queries with AND/OR to arbitrary depth
 - Fast counts and sums using Badger's 'key only' iteration
 - Business logic using 'triggers' on save and get, including the ability to pass a 'context' through a query
+- URL parameter -> query builder in package `urltoquery`, for quick construction of queries from URL strings
 
 ## Quick How To
 

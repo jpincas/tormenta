@@ -72,6 +72,46 @@ type Query struct {
 	combinedQuery bool
 }
 
+func (q Query) String() string {
+	return toJSON(
+		map[string]interface{}{
+			"keyRoot":           q.keyRoot,
+			"offset":            q.offset,
+			"limit":             q.limit,
+			"reverse":           q.reverse,
+			"first":             q.first,
+			"start":             q.start,
+			"end":               q.end,
+			"from":              q.from,
+			"to":                q.to,
+			"indexName":         q.indexName,
+			"isIndexQuery":      q.isIndexQuery,
+			"isStartsWithQuery": q.isStartsWithQuery,
+			"countOnly":         q.countOnly,
+			"isAggQuery":        q.isAggQuery,
+			"ctx":               q.ctx,
+		},
+	)
+}
+
+func (q Query) Compare(cq Query) bool {
+	return string(q.keyRoot) == string(cq.keyRoot) &&
+		q.offset == cq.offset &&
+		q.limit == cq.limit &&
+		q.reverse == cq.reverse &&
+		q.first == cq.first &&
+		q.start == cq.start &&
+		q.end == cq.end &&
+		q.from == cq.from &&
+		q.to == cq.to &&
+		string(q.indexName) == string(cq.indexName) &&
+		q.isIndexQuery == cq.isIndexQuery &&
+		q.isStartsWithQuery == cq.isStartsWithQuery &&
+		q.countOnly == cq.countOnly &&
+		q.isAggQuery == cq.isAggQuery &&
+		toJSON(q.ctx) == toJSON(q.ctx)
+}
+
 func (db DB) newQuery(target interface{}, first bool) *Query {
 	// Create the base Query
 	q := &Query{

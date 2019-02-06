@@ -171,6 +171,14 @@ func (q *Query) To(t time.Time) *Query {
 	return q
 }
 
+// ManualFromToSet allows you to set the exact gouuidv6s for from and to
+// Useful for testing purposes.
+func (q *Query) ManualFromToSet(from, to gouuidv6.UUID) *Query {
+	q.from = from
+	q.to = to
+	return q
+}
+
 // Run actually executes the Query
 func (q *Query) Run() (int, error) {
 	return q.execute()
