@@ -46,9 +46,10 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 
 ## To Do
 
+- [ ] Byte-ordered floats (UREGENT BUG)
 - [x] Index deletion on reecord deletion
 - [x] Index update on record edit
-- [ ] Date field indexing (URGENT)
+- [x] Date field indexing (URGENT)
 - [ ] More tests for indexes: more fields, post deletion, interrupted save transactions
 - [ ] Nuke/rebuild indices command
 - [ ] Documentation / Examples
@@ -65,6 +66,9 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - [x] Indexes on by default
 - [x] Multiple entity `Get()`
 - [x] Bulk unmarshall rather than 1 at a time? Concurrent?
+
+## Maybe
+
 - [ ] JSON dump/ backup
 - [ ] JSON 'pass through' functionality for where you don't need to do any processing and therefore can skip unmarshalling.
 - [ ] Partial JSON return, combined with above, using https://github.com/buger/jsonparser
