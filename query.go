@@ -157,33 +157,83 @@ func (q Query) endIteration(it *badger.Iterator) bool {
 	return false
 }
 
-func (q Query) aggregate(item *badger.Item) {
-	// TODO: super inefficient to do this every time
+func (q Query) sum(item *badger.Item) {
+	// TODO: is there a more efficient way to increment
+	// the sum target given that we don't know what type it is
 	switch q.aggTarget.(type) {
+
+	// Signed Ints
+	case *int:
+		// Reminder - decoding the index values only works for fixed length integers
+		// So in the case of ints, we set up an int32 target and use
+		// that to accumulate
+		acc := *q.aggTarget.(*int)
+		var int32target int32
+		extractIndexValue(item.Key(), &int32target)
+		*q.aggTarget.(*int) = acc + int(int32target)
+	case *int8:
+		acc := *q.aggTarget.(*int8)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*int8) = acc + *q.aggTarget.(*int8)
+	case *int16:
+		acc := *q.aggTarget.(*int16)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*int16) = acc + *q.aggTarget.(*int16)
 	case *int32:
 		acc := *q.aggTarget.(*int32)
 		extractIndexValue(item.Key(), q.aggTarget)
 		*q.aggTarget.(*int32) = acc + *q.aggTarget.(*int32)
+	case *int64:
+		acc := *q.aggTarget.(*int64)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*int64) = acc + *q.aggTarget.(*int64)
+
+	// Unsigned ints
+	case *uint:
+		// See above for notes on variable vs fixed length
+		acc := *q.aggTarget.(*uint)
+		var uint32target uint32
+		extractIndexValue(item.Key(), &uint32target)
+		*q.aggTarget.(*uint) = acc + uint(uint32target)
+	case *uint8:
+		acc := *q.aggTarget.(*uint8)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*uint8) = acc + *q.aggTarget.(*uint8)
+	case *uint16:
+		acc := *q.aggTarget.(*uint16)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*uint16) = acc + *q.aggTarget.(*uint16)
+	case *uint32:
+		acc := *q.aggTarget.(*uint32)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*uint32) = acc + *q.aggTarget.(*uint32)
+	case *uint64:
+		acc := *q.aggTarget.(*uint64)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*uint64) = acc + *q.aggTarget.(*uint64)
+
+	// Floats
 	case *float64:
 		acc := *q.aggTarget.(*float64)
 		extractIndexValue(item.Key(), q.aggTarget)
 		*q.aggTarget.(*float64) = acc + *q.aggTarget.(*float64)
+
+	case *float32:
+		acc := *q.aggTarget.(*float32)
+		extractIndexValue(item.Key(), q.aggTarget)
+		*q.aggTarget.(*float32) = acc + *q.aggTarget.(*float32)
 	}
 }
 
 func (q *Query) setRanges() {
 	var seekFrom, validTo, compareTo []byte
 
-	// For reverse queries, append the byte 0xFF to get inclusive results
-	// See Badger issue: https://github.com/dgraph-io/badger/issues/347
-	// Also, flick-flack start/end and from/to
+	// For reverse queries, flick-flack start/end and from/to
 	// to provide a standardised user API
 	// CAUTION: we don't want to do this more than once for a query,
 	// so just in case this is a query being run for a second time,
 	// we maintain the flag 'is reverse prepared' to guard against this
 	if q.reverse && !q.isReversePrepared {
-		seekFrom = append(seekFrom, 0xFF)
-
 		tempEnd := q.end
 		q.end = q.start
 		q.start = tempEnd
@@ -191,8 +241,6 @@ func (q *Query) setRanges() {
 		tempTo := q.to
 		q.to = q.from
 		q.from = tempTo
-
-		q.isReversePrepared = true
 	}
 
 	if q.isIndexQuery && q.isExactIndexMatchSearch() {
@@ -209,6 +257,14 @@ func (q *Query) setRanges() {
 		seekFrom = newContentKey(q.keyRoot, q.from).bytes()
 		validTo = newContentKey(q.keyRoot).bytes()
 		compareTo = newContentKey(q.keyRoot, q.to).bytes()
+	}
+
+	// For reverse queries, append the byte 0xFF to get inclusive results
+	// See Badger issue: https://github.com/dgraph-io/badger/issues/347
+	// We can now mark the query as 'reverse prepared'
+	if q.reverse && !q.isReversePrepared {
+		seekFrom = append(seekFrom, 0xFF)
+		q.isReversePrepared = true
 	}
 
 	q.seekFrom = seekFrom
@@ -329,7 +385,7 @@ func (q *Query) queryIDs() error {
 			q.ids = append(q.ids, extractID(item.Key()))
 
 			if q.isAggQuery {
-				q.aggregate(item)
+				q.sum(item)
 			}
 
 			// If this is a first-only search, break out of the iteration now

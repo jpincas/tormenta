@@ -116,6 +116,13 @@ func extractIndexValue(b []byte, i interface{}) {
 	s := bytes.Split(b, []byte(keySeparator))
 	indexValueBytes := s[3]
 
+	// For unsigned ints, we need to flip the sign bit back
+	switch i.(type) {
+	case *int, *int8, *int16, *int32, *int64:
+		flipIntSign(indexValueBytes)
+
+	}
+
 	buf := bytes.NewBuffer(indexValueBytes)
 	binary.Read(buf, binary.BigEndian, i) //TODO: error handling
 }

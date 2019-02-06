@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
@@ -19,12 +20,6 @@ const (
 	tormentaTag        = "tormenta"
 	tormentaTagNoIndex = "noindex"
 	tormentaTagSplit   = "split"
-)
-
-var (
-	typeInt    = reflect.TypeOf(0)
-	typeFloat  = reflect.TypeOf(0.99)
-	typeString = reflect.TypeOf("")
 )
 
 func index(txn *badger.Txn, entity Record) error {
@@ -84,6 +79,14 @@ func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUI
 				}
 
 			case reflect.Struct:
+				// time.Time is a struct, so we'll intercept it here
+				// and send it to the index key maker which will translate it to int64
+				// see below interfaceToBytes for more on that
+				f := v.Field(i).Interface()
+				if _, ok := f.(time.Time); ok {
+					keys = append(keys, makeIndexKey(keyRoot, id, fieldType.Name, f))
+				}
+
 				// Recursively index embedded structs
 				if fieldType.Anonymous {
 					keys = append(keys, indexStruct(v.Field(i), entity, keyRoot, id)...)
@@ -139,6 +142,7 @@ func getSplitStringIndexes(v reflect.Value, root []byte, id gouuidv6.UUID, index
 	return
 }
 
+// interfaceToBytes encodes values to bytes
 func interfaceToBytes(value interface{}) []byte {
 	// Note: must use BigEndian for correct sorting
 
@@ -157,34 +161,55 @@ func interfaceToBytes(value interface{}) []byte {
 	// AND the kind of NamedString (with underlying type string) is ALSO just string
 
 	switch reflect.ValueOf(value).Type().Kind() {
-
-	// For ints, cast the interface to int, convert to uint32 (normal ints don't work)
 	case reflect.Int:
-		i := convertUnderlying(value, typeInt)
-		binary.Write(buf, binary.BigEndian, uint32(i.(int)))
+		binary.Write(buf, binary.BigEndian, intInterfaceToInt32(value))
+		return flipIntSign(buf.Bytes())
 
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		binary.Write(buf, binary.BigEndian, value)
+		return flipIntSign(buf.Bytes())
+
+	case reflect.Float64, reflect.Float32:
+		binary.Write(buf, binary.BigEndian, value)
 		return buf.Bytes()
 
-	// For floats, write straight to binary
-	case reflect.Float64:
-		i := convertUnderlying(value, typeFloat)
-		binary.Write(buf, binary.BigEndian, i.(float64))
-
+	case reflect.Uint:
+		binary.Write(buf, binary.BigEndian, intInterfaceToUInt32(value))
 		return buf.Bytes()
 
-	// For strings, lower case before indexing
-	case reflect.String:
-		i := convertUnderlying(value, typeString)
-		return []byte(strings.ToLower(i.(string)))
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		binary.Write(buf, binary.BigEndian, value)
+		return buf.Bytes()
+
+	case reflect.Bool:
+		binary.Write(buf, binary.BigEndian, value)
+		return buf.Bytes()
+
+	case reflect.Struct:
+		// time.Time is a struct, so we encode/decode as int64 (unix seconds)
+		if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
+			binary.Write(buf, binary.BigEndian, t.Unix())
+			return flipIntSign(buf.Bytes())
+		}
+
 	}
 
-	// Everything else as a string
-	return []byte(fmt.Sprintf("%v", value))
+	// Everything else as a string (lower case)
+	return []byte(strings.ToLower(fmt.Sprintf("%v", value)))
 }
 
-// convertUnderlying takes an interface and converts its underlying type
-// to the target type.  Obviously the underlying types must be convertible
-// E.g. NamedInt -> Int
-func convertUnderlying(src interface{}, targetType reflect.Type) interface{} {
-	return reflect.ValueOf(src).Convert(targetType).Interface()
+func flipIntSign(b []byte) []byte {
+	b[0] ^= 1 << 7
+	return b
 }
+
+// isNegative uses the bitwise &operator to determine if the first bit of a bit slice is 1.
+// In the case of signed numbers, this means its a negative
+// func isNegative(b []byte) bool {
+// 	return b[0]>>7 > 0
+// }
+
+// I think a simple modification can extend this to negative numbers: XOR all positive numbers with 0x8000... and negative numbers with 0xffff.... This should flip the sign bit on both (so negative numbers go first), and then reverse the ordering on negative numbers. Does anyone see a problem with this?
+// func signByteFloat(b []byte) []byte {
+// 	return b
+// }

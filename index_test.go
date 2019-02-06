@@ -2,6 +2,7 @@ package tormenta_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/tormenta"
@@ -18,6 +19,7 @@ func Test_MakeIndexKeys(t *testing.T) {
 		StringField:             "test",
 		FloatField:              0.99,
 		BoolField:               true,
+		DateField:               time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
 		IntSliceField:           []int{1, 2},
 		StringSliceField:        []string{"test1", "test2"},
 		FloatSliceField:         []float64{0.99, 1.99},
@@ -50,6 +52,7 @@ func Test_MakeIndexKeys(t *testing.T) {
 		{"string field", "stringfield", "test"},
 		{"float field", "floatfield", 0.99},
 		{"bool field", "boolfield", true},
+		{"date field", "datefield", time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC).Unix()},
 
 		// Slice testtypes - check both members
 		{"int slice field", "intslicefield", 1},

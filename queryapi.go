@@ -186,7 +186,7 @@ func (q *Query) Count() (int, error) {
 // than accessing every record, but requires an index query
 func (q *Query) QuickSum(a interface{}) (int, error) {
 	if !q.isIndexQuery || len(q.indexName) == 0 {
-		return 0, errors.New("Aggregation must use an index Query")
+		return 0, errors.New("Quicksum must use an index Query")
 	}
 
 	q.aggTarget = a

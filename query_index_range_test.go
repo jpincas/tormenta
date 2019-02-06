@@ -11,6 +11,44 @@ import (
 	"github.com/jpincas/tormenta/testtypes"
 )
 
+// Helpers
+
+// just any old date really, all we're interested in is being able to sequence the year for testing
+func dateWithYear(i int) time.Time {
+	return time.Date(2009+i, time.November, 10, 23, 0, 0, 0, time.UTC)
+}
+
+func Test_IndexQuery_Range_Simple_Reverse(t *testing.T) {
+	var fullStructs []tormenta.Record
+
+	for i := 0; i < 100; i++ {
+		fullStructs = append(fullStructs, &testtypes.FullStruct{
+			IntField: i + 1,
+		})
+	}
+
+	tormenta.RandomiseRecords(fullStructs)
+	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	defer db.Close()
+	db.Save(fullStructs...)
+
+	rangequeryResults := []testtypes.FullStruct{}
+	n, err := db.
+		Find(&rangequeryResults).
+		Range("intfield", 1, 100).
+		Reverse().
+		Run()
+
+	if err != nil {
+		t.Errorf("Testing simple reverse.  Got error %v", err)
+	}
+
+	if n != 100 {
+		t.Errorf("Testing simple reverse.  Expected 100, got %v", n)
+	}
+
+}
+
 // Test range queries across different types
 func Test_IndexQuery_Range(t *testing.T) {
 	// Set up 100 fullStructs with increasing department, customer and shipping fee
@@ -19,9 +57,13 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		fullStructs = append(fullStructs, &testtypes.FullStruct{
-			IntField:    i + 1,
-			StringField: fmt.Sprintf("customer-%v", string((i%26)+65)),
-			FloatField:  float64(i) + 0.99,
+			IntField:          i + 1,
+			UintField:         uint(i) + 1,
+			AnotherIntField:   (-50) + i,
+			StringField:       fmt.Sprintf("customer-%v", string((i%26)+65)),
+			FloatField:        float64(i) + 0.99,
+			AnotherFloatField: float64(-50.99) + float64(i),
+			DateField:         dateWithYear(i),
 		})
 	}
 
@@ -32,6 +74,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
+
 	db.Save(fullStructs...)
 
 	testCases := []struct {
@@ -54,8 +97,39 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"integer - from 50", "intfield", 50, nil, 51, nil},
 		{"integer - 1 to 2", "intfield", 1, 2, 2, nil},
 		{"integer - 50 to 59", "intfield", 50, 59, 10, nil},
+		{"integer - start at 0", "intfield", 0, 100, 100, nil},
 		{"integer - 1 to 100", "intfield", 1, 100, 100, nil},
 		{"integer - to 50", "intfield", nil, 50, 50, nil},
+
+		// Int (negatives - involves bit toggling - see interfaceToBytes())
+		{"integer - start at -1, full range", "intfield", -1, 100, 100, nil},
+		{"integer - start at -100, full range", "intfield", -100, 100, 100, nil},
+		{"integer - start at -100, limited range ", "intfield", -100, -20, 0, nil},
+		{"integer - negatives - out of range", "anotherintfield", -100, -51, 0, nil},
+		{"integer - negatives - just in range", "anotherintfield", -100, -50, 1, nil},
+		{"integer - negatives - first half of range", "anotherintfield", -50, -1, 50, nil},
+		{"integer - negatives - span neg and pos - all", "anotherintfield", -50, 50, 100, nil},
+		{"integer - negatives - span neg and pos", "anotherintfield", -25, 25, 51, nil},
+		{"integer - negatives - span neg and pos 2", "anotherintfield", -10, 5, 16, nil},
+
+		// Uint
+		// Note how the types have to be explcitly stated, otherwise they will
+		// be interpreted as ints and the sign bit will be flipped
+		{"unsigned integer - no range", "uintfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"unsigned integer - from 1", "uintfield", uint(1), nil, 100, nil},
+		{"unsigned integer - from 2", "uintfield", uint(2), nil, 99, nil},
+		{"unsigned integer - from 50", "uintfield", uint(50), nil, 51, nil},
+		{"unsigned integer - 1 to 2", "uintfield", uint(1), uint(2), 2, nil},
+		{"unsigned integer - 50 to 59", "uintfield", uint(50), uint(59), 10, nil},
+		{"unsigned integer - start at 0", "uintfield", uint(0), uint(100), 100, nil},
+		{"unsigned integer - 1 to 100", "uintfield", uint(1), uint(100), 100, nil},
+		{"unsigned integer - to 50", "uintfield", nil, uint(50), 50, nil},
+
+		// Date - just encoded as an int64 so should be no problem
+		{"date - no range", "datefield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"date - all", "datefield", dateWithYear(0), nil, 100, nil},
+		{"date - first 2", "datefield", dateWithYear(0), dateWithYear(1), 2, nil},
+		{"date - random range", "datefield", dateWithYear(10), dateWithYear(20), 11, nil},
 
 		// String
 		{"string - no range", "stringfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
@@ -67,13 +141,25 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"string - to Z", "stringfield", nil, "customer-Z", 100, nil},
 
 		// Float
+		// Note that we've always used the decimal point, so
+		// the range values will be interpreted as floats not ints
 		{"float - no range", "floatfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"float", "floatfield", 0, nil, 100, nil},
-		{"float", "floatfield", 0.99, nil, 100, nil},
+		{"float - 0 to nil", "floatfield", 0.00, nil, 100, nil},
+		{"float - 0.99 to nil", "floatfield", 0.99, nil, 100, nil},
 		{"float - from 1.99", "floatfield", 1.99, nil, 99, nil},
 		{"float - from 50.99", "floatfield", 50.99, nil, 50, nil},
 		{"float - from 99.99", "floatfield", 99.99, nil, 1, nil},
 		{"float - to 20.99", "floatfield", nil, 20.99, 21, nil},
+
+		// Negative floats TODO
+		// {"float - start at -1, full range", "floatfield", -1.00, 99.99, 100, nil},
+		// {"float - start at -100, full range", "floatfield", -100.00, 99.99, 100, nil},
+		// {"float - start at -100, limited range ", "floatfield", -100.00, -20.00, 0, nil},
+		// {"float - negatives - just out of range", "anotherfloatfield", -100, -51, 0, nil},
+		// {"float - negatives - just in range", "anotherfloatfield", -100, -50, 1, nil},
+		// {"float - negatives - first half of range", "anotherfloatfield", -50, -1, 50, nil},
+		// {"float- negatives - span neg and pos", "anotherfloatfield", -50, 50, 100, nil},
+
 	}
 
 	for _, testCase := range testCases {
@@ -118,19 +204,24 @@ func Test_IndexQuery_Range(t *testing.T) {
 		}
 
 		// Reverse
-		rn, err := q.Reverse().Run()
+		rangequeryResults = []testtypes.FullStruct{}
+		q = db.
+			Find(&rangequeryResults).
+			Range(testCase.indexName, testCase.start, testCase.end).
+			Reverse()
+		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
-			t.Errorf("Testing %s. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
+			t.Errorf("Testing %s - reverse. Expected error [%v] but got none", testCase.testName, testCase.expectedError)
 		}
 
 		if testCase.expectedError == nil && err != nil {
-			t.Errorf("Testing %s. Didn't expect error [%v]", testCase.testName, err)
+			t.Errorf("Testing %s - reverse. Didn't expect error [%v]", testCase.testName, err)
 		}
 
 		// Check for correct number of returned results
-		if n != testCase.expected {
-			t.Errorf("Testing %s (number fullStructs retrieved). Expected %v - got %v", testCase.testName, testCase.expected, rn)
+		if rn != testCase.expected || rn != n {
+			t.Errorf("Testing %s - reverse (number fullStructs retrieved). Expected %v - got %v. Forwards search was %v", testCase.testName, testCase.expected, rn, n)
 		}
 
 		// Check each member of the results for nil ID, customer and shipping fee

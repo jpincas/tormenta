@@ -30,11 +30,27 @@ type FullStruct struct {
 
 	// Basic types
 	IntField          int
+	AnotherIntField   int
 	StringField       string
 	MultipleWordField string `tormenta:"split"`
 	FloatField        float64
+	AnotherFloatField float64
 	BoolField         bool
 	DateField         time.Time
+
+	// Fixed-length types
+	Int8Field  int8
+	Int16Field int16
+	Int32Field int32
+	Int64Field int64
+
+	UintField   uint
+	Uint8Field  uint8
+	Uint16Field uint16
+	Uint32Field uint32
+	Uint64Field uint64
+
+	Float32Field float32
 
 	// Slice types
 	IDSliceField     []gouuidv6.UUID
