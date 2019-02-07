@@ -58,10 +58,13 @@ func Test_IndexQuery_Range(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		fullStructs = append(fullStructs, &testtypes.FullStruct{
 			IntField:          i + 1,
+			DefinedIntField:   testtypes.DefinedInt(-50) + testtypes.DefinedInt(i),
+			DefinedInt16Field: testtypes.DefinedInt16(-50) + testtypes.DefinedInt16(i),
 			UintField:         uint(i) + 1,
 			AnotherIntField:   (-50) + i,
 			StringField:       fmt.Sprintf("customer-%v", string((i%26)+65)),
 			FloatField:        float64(i) + 0.99,
+			DefinedFloatField: testtypes.DefinedFloat(-50) + testtypes.DefinedFloat(i),
 			AnotherFloatField: float64(-50) + float64(i),
 			DateField:         dateWithYear(i),
 		})
@@ -111,6 +114,46 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"integer - negatives - span neg and pos - all", "anotherintfield", -50, 50, 100, nil},
 		{"integer - negatives - span neg and pos", "anotherintfield", -25, 25, 51, nil},
 		{"integer - negatives - span neg and pos 2", "anotherintfield", -10, 5, 16, nil},
+
+		// Defined Int
+		{"defined integer - no range", "definedintfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"defined integer - from 1", "definedintfield", 1, nil, 49, nil},
+		{"defined integer - from 2", "definedintfield", 2, nil, 48, nil},
+		{"defined integer - from 50", "definedintfield", 50, nil, 0, nil},
+		{"defined integer - 1 to 2", "definedintfield", 1, 2, 2, nil},
+		{"defined integer - 50 to 59", "definedintfield", 50, 59, 0, nil},
+		{"defined integer - start at 0", "definedintfield", 0, 100, 50, nil},
+		{"defined integer - 1 to 100", "definedintfield", 1, 100, 49, nil},
+		{"defined integer - to 50", "definedintfield", nil, 50, 100, nil},
+		{"defined integer - start at -1, full range", "definedintfield", -1, 100, 51, nil},
+		{"defined integer - start at -100, full range", "definedintfield", -100, 100, 100, nil},
+		{"defined integer - start at -100, limited range ", "definedintfield", -100, -20, 31, nil},
+		{"defined integer - negatives - out of range", "definedintfield", -100, -51, 0, nil},
+		{"defined integer - negatives - just in range", "definedintfield", -100, -50, 1, nil},
+		{"defined integer - negatives - first half of range", "definedintfield", -50, -1, 50, nil},
+		{"defined integer - negatives - span neg and pos - all", "definedintfield", -50, 50, 100, nil},
+		{"defined integer - negatives - span neg and pos", "definedintfield", -25, 25, 51, nil},
+		{"defined integer - negatives - span neg and pos 2", "definedintfield", -10, 5, 16, nil},
+
+		// Defined Int16
+		{"defined integer 16 - no range", "definedint16field", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"defined integer 16 - from 1", "definedint16field", int16(1), nil, 49, nil},
+		{"defined integer 16 - from 2", "definedint16field", int16(2), nil, 48, nil},
+		{"defined integer 16 - from 50", "definedint16field", int16(50), nil, 0, nil},
+		{"defined integer 16 - 1 to 2", "definedint16field", int16(1), int16(2), 2, nil},
+		{"defined integer 16 - 50 to 59", "definedint16field", int16(50), int16(59), 0, nil},
+		{"defined integer 16 - start at 0", "definedint16field", int16(0), int16(100), 50, nil},
+		{"defined integer 16 - 1 to 100", "definedint16field", int16(1), int16(100), 49, nil},
+		{"defined integer 16 - to 50", "definedint16field", nil, int16(50), 100, nil},
+		{"defined integer 16 - start at -1, full range", "definedint16field", int16(-1), int16(100), 51, nil},
+		{"defined integer 16 - start at -100, full range", "definedint16field", int16(-100), int16(100), 100, nil},
+		{"defined integer 16 - start at -100, limited range ", "definedint16field", int16(-100), int16(-20), 31, nil},
+		{"defined integer 16 - negatives - out of range", "definedint16field", int16(-100), int16(-51), 0, nil},
+		{"defined integer 16 - negatives - just in range", "definedint16field", int16(-100), int16(-50), 1, nil},
+		{"defined integer 16 - negatives - first half of range", "definedint16field", int16(-50), int16(-1), 50, nil},
+		{"defined integer 16 - negatives - span neg and pos - all", "definedint16field", int16(-50), int16(50), 100, nil},
+		{"defined integer 16 - negatives - span neg and pos", "definedint16field", int16(-25), int16(25), 51, nil},
+		{"defined integer 16 - negatives - span neg and pos 2", "definedint16field", int16(-10), int16(5), 16, nil},
 
 		// Uint
 		// Note how the types have to be explcitly stated, otherwise they will
@@ -163,6 +206,23 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"float - negatives - first half of range", "anotherfloatfield", -50.00, -1.00, 50, nil},
 		{"float- negatives - span neg and pos", "anotherfloatfield", -50.00, 50.00, 100, nil},
 		{"float- negatives - span neg and pos 2", "anotherfloatfield", -20.00, 30.00, 51, nil},
+
+		// Defined Float
+		{"defined float - no range", "definedfloatfield", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
+		{"defined float - 0 to nil", "definedfloatfield", 0.00, nil, 50, nil},
+		{"defined float - 0.99 to nil", "definedfloatfield", 0.99, nil, 49, nil},
+		{"defined float - from 1.99", "definedfloatfield", 1.99, nil, 48, nil},
+		{"defined float - from 50.99", "definedfloatfield", 50.99, nil, 0, nil},
+		{"defined float - from 99.99", "definedfloatfield", 99.99, nil, 0, nil},
+		{"defined float - to 20.99", "definedfloatfield", nil, 20.99, 71, nil},
+		{"defined float - start at -1, full range", "definedfloatfield", -1.00, 99.99, 51, nil},
+		{"defined float - start at -100, full range", "definedfloatfield", -100.00, 99.99, 100, nil},
+		{"defined float - start at -100, limited range ", "definedfloatfield", -100.00, -20.00, 31, nil},
+		{"defined float - negatives - just out of range", "definedfloatfield", -100.00, -51.00, 0, nil},
+		{"defined float - negatives - just in range", "definedfloatfield", -100.00, -50.00, 1, nil},
+		{"defined float - negatives - first half of range", "definedfloatfield", -50.00, -1.00, 50, nil},
+		{"defined float- negatives - span neg and pos", "definedfloatfield", -50.00, 50.00, 100, nil},
+		{"defined float- negatives - span neg and pos 2", "definedfloatfield", -20.00, 30.00, 51, nil},
 	}
 
 	for _, testCase := range testCases {

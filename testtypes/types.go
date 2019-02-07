@@ -11,6 +11,8 @@ import (
 type (
 	DefinedID     gouuidv6.UUID
 	DefinedInt    int
+	DefinedInt16  int16
+	DefinedUint16 uint16
 	DefinedString string
 	DefinedFloat  float64
 	DefinedBool   bool
@@ -34,6 +36,7 @@ type FullStruct struct {
 	StringField       string
 	MultipleWordField string `tormenta:"split"`
 	FloatField        float64
+	Float32Field      float32
 	AnotherFloatField float64
 	BoolField         bool
 	DateField         time.Time
@@ -50,8 +53,6 @@ type FullStruct struct {
 	Uint32Field uint32
 	Uint64Field uint64
 
-	Float32Field float32
-
 	// Slice types
 	IDSliceField     []gouuidv6.UUID
 	IntSliceField    []int
@@ -67,6 +68,10 @@ type FullStruct struct {
 	DefinedFloatField  DefinedFloat
 	DefinedBoolField   DefinedBool
 	DefinedDateField   DefinedDate
+
+	// Defined Fixed-length types - just a sample
+	DefinedInt16Field  DefinedInt16
+	DefinedUint16Field DefinedUint16
 
 	// Defined slice types
 	DefinedIDSliceField     []DefinedID

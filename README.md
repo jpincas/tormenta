@@ -1,7 +1,3 @@
-### (Update Jan 2019)
-
-I've refactored the repo and removed the REST API layer and GUI for now. The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).  Another big change is the move away from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, making Tormenta easier to get started with, which fits with the philosophy of the project. Also, it means we could do some pretty cool 'pass-straight-through-to JSON' stuff in the future, which could be handy for building a JSON api when you just need to spit out a record without any intermediate processing.  Still a WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon! Any questions, hit me up.
-
 # ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)  [![Coverage Status](https://coveralls.io/repos/github/jpincas/tormenta/badge.svg?branch=master)](https://coveralls.io/github/jpincas/tormenta?branch=master)
 
 Tormenta is a functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some data querying capabilities and ORM-like features.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm) and powered by:
@@ -9,6 +5,10 @@ Tormenta is a functionality layer over BadgerDB key/value store.  It provides si
 - [BadgerDB](https://github.com/dgraph-io/badger)
 - ['V6' UUIDs](https://github.com/bradleypeabody/gouuidv6)
 - [JSONIter](https://github.com/json-iterator/go)
+
+### (Update Jan 2019)
+
+I've refactored the repo and removed the REST API layer and GUI for now. The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).  Another big change is the move away from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, making Tormenta easier to get started with, which fits with the philosophy of the project. Also, it means we could do some pretty cool 'pass-straight-through-to JSON' stuff in the future, which could be handy for building a JSON api when you just need to spit out a record without any intermediate processing.  Still a WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon! Any questions, hit me up.
 
 ## Why would you use this?
 
@@ -39,15 +39,20 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - Save a single entity with `db.Save(&MyEntity)` or multiple entities with `db.Save(&MyEntity1, &MyEntity2)`.
 - Get a single entity by ID with `db.Get(&MyEntity, entityID)`.
 - Construct a query to find single or mutliple entities with `db.First(&MyEntity)` or `db.Find(&MyEntities)` respectively. 
-- Build up the query by chaining methods: `From()/.To()` to add a date range, `Match("indexName", value)` to add an exact match index search, `Range("indexname", start, end)` to add a range search, `StartsWith("indexname", "prefix")` for a text prefix search, `.Reverse()` to reverse the fullStruct of searching/results and `.Limit()/.Offset()` to limit the number of results.
+- Build up the query by chaining methods: `From()/.To()` to add a date range, `Match("indexName", value)` to add an exact match index search, `Range("indexname", start, end)` to add a range search, `StartsWith("indexname", "prefix")` for a text prefix search, `.Reverse()` to reverse the fullStruct of searching/results and `.Limit()/.Offset()` to limit the number of results. `Order()` can be used to specify results order, but with caveats (see below).
 - Kick off the query with `.Run()`, or `.Count()` if you just need the count.  `.QuickSum()` is also available for float/int index searches.
 - Add business logic by specifying `.PreSave()`, `.PostSave()` and `.PostGet()` methods on your structs.
 	
 See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.go) to get a better idea of how to use.
 
+## Gotchas
+
+- Be type-specific when specifying index searches; e.g. `Match("int16field", int(16)")` if you are searching on an `int16` field.  This is due to slight encoding differences between variable/fixed length ints, signed/unsigned ints and floats.  If you let the compiler infer the type and the type you are searching on isn't the default `int` (or `int32`) or `float64`, you'll get odd results.  I understand this is a pain - perhaps we should switch to a fixed indexing scheme in all cases?
+- Due to the way Tormenta returns results by iterating ordered keys, ordering functionality is limited to non-index query searches.  Essentially, adding `Order("myField")` creates an index search on `myField` but without any range (i.e. returns all results).  If you are already using an index, e.g. with `Range("someOtherField", 1, 2)` then that index will take priority and results would be ordered by `someOtherField`.  If you are only filtering by date with `From()/.To()` you CAN independently order as that doesn't use indexes.  If you are doing complex AND/OR query combinations which rely on multiple indexes, then date/ID ordering is the only option - sorry!  In general, best practice would be to limit your results set as much as possible and order results in application code if you require a different order to what you get from Tormenta.
+
 ## To Do
 
-- [ ] Correct indexing and aggregation on defined fields
+- [x] Correct indexing and aggregation on defined fields
 - [x] Byte-ordered floats (UREGENT)
 - [x] Index deletion on reecord deletion
 - [x] Index update on record edit
