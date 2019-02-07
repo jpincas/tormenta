@@ -92,6 +92,15 @@ type FullStruct struct {
 	Retrieved       bool
 	IsSaved         bool
 	ShouldBlockSave bool
+
+	// Fields for 'no save' testing
+	NoSaveSimple                string `tormenta:"-"`
+	NoSaveTwoTags               string `tormenta:"split;-"`
+	NoSaveTwoTagsDifferentOrder string `tormenta:"-;split"`
+
+	// for this one we change the field name with a json tag
+	NoSaveJSONtag     string `tormenta:"-" json:"noSaveJsonTag"`
+	NoSaveJSONSkiptag string `tormenta:"-" json:"-"`
 }
 
 func (t FullStruct) PreSave() error {

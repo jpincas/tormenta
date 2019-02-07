@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/dgraph-io/badger"
 )
 
@@ -63,6 +64,10 @@ func (db DB) Save(entities ...Record) (int, error) {
 				return err
 			}
 
+			// If there are any fields that shouldn't be saved - directly
+			// manipulate the output JSON to remove them
+			removeSkippedFields(e, data)
+
 			key := newContentKey(keyRoot, model.ID).bytes()
 			if err := txn.Set(key, data); err != nil {
 				return err
@@ -106,4 +111,15 @@ func (db DB) SaveIndividually(entities ...Record) (counter int, lastErr error) {
 	}
 
 	return counter, lastErr
+}
+
+// removeSkippedFields will remove from the output JSON any fields that
+// have been marked with `tormenta:"-"`
+func removeSkippedFields(entityValue reflect.Value, json []byte) {
+	for i := 0; i < entityValue.NumField(); i++ {
+		fieldType := entityValue.Type().Field(i)
+		if shouldDelete, jsonFieldName := shouldDeleteField(fieldType); shouldDelete {
+			jsonparser.Delete(json, jsonFieldName)
+		}
+	}
 }

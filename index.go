@@ -16,12 +16,6 @@ import (
 // i:indexname:root:indexcontent:entityID
 // i:fullStruct:customer:5:324ds-3werwf-234wef-23wef
 
-const (
-	tormentaTag        = "tormenta"
-	tormentaTagNoIndex = "noindex"
-	tormentaTagSplit   = "split"
-)
-
 func index(txn *badger.Txn, entity Record) error {
 	keys := indexStruct(
 		recordValue(entity),

@@ -1,4 +1,4 @@
-# ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)  [![Coverage Status](https://coveralls.io/repos/github/jpincas/tormenta/badge.svg?branch=master)](https://coveralls.io/github/jpincas/tormenta?branch=master)
+# ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)
 
 Tormenta is a functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some data querying capabilities and ORM-like features.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm) and powered by:
 
@@ -32,7 +32,8 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 ## Quick How To
 
 - Add import `"github.com/jpincas/tormenta"`
-- Add `tormenta.Model` to structs you want to persist 
+- Add `tormenta.Model` to structs you want to persist
+- Add `tormenta:"-"` tag to fields you don't want to save
 - Add `tormenta:"noindex"` tag to fields you want to exclude from secondary indexing
 - Add `tormenta:"split"` tag to string fields where you'd like to index each word separately instead of the the whole sentence
 - Open a DB connection with `db, err := tormenta.Open("mydatadirectory")` (dont forget to `defer db.Close()`). For auto-deleting test DB, use `tormenta.OpenTest`

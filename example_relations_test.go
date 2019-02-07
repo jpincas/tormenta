@@ -8,31 +8,7 @@ import (
 	"github.com/jpincas/tormenta"
 )
 
-type Product struct {
-	tormenta.Model
-
-	Code          string
-	Name          string
-	Price         float32
-	StartingStock int
-	Tags          []string
-}
-
-type Order struct {
-	tormenta.Model
-
-	Customer    string
-	Department  int
-	ShippingFee float64
-	ProductID   gouuidv6.UUID
-	Product     *Product
-}
-
-func printlinef(formatString string, x interface{}) {
-	fmt.Println(fmt.Sprintf(formatString, x))
-}
-
-func Example() {
+func Example_Relations() {
 	// Open the DB
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
