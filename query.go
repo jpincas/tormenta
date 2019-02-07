@@ -73,7 +73,7 @@ type Query struct {
 }
 
 func (q Query) String() string {
-	return toJSON(
+	return ToJSON(
 		map[string]interface{}{
 			"keyRoot":           q.keyRoot,
 			"offset":            q.offset,
@@ -109,7 +109,7 @@ func (q Query) Compare(cq Query) bool {
 		q.isStartsWithQuery == cq.isStartsWithQuery &&
 		q.countOnly == cq.countOnly &&
 		q.isAggQuery == cq.isAggQuery &&
-		toJSON(q.ctx) == toJSON(q.ctx)
+		ToJSON(q.ctx) == ToJSON(q.ctx)
 }
 
 func (db DB) newQuery(target interface{}, first bool) *Query {

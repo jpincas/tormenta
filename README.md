@@ -63,7 +63,9 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - [ ] Documentation / Examples
 - [x] Delete
 - [x] Logic triggers (preSave, postSave, postGet)
-- [ ] Easy relational data loading
+- [x] Relation loading helpers: has-one
+- [ ] Relation loading helpers: has-many
+- [ ] Relation loading helpers: many-to-many
 - [ ] Better error reporting from query construction
 - [ ] Better protection against unsupported types being passed around as interfaces
 - [ ] Fully benchmarked simulation of a real-world use case

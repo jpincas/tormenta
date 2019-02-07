@@ -3,7 +3,6 @@ package tormenta
 import (
 	"bytes"
 	"encoding/binary"
-	"reflect"
 	"strings"
 
 	"github.com/jpincas/gouuidv6"
@@ -170,11 +169,6 @@ func keyIsOutsideDateRange(key, start, end gouuidv6.UUID) bool {
 }
 
 // Key construction helpers
-
-func entityTypeAndValue(t interface{}) ([]byte, reflect.Value) {
-	e := reflect.Indirect(reflect.ValueOf(t))
-	return typeToKeyRoot(e.Type().String()), e
-}
 
 func KeyRoot(t interface{}) []byte {
 	k, _ := entityTypeAndValue(t)

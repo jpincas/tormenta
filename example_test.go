@@ -25,7 +25,7 @@ type Order struct {
 	Department  int
 	ShippingFee float64
 	ProductID   gouuidv6.UUID
-	Product     *Product
+	Product     Product `tormenta:"-"`
 }
 
 func printlinef(formatString string, x interface{}) {

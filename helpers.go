@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -42,10 +41,10 @@ func timerMiliseconds(t time.Time) int {
 	return int(duration.Seconds() * 1000)
 }
 
-func toJSON(m interface{}) string {
-	js, err := json.Marshal(m)
+func ToJSON(m interface{}) string {
+	js, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
-	return strings.Replace(string(js), ",", ", ", -1)
+	return string(js)
 }

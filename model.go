@@ -15,6 +15,10 @@ type Record interface {
 	GetID() gouuidv6.UUID
 }
 
+type ReadOnlyRecord interface {
+	GetID() gouuidv6.UUID
+}
+
 type Model struct {
 	ID          gouuidv6.UUID `json:"id"`
 	Created     time.Time     `json:"created"`
