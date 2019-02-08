@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/jpincas/gouuidv6"
@@ -14,9 +15,20 @@ const (
 	ErrIDFieldIncorrectType        = "%s is not an ID field of the type UUID"
 	ErrNoRecords                   = "at least 1 record is needed in order to load relations"
 	ErrRelationMustBeStructPointer = "relation must be a pointer to a struct"
+
+	idFieldPostFix = "ID"
+	fieldPathSep   = "."
 )
 
 // TODO: clean this up when all relational stuff is done
+
+func idFieldName(fieldName string) string {
+	return fieldName + idFieldPostFix
+}
+
+func fieldPath(fieldName string) []string {
+	return strings.Split(fieldName, fieldPathSep)
+}
 
 type relationsResult struct {
 	fieldName string
@@ -32,13 +44,19 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 	}
 
 	ch := make(chan relationsResult)
+	defer close(ch)
+
 	var wg sync.WaitGroup
+	wg.Add(len(fieldNames))
 
 	// For each fieldname/path specified for relational loading,
 	// we spawn a worker to go and get all the relations needed
 	// for ALL the entities - we'll do the sorting and reattaching later
 	for _, fieldName := range fieldNames {
-		wg.Add(1)
+		fieldPath := fieldPath(fieldName)
+		if len(fieldPath) == 0 {
+			return fmt.Errorf("%s is an invalid field path", fieldName)
+		}
 
 		go func(thisFieldName string) {
 			recordMap, err := hasOne(db, thisFieldName, entities...)
@@ -47,7 +65,7 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 				recordMap: recordMap,
 				err:       err,
 			}
-		}(fieldName)
+		}(fieldPath[0])
 	}
 
 	// The workers return a map of relational records keyed by ID,
@@ -79,22 +97,23 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 	// that record and 'attach' it according to the stored xxxID field.
 	// We do that in parallel for each entity
 	var entityWg sync.WaitGroup
+	entityWg.Add(len(entities))
+
 	done := make(chan bool)
+	defer close(done)
 
 	for i := range entities {
-		entityWg.Add(1)
-
 		go func(ii int) {
 			for fieldName, recordMap := range masterRecordMap {
-				idfieldName := fieldName + "ID"
-				field := recordValue(entities[ii]).FieldByName(idfieldName)
-				id, ok := field.Interface().(gouuidv6.UUID)
-				if ok {
-					// Get the record from the record map - if its nil
-					// don't worry, the relation will just be nil
-					record := recordMap[id]
-					recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(record))
-				}
+				field := recordValue(entities[ii]).FieldByName(idFieldName(fieldName))
+				// No need to confirm that the interface to UUID is OK
+				// as this is performed already in the inner loop so will
+				// always be OK at this point
+				id := field.Interface().(gouuidv6.UUID)
+
+				// Get the record from the record map - if its nil
+				// don't worry, the relation will just be nil
+				recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(recordMap[id]))
 			}
 
 			done <- true
@@ -111,16 +130,13 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 	return nil
 }
 
-// TODO: is it worth parallelising this??
 func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]ReadOnlyRecord, error) {
+	idfieldName := idFieldName(fieldName)
 	recordMap := map[gouuidv6.UUID]ReadOnlyRecord{}
 
-	// Get all the related IDs for all the entities passed in
-	// Use a map to build a set of IDs to avoid duplication
-	idMap := map[gouuidv6.UUID]bool{}
-
+	// For each entity, add the ID of the relation to the map
+	// giving deduping for free
 	for _, entity := range entities {
-		idfieldName := fieldName + "ID"
 		field := recordValue(entity).FieldByName(idfieldName)
 		if !field.IsValid() {
 			return recordMap, fmt.Errorf(ErrIDFieldNotExist, idfieldName)
@@ -128,26 +144,23 @@ func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Rea
 
 		id, ok := field.Interface().(gouuidv6.UUID)
 		if !ok {
-			fmt.Errorf(ErrIDFieldIncorrectType, idfieldName)
+			return recordMap, fmt.Errorf(ErrIDFieldIncorrectType, idfieldName)
 		}
 
-		idMap[id] = true
+		recordMap[id] = nil
 	}
 
-	// Map -> List
-	var ids []gouuidv6.UUID
-	for k := range idMap {
+	// id map -> list
+	ids := make([]gouuidv6.UUID, 0, len(recordMap))
+	for k := range recordMap {
 		ids = append(ids, k)
 	}
 
 	// Now we have the IDs of the related entities we need to get,
 	// we just have to work out what type we are getting.
 	// Use the first record as an exemplar -
-	// check that its a pointer, and if so that it points to a struct
+	// check that its a struct
 	fieldValue := fieldValue(entities[0], fieldName)
-	// if fieldValue.Kind() != reflect.Ptr {
-	// 	return errors.New(ErrRelationMustBeStructPointer)
-	// }
 
 	if reflect.ValueOf(fieldValue).Kind() != reflect.Struct {
 		return recordMap, errors.New(ErrRelationMustBeStructPointer)

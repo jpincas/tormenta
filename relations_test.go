@@ -44,7 +44,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 	db.Save(&struct1, &struct2, &struct3)
 
-	// A) Single relation, no nesting
+	// A) Single invalid relation, no nesting
 	// Reload
 	fullStructs := []testtypes.FullStruct{}
 	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
@@ -122,7 +122,7 @@ func Test_Relations_HasOne(t *testing.T) {
 		}
 	}
 
-	// 2) Two relations
+	// 3) Two relations
 	// Reload
 	fullStructs = []testtypes.FullStruct{}
 	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
@@ -160,5 +160,46 @@ func Test_Relations_HasOne(t *testing.T) {
 				fullStruct.HasAnotherOne.ID,
 			)
 		}
+	}
+
+	// 4) Single relation, nesting
+	// Reload
+	fullStructs = []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
+		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
+	}
+
+	// Convert to records
+	records = []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	testName = "single, nested relation"
+	if err := tormenta.HasOne(db, []string{"HasOne.Nested"}, records...); err != nil {
+		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
+	}
+
+	for i, fullStruct := range fullStructs {
+		if fullStruct.HasOneID != fullStruct.HasOne.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOneID to HasOne.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOneID,
+				fullStruct.HasOne.ID,
+			)
+		}
+
+		if fullStruct.HasOne.NestedID != fullStruct.HasOne.Nested.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOne.NestedID to HasOne.Nested.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOne.NestedID,
+				fullStruct.HasOne.Nested.ID,
+			)
+		}
+
 	}
 }
