@@ -3,79 +3,161 @@ package tormenta_test
 import (
 	"testing"
 
+	"github.com/jpincas/tormenta/testtypes"
+
 	"github.com/jpincas/tormenta"
 )
 
-func Test_Relations_Load(t *testing.T) {
+func Test_Relations_HasOne(t *testing.T) {
 	// Open the DB
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	// Create some products
-	product1 := Product{
-		Code:          "SKU1",
-		Name:          "Product1",
-		Price:         1.00,
-		StartingStock: 50}
-	product2 := Product{
-		Code:          "SKU2",
-		Name:          "Product2",
-		Price:         2.00,
-		StartingStock: 100}
+	// Created some nested structs and save
+	nestedStruct1 := testtypes.NestedRelatedStruct{}
+	nestedStruct2 := testtypes.NestedRelatedStruct{}
+	db.Save(&nestedStruct1, &nestedStruct2)
 
-	// Save them
-	db.Save(&product1, &product2)
+	// Create some related structs which nest the above and save
+	relatedStruct1 := testtypes.RelatedStruct{
+		NestedID: nestedStruct2.ID,
+	}
+	relatedStruct2 := testtypes.RelatedStruct{
+		NestedID: nestedStruct1.ID,
+	}
+	db.Save(&relatedStruct1, &relatedStruct2)
 
-	// Create some orders for those products
-	// 1 product per order for now
-	order1 := Order{
-		Customer:    "Mr T",
-		Department:  1,
-		ShippingFee: 4.99,
-		ProductID:   product1.ID,
+	// Create some full structs including these relations
+	struct1 := testtypes.FullStruct{
+		HasOneID:        relatedStruct1.ID,
+		HasAnotherOneID: relatedStruct1.ID,
 	}
 
-	order2 := Order{
-		Customer:    "Mr T",
-		Department:  1,
-		ShippingFee: 4.99,
-		ProductID:   product2.ID,
+	struct2 := testtypes.FullStruct{
+		HasOneID:        relatedStruct2.ID,
+		HasAnotherOneID: relatedStruct2.ID,
 	}
 
-	order3 := Order{
-		Customer:    "Mr T",
-		Department:  1,
-		ShippingFee: 4.99,
-		ProductID:   product1.ID,
+	struct3 := testtypes.FullStruct{
+		HasOneID:        relatedStruct1.ID,
+		HasAnotherOneID: relatedStruct1.ID,
 	}
+	db.Save(&struct1, &struct2, &struct3)
 
-	// Save
-	db.Save(&order1, &order2, &order3)
-
+	// A) Single relation, no nesting
 	// Reload
-	var orders []Order
-	if n, err := db.Find(&orders).Run(); err != nil || n != 3 {
+	fullStructs := []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
 		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
 	}
 
 	// Convert to records
-	var records []tormenta.Record
-	for i := range orders {
-		records = append(records, &orders[i])
+	records := []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
 	}
 
-	// Attempt to load relations
-	if err := tormenta.LoadRelations(db, "Product", records...); err != nil {
-		t.Errorf("Error loading relations: %s", err)
+	testName := "non existent relation"
+	if err := tormenta.HasOne(db, []string{"DoesntHaveOne"}, records...); err == nil {
+		t.Errorf("Testing %s. Should have error but didn't", testName)
 	}
 
-	for i, order := range orders {
-		if order.ProductID != order.Product.ID {
+	// 1) Single relation, no nesting
+	// Reload
+	fullStructs = []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
+		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
+	}
+
+	// Convert to records
+	records = []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	testName = "single, one level relation"
+	if err := tormenta.HasOne(db, []string{"HasOne"}, records...); err != nil {
+		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
+	}
+
+	for i, fullStruct := range fullStructs {
+		if fullStruct.HasOneID != fullStruct.HasOne.ID {
 			t.Errorf(
-				"Comparing ProductID to Product.ID for order %v and they are not the same: %v vs %v",
+				"Testing %s. Comparing HasOneID to HasOne.ID for order %v and they are not the same: %v vs %v",
+				testName,
 				i,
-				order.ProductID,
-				order.Product.ID,
+				fullStruct.HasOneID,
+				fullStruct.HasOne.ID,
+			)
+		}
+	}
+
+	// 2) Two relations, but repeated
+	// Reload
+	fullStructs = []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
+		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
+	}
+
+	// Convert to records
+	records = []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	testName = "two relations, one level, repeated"
+	if err := tormenta.HasOne(db, []string{"HasOne", "HasOne"}, records...); err != nil {
+		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
+	}
+
+	for i, fullStruct := range fullStructs {
+		if fullStruct.HasOneID != fullStruct.HasOne.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOneID to HasOne.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOneID,
+				fullStruct.HasOne.ID,
+			)
+		}
+	}
+
+	// 2) Two relations
+	// Reload
+	fullStructs = []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
+		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
+	}
+
+	// Convert to records
+	records = []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	testName = "two relations, one level, repeated"
+	if err := tormenta.HasOne(db, []string{"HasOne", "HasAnotherOne"}, records...); err != nil {
+		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
+	}
+
+	for i, fullStruct := range fullStructs {
+		if fullStruct.HasOneID != fullStruct.HasOne.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOneID to HasOne.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOneID,
+				fullStruct.HasOne.ID,
+			)
+		}
+
+		if fullStruct.HasAnotherOneID != fullStruct.HasAnotherOne.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasAnotherOneID to HasAnotherOne.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasAnotherOneID,
+				fullStruct.HasAnotherOne.ID,
 			)
 		}
 	}

@@ -1,0 +1,9 @@
+
+Has One: naive, bring entity setting up, single entity loop, parallel, entity set parallel, 1000 entities / 2 relations
+
+Benchmark_Relations_HasOne-8   	   20000	     93579 ns/op	   17297 B/op	     398 allocs/op
+Benchmark_Relations_HasOne-8   	   20000	     94967 ns/op	   17989 B/op	     402 allocs/op
+Benchmark_Relations_HasOne-8   	   20000	     93777 ns/op	   17969 B/op	     402 allocs/op
+Benchmark_Relations_HasOne-8   	   20000	     77945 ns/op	   18855 B/op	     407 allocs/op
+Benchmark_Relations_HasOne-8   	   20000	     81470 ns/op	   19478 B/op	     411 allocs/op
+Benchmark_Relations_HasOne-8   	    1000	   1489960 ns/op	  223307 B/op	   13692 allocs/op

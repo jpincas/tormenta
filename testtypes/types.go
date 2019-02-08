@@ -27,6 +27,29 @@ type MyStruct struct {
 	StructDateField   time.Time
 }
 
+type RelatedStruct struct {
+	tormenta.Model
+
+	StructIntField    int
+	StructStringField string
+	StructFloatField  float64
+	StructBoolField   bool
+	StructDateField   time.Time
+
+	NestedID gouuidv6.UUID
+	Nested   NestedRelatedStruct `tormenta:"-"`
+}
+
+type NestedRelatedStruct struct {
+	tormenta.Model
+
+	StructIntField    int
+	StructStringField string
+	StructFloatField  float64
+	StructBoolField   bool
+	StructDateField   time.Time
+}
+
 type FullStruct struct {
 	tormenta.Model
 
@@ -101,6 +124,13 @@ type FullStruct struct {
 	// for this one we change the field name with a json tag
 	NoSaveJSONtag     string `tormenta:"-" json:"noSaveJsonTag"`
 	NoSaveJSONSkiptag string `tormenta:"-" json:"-"`
+
+	// Fields for relations testing
+	HasOneID gouuidv6.UUID
+	HasOne   RelatedStruct `tormenta:"-"`
+
+	HasAnotherOneID gouuidv6.UUID
+	HasAnotherOne   RelatedStruct `tormenta:"-"`
 }
 
 func (t FullStruct) PreSave() error {
