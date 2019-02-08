@@ -13,9 +13,17 @@ func Test_Relations_HasOne(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
+	doubleNestedStruct1 := testtypes.DoubleNestedRelatedStruct{}
+	doubleNestedStruct2 := testtypes.DoubleNestedRelatedStruct{}
+	db.Save(&doubleNestedStruct1, &doubleNestedStruct2)
+
 	// Created some nested structs and save
-	nestedStruct1 := testtypes.NestedRelatedStruct{}
-	nestedStruct2 := testtypes.NestedRelatedStruct{}
+	nestedStruct1 := testtypes.NestedRelatedStruct{
+		NestedID: doubleNestedStruct2.ID,
+	}
+	nestedStruct2 := testtypes.NestedRelatedStruct{
+		NestedID: doubleNestedStruct1.ID,
+	}
 	db.Save(&nestedStruct1, &nestedStruct2)
 
 	// Create some related structs which nest the above and save
@@ -162,7 +170,7 @@ func Test_Relations_HasOne(t *testing.T) {
 		}
 	}
 
-	// 4) Single relation, nesting
+	// 4) Single relation, 2 level nesting
 	// Reload
 	fullStructs = []testtypes.FullStruct{}
 	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
@@ -191,9 +199,75 @@ func Test_Relations_HasOne(t *testing.T) {
 			)
 		}
 
+		if fullStruct.HasOne.Nested == nil {
+			t.Fatalf("Testing %s - index %v. HasOne.Nested is nil - the relation didn't load", testName, i)
+		}
+
 		if fullStruct.HasOne.NestedID != fullStruct.HasOne.Nested.ID {
 			t.Errorf(
 				"Testing %s. Comparing HasOne.NestedID to HasOne.Nested.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOne.NestedID,
+				fullStruct.HasOne.Nested.ID,
+			)
+		}
+	}
+
+	// 4) Single relation, 3 level nesting
+	// Reload
+	fullStructs = []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
+		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
+	}
+
+	// Convert to records
+	records = []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	testName = "single, 3 level nested relation"
+	if err := tormenta.HasOne(db, []string{"HasOne.Nested.Nested"}, records...); err != nil {
+		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
+	}
+
+	for i, fullStruct := range fullStructs {
+		if fullStruct.HasOneID != fullStruct.HasOne.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOneID to HasOne.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOneID,
+				fullStruct.HasOne.ID,
+			)
+		}
+
+		// L1
+
+		if fullStruct.HasOne.Nested == nil {
+			t.Fatalf("Testing %s - index %v. HasOne.Nested is nil - the relation didn't load", testName, i)
+		}
+
+		if fullStruct.HasOne.NestedID != fullStruct.HasOne.Nested.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOne.NestedID to HasOne.Nested.ID for order %v and they are not the same: %v vs %v",
+				testName,
+				i,
+				fullStruct.HasOne.NestedID,
+				fullStruct.HasOne.Nested.ID,
+			)
+		}
+
+		// L2
+
+		if fullStruct.HasOne.Nested.Nested == nil {
+			t.Fatalf("Testing %s - index %v. HasOne.Nested.Nested is nil - the relation didn't load", testName, i)
+		}
+
+		if fullStruct.HasOne.Nested.NestedID != fullStruct.HasOne.Nested.Nested.ID {
+			t.Errorf(
+				"Testing %s. Comparing HasOne.Nested.NestedID to HasOne.Nested.Nested.ID for order %v and they are not the same: %v vs %v",
 				testName,
 				i,
 				fullStruct.HasOne.NestedID,

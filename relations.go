@@ -3,6 +3,7 @@ package tormenta
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 	"sync"
@@ -30,14 +31,26 @@ func fieldPath(fieldName string) []string {
 	return strings.Split(fieldName, fieldPathSep)
 }
 
+// reJoinFieldPath is a bit counterintutive
+// When we recursively call HasOne for nested relations,
+// we need to join back up the field path (minus the 1st component)
+// which has already been dealt with.  We then call HasOne with the rejoined
+// path as the SINGLE member of the 'relationsToLoad' argument
+func reJoinFieldPath(pathComponents []string) []string {
+	return []string{strings.Join(pathComponents, fieldPathSep)}
+}
+
 type relationsResult struct {
 	fieldName string
-	recordMap map[gouuidv6.UUID]ReadOnlyRecord
+	recordMap map[gouuidv6.UUID]Record
 	err       error
 }
 
 // HasOne
-func HasOne(db *DB, fieldNames []string, entities ...Record) error {
+func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
+
+	fmt.Println(relationsToLoad)
+
 	// We need at least 1 entity to make this work
 	if len(entities) == 0 {
 		return errors.New(ErrNoRecords)
@@ -47,31 +60,53 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 	defer close(ch)
 
 	var wg sync.WaitGroup
-	wg.Add(len(fieldNames))
 
 	// For each fieldname/path specified for relational loading,
 	// we spawn a worker to go and get all the relations needed
 	// for ALL the entities - we'll do the sorting and reattaching later
-	for _, fieldName := range fieldNames {
-		fieldPath := fieldPath(fieldName)
-		if len(fieldPath) == 0 {
-			return fmt.Errorf("%s is an invalid field path", fieldName)
+	for _, relation := range relationsToLoad {
+		path := fieldPath(relation)
+
+		if len(path) == 0 {
+			return nil
 		}
 
-		go func(thisFieldName string) {
-			recordMap, err := hasOne(db, thisFieldName, entities...)
+		wg.Add(1)
+		go func(thisPath []string) {
+			recordMap, err := hasOne(db, thisPath[0], entities...)
+
+			// If there is more than one component to the path,
+			// call HasOne recursively, passing in the rest of the path
+			// (joined back up with the separator, and passed a single
+			// member of a slice)
+			// and the entities that came back above
+			if len(thisPath) > 1 {
+				var nestedEntities []Record
+				for _, record := range recordMap {
+					nestedEntities = append(nestedEntities, record)
+				}
+
+				if err := HasOne(db, reJoinFieldPath(path[1:]), nestedEntities...); err != nil {
+					log.Println("error in nested HasOne")
+					// TODO: need to work out way of signaling this at top level
+				}
+			}
+
+			// Wait until the nested loading has finished
+			// before sending the result to the channel,
+			// otherwise the top level loading will finish before the lower level
 			ch <- relationsResult{
-				fieldName: thisFieldName,
+				fieldName: thisPath[0],
 				recordMap: recordMap,
 				err:       err,
 			}
-		}(fieldPath[0])
+		}(path)
 	}
 
 	// The workers return a map of relational records keyed by ID,
 	// As the results come back, we'll build up a 'master' map
 	// of those relation maps, keyed by the field name
-	masterRecordMap := map[string]map[gouuidv6.UUID]ReadOnlyRecord{}
+	masterRecordMap := map[string]map[gouuidv6.UUID]Record{}
 	var errorsList []error
 	go func() {
 		for relationsResult := range ch {
@@ -113,6 +148,7 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 
 				// Get the record from the record map - if its nil
 				// don't worry, the relation will just be nil
+				// fmt.Println("output: ", ToJSON(entities[ii]))
 				recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(recordMap[id]))
 			}
 
@@ -130,9 +166,9 @@ func HasOne(db *DB, fieldNames []string, entities ...Record) error {
 	return nil
 }
 
-func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]ReadOnlyRecord, error) {
+func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Record, error) {
 	idfieldName := idFieldName(fieldName)
-	recordMap := map[gouuidv6.UUID]ReadOnlyRecord{}
+	recordMap := map[gouuidv6.UUID]Record{}
 
 	// For each entity, add the ID of the relation to the map
 	// giving deduping for free
@@ -162,6 +198,10 @@ func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Rea
 	// check that its a struct
 	fieldValue := fieldValue(entities[0], fieldName)
 
+	if fieldValue.Kind() != reflect.Ptr {
+		return recordMap, errors.New(ErrRelationMustBeStructPointer)
+	}
+
 	if reflect.ValueOf(fieldValue).Kind() != reflect.Struct {
 		return recordMap, errors.New(ErrRelationMustBeStructPointer)
 	}
@@ -169,19 +209,18 @@ func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Rea
 	// Set up a new slice of the type we are getting
 	// and use the multiple Get by ID api to grab all the
 	// relations
-	results := newSlice(fieldValue, len(ids))
+
+	results := newSlice(fieldValue.Type().Elem(), len(ids))
 	if _, err := db.GetIDs(results, ids...); err != nil {
 		return recordMap, err
 	}
 
 	// At this point, results is *[]WhateverTheEntityIs
-	// We'll iterate it and turn it into a map of 'read only' records
-	// That's because we don't have pointers, so they
-	// don't fulfil the full 'Record' interface.
-	// It doesn't matter though - all we need is to be able to extract the ID
+	// We'll iterate it and return as a map of *WhateverTheEntityIs
+	// which fulfuls the Record interface
 	s := reflect.ValueOf(results).Elem()
 	for i := 0; i < s.Len(); i++ {
-		record := s.Index(i).Interface().(ReadOnlyRecord)
+		record := s.Index(i).Addr().Interface().(Record)
 		recordMap[record.GetID()] = record
 	}
 

@@ -53,8 +53,8 @@ func fieldValue(entity Record, fieldName string) reflect.Value {
 // newSlice sets up a new target slice for results
 // this was arrived at after a lot of experimentation
 // so might not be the most efficient way!! TODO
-func newSlice(fieldValue reflect.Value, l int) interface{} {
-	asSlice := reflect.MakeSlice(reflect.SliceOf(fieldValue.Type()), 0, l)
+func newSlice(t reflect.Type, l int) interface{} {
+	asSlice := reflect.MakeSlice(reflect.SliceOf(t), 0, l)
 	new := reflect.New(asSlice.Type())
 	new.Elem().Set(asSlice)
 	return new.Interface()

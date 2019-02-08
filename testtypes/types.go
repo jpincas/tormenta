@@ -37,17 +37,18 @@ type RelatedStruct struct {
 	StructDateField   time.Time
 
 	NestedID gouuidv6.UUID
-	Nested   NestedRelatedStruct `tormenta:"-"`
+	Nested   *NestedRelatedStruct `tormenta:"-"`
 }
 
 type NestedRelatedStruct struct {
 	tormenta.Model
 
-	StructIntField    int
-	StructStringField string
-	StructFloatField  float64
-	StructBoolField   bool
-	StructDateField   time.Time
+	NestedID gouuidv6.UUID
+	Nested   *DoubleNestedRelatedStruct `tormenta:"-"`
+}
+
+type DoubleNestedRelatedStruct struct {
+	tormenta.Model
 }
 
 type FullStruct struct {
@@ -127,10 +128,10 @@ type FullStruct struct {
 
 	// Fields for relations testing
 	HasOneID gouuidv6.UUID
-	HasOne   RelatedStruct `tormenta:"-"`
+	HasOne   *RelatedStruct `tormenta:"-"`
 
 	HasAnotherOneID gouuidv6.UUID
-	HasAnotherOne   RelatedStruct `tormenta:"-"`
+	HasAnotherOne   *RelatedStruct `tormenta:"-"`
 }
 
 func (t FullStruct) PreSave() error {

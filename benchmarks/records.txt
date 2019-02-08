@@ -11,6 +11,7 @@ entity set parallel,
 1000 entities / 2 relations : better slice building
 1000 entities / 2 relations : defer close channel
 1000 entities / 2 relations : no rechecking of interface
+1000 entities / 2 relations : pointer results
 
 
 Benchmark_Relations_HasOne-8   	   20000	     93579 ns/op	   17297 B/op	     398 allocs/op
@@ -24,3 +25,4 @@ Benchmark_Relations_HasOne-8   	    1000	   1458650 ns/op	  198603 B/op	   11689
 Benchmark_Relations_HasOne-8   	    1000	   1445925 ns/op	  197868 B/op	   11680 allocs/op
 Benchmark_Relations_HasOne-8   	    1000	   1462471 ns/op	  196902 B/op	   11677 allocs/op
 Benchmark_Relations_HasOne-8   	    1000	   1435012 ns/op	  196897 B/op	   11677 allocs/op
+Benchmark_Relations_HasOne-8   	    1000	   1452898 ns/op	  183578 B/op	   11659 allocs/op
