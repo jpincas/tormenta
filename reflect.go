@@ -1,6 +1,8 @@
 package tormenta
 
-import "reflect"
+import (
+	"reflect"
+)
 
 var (
 	typeInt    = reflect.TypeOf(0)
@@ -12,6 +14,10 @@ var (
 
 // The idea here is to keep all the reflect code in one place,
 // which might help to spot potential optimisations / refactors
+
+func indexStringForThisEntity(record Record) string {
+	return string(typeToKeyRoot(reflect.TypeOf(record).String()))
+}
 
 func entityTypeAndValue(t interface{}) ([]byte, reflect.Value) {
 	e := reflect.Indirect(reflect.ValueOf(t))

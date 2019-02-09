@@ -38,6 +38,9 @@ type RelatedStruct struct {
 
 	NestedID gouuidv6.UUID
 	Nested   *NestedRelatedStruct `tormenta:"-"`
+
+	// For 'belongs to'
+	FullStructID gouuidv6.UUID
 }
 
 type NestedRelatedStruct struct {
@@ -56,6 +59,7 @@ type FullStruct struct {
 
 	// Basic types
 	IntField          int
+	IDField           gouuidv6.UUID
 	AnotherIntField   int
 	StringField       string
 	MultipleWordField string `tormenta:"split"`
@@ -135,6 +139,8 @@ type FullStruct struct {
 
 	HasManyIDs []gouuidv6.UUID
 	HasMany    []*RelatedStruct `tormenta:"-"`
+
+	RelatedStructsByQuery *[]RelatedStruct `tormenta:"-"`
 }
 
 func (t FullStruct) PreSave() error {

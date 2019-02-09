@@ -61,7 +61,12 @@ func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUI
 				keys = append(keys, getMultipleIndexKeys(v.Field(i), keyRoot, id, fieldType.Name)...)
 
 			case reflect.Array:
-				keys = append(keys, getMultipleIndexKeys(v.Field(i), keyRoot, id, fieldType.Name)...)
+				// UUIDV6s are arrays, so we intercept them here
+				if fieldType.Type == reflect.TypeOf(gouuidv6.UUID{}) {
+					keys = append(keys, makeIndexKey(keyRoot, id, fieldType.Name, v.Field(i).Interface()))
+				} else {
+					keys = append(keys, getMultipleIndexKeys(v.Field(i), keyRoot, id, fieldType.Name)...)
+				}
 
 			case reflect.String:
 				// If the string is tagged with 'split',

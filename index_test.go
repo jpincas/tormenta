@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jpincas/gouuidv6"
+
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/tormenta"
 	"github.com/jpincas/tormenta/testtypes"
@@ -14,8 +16,11 @@ func Test_MakeIndexKeys(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
+	id := gouuidv6.New()
+
 	entity := testtypes.FullStruct{
 		IntField:                1,
+		IDField:                 id,
 		StringField:             "test",
 		FloatField:              0.99,
 		BoolField:               true,
@@ -49,6 +54,7 @@ func Test_MakeIndexKeys(t *testing.T) {
 	}{
 		// Basic testtypes
 		{"int field", "intfield", 1},
+		{"id field", "idfield", id},
 		{"string field", "stringfield", "test"},
 		{"float field", "floatfield", 0.99},
 		{"bool field", "boolfield", true},

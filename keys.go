@@ -180,11 +180,14 @@ func KeyRootString(entity Record) string {
 }
 
 func typeToKeyRoot(typeSig string) []byte {
+	return []byte(strings.ToLower(cleanType(typeSig)))
+}
+
+func cleanType(typeSig string) string {
 	sp := strings.Split(typeSig, ".")
 	s := sp[len(sp)-1]
 	s = strings.TrimPrefix(s, "*")
 	s = strings.TrimPrefix(s, "[]")
-	s = strings.ToLower(s)
 
-	return []byte(s)
+	return s
 }

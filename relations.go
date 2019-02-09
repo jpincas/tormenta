@@ -19,12 +19,15 @@ const (
 	ErrNoRecords                   = "at least 1 record is needed in order to load relations"
 	ErrRelationMustBeStructPointer = "relation must be a pointer to a struct"
 
-	idFieldPostfixSingle   = "ID"
-	idFieldPostfixMultiple = "IDs"
-	fieldPathSep           = "."
+	idFieldPostfixSingle         = "ID"
+	idFieldPostfixSingleForIndex = "id"
+	idFieldPostfixMultiple       = "IDs"
+	fieldPathSep                 = "."
 )
 
 // TODO: clean this up when all relational stuff is done
+// There is a lot of reflect code repeated that can be refactored to the
+// 'reflect.go' file.
 
 func idFieldName(fieldName string, postfix string) string {
 	return fieldName + postfix
@@ -43,13 +46,37 @@ func reJoinFieldPath(pathComponents []string) []string {
 	return []string{strings.Join(pathComponents, fieldPathSep)}
 }
 
+func LoadByQuery(db *DB, fieldName string, entities ...Record) error {
+	for i, entity := range entities {
+		// Reflect on the specified field - bail if its not there
+		field := recordValue(entities[i]).FieldByName(fieldName)
+		// if !field.IsValid() {
+		// 	return fmt.Errorf(ErrFieldNotExist, fieldName)
+		// }
+
+		// Create a new pointer for the query results
+		target := reflect.New(field.Type().Elem()).Interface()
+
+		// Run a match query restricting results to match the ID of this entity
+		indexString := indexStringForThisEntity(entity) + idFieldPostfixSingleForIndex
+		And(
+			db.Find(target).Match(indexString, entity.GetID()),
+			// This is where the rest of the clauses need to go
+		).Run()
+
+		// Set the results pointer on the entity
+		field.Set(reflect.ValueOf(target))
+	}
+
+	return nil
+}
+
 type relationsResult struct {
 	fieldName string
 	recordMap map[gouuidv6.UUID]Record
 	err       error
 }
 
-// HasOne
 func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 	// We need at least 1 entity to make this work
 	if len(entities) == 0 {
