@@ -8,7 +8,9 @@ Tormenta is a functionality layer over BadgerDB key/value store.  It provides si
 
 ### (Update Jan 2019)
 
-I've refactored the repo and removed the REST API layer and GUI for now. The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).  Another big change is the move away from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, making Tormenta easier to get started with, which fits with the philosophy of the project. Also, it means we could do some pretty cool 'pass-straight-through-to JSON' stuff in the future, which could be handy for building a JSON api when you just need to spit out a record without any intermediate processing.  Still a WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon! Any questions, hit me up.
+- Refactored the repo and removed the REST API layer and GUI for now. The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).  
+- Switch from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, making Tormenta easier to get started with, which fits with the philosophy of the project. 
+- Still a WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon! Any questions, hit me up.
 
 ## Why would you use this?
 
@@ -16,11 +18,11 @@ Becuase you want to simplify your data persistence and you don't forsee the need
  
 ## Features
 
-- Uses good old JSON for serialisation of data
-- `jsoniter` for faster marshalling/unmarshalling of structs to JSON
+- JSON for serialisation of data using `jsoniter` for speed
 - Date-stamped UUIDs mean no need to maintain an ID counter, and
 - You get date range querying and 'created at' field baked in
 - Simple basic API for saving and retrieving your objects
+- Option to skip saving of any field, independently of `json` struct tags
 - Automatic indexing on all fields (can be skipped)
 - Option to index by individual words in strings (split index)
 - More complex querying of indices including exact matches, text prefix, ranges, reverse, limit, offset and order by
@@ -28,7 +30,7 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - Fast counts and sums using Badger's 'key only' iteration
 - Business logic using 'triggers' on save and get, including the ability to pass a 'context' through a query
 - URL parameter -> query builder in package `urltoquery`, for quick construction of queries from URL strings
-- Helpers for loading relations: has-one, has-many and many-to-many
+- Helpers for loading relations (WIP)
 
 ## Quick How To
 
@@ -64,9 +66,13 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - [ ] Documentation / Examples
 - [x] Delete
 - [x] Logic triggers (preSave, postSave, postGet)
-- [x] Relation loading helpers: has-one
-- [ ] Relation loading helpers: has-many
-- [ ] Relation loading helpers: many-to-many
+- [x] Relation loading helpers: load single relation by ID
+- [x] Relation loading helpers: load multiple relations by single ID
+- [x] Relation loading helpers: load nested relations
+- [x] Relation loading helpers: load multiple relations by slice of IDs
+- [ ] Relation loading helpers: load relations of embedded structs
+- [ ] Relation loading helpers: load relations by query (e.g. all unpaid invoices) - using reference ID stored on relation
+- [ ] Document all the relation loading stuff
 - [ ] Better error reporting from query construction
 - [ ] Better protection against unsupported types being passed around as interfaces
 - [ ] Fully benchmarked simulation of a real-world use case
