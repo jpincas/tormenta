@@ -201,7 +201,7 @@ func Test_SaveMultiple(t *testing.T) {
 }
 
 func Test_SaveMultipleLarge(t *testing.T) {
-	const noOfTests = 1000
+	const noOfTests = 500
 
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()

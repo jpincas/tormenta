@@ -130,7 +130,7 @@ func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID
 
 		return item.Value(func(val []byte) {
 			// TODO: unmarshalling error?
-			db.json.Unmarshal(val, entity)
+			db.unserialise(val, entity)
 		})
 	})
 

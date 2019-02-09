@@ -48,9 +48,6 @@ type relationsResult struct {
 
 // HasOne
 func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
-
-	fmt.Println(relationsToLoad)
-
 	// We need at least 1 entity to make this work
 	if len(entities) == 0 {
 		return errors.New(ErrNoRecords)
@@ -148,7 +145,7 @@ func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
 
 				// Get the record from the record map - if its nil
 				// don't worry, the relation will just be nil
-				// fmt.Println("output: ", ToJSON(entities[ii]))
+				fmt.Println(fieldName)
 				recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(recordMap[id]))
 			}
 

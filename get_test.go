@@ -72,7 +72,7 @@ func Test_GetByMultipleIDs(t *testing.T) {
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
 
-	noOfTests := 1000
+	noOfTests := 500
 
 	var toSave []tormenta.Record
 	var ids []gouuidv6.UUID
@@ -85,7 +85,9 @@ func Test_GetByMultipleIDs(t *testing.T) {
 		ids = append(ids, id)
 	}
 
-	db.Save(toSave...)
+	if _, err := db.Save(toSave...); err != nil {
+		t.Errorf("Testing get by multiple ids. Got error saving %v", err)
+	}
 
 	var results []testtypes.FullStruct
 	n, err := db.GetIDs(&results, ids...)

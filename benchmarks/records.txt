@@ -1,5 +1,8 @@
 
 Has One: 
+
+1000 records, 2 related fields, 50 relations
+
 naive, 
 bring entity setting up, 
 single entity loop, 
@@ -26,3 +29,10 @@ Benchmark_Relations_HasOne-8   	    1000	   1445925 ns/op	  197868 B/op	   11680
 Benchmark_Relations_HasOne-8   	    1000	   1462471 ns/op	  196902 B/op	   11677 allocs/op
 Benchmark_Relations_HasOne-8   	    1000	   1435012 ns/op	  196897 B/op	   11677 allocs/op
 Benchmark_Relations_HasOne-8   	    1000	   1452898 ns/op	  183578 B/op	   11659 allocs/op
+
+
+Has One: 
+
+1000 records, 50 relations, 2 related fields, 1 nested relation
+
+Benchmark_Relations_HasOne-8   	    1000	   2235074 ns/op	  467909 B/op	   18811 allocs/op

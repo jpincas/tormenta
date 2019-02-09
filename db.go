@@ -1,27 +1,38 @@
 package tormenta
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/dgraph-io/badger"
 	jsoniter "github.com/json-iterator/go"
 )
 
+const (
+	// Serialisers
+	SerialiserJSONStdLib = "json"
+	SerialiserJSONIter   = "jsoniter"
+)
+
 // DB is the wrapper of the BadgerDB connection
 type DB struct {
-	KV   *badger.DB
-	json jsoniter.API
+	KV              *badger.DB
+	serialiseFunc   func(interface{}) ([]byte, error)
+	unserialiseFunc func([]byte, interface{}) error
 }
 
 type Options struct {
-	json jsoniter.API
+	JsonIterAPI jsoniter.API
+	Serialiser  string
 }
 
 var DefaultOptions = Options{
-	// Use the fasted JSONiter option by default
+	// Use the fastest JSONiter option by default
 	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
-	json: jsoniter.ConfigFastest,
+	JsonIterAPI: jsoniter.ConfigFastest,
+	Serialiser:  SerialiserJSONIter,
 }
 
 // testDirectory alters a specified data directory to mark it as for tests
@@ -46,15 +57,12 @@ func Open(dir string, options Options) (*DB, error) {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
-	db, err := badger.Open(opts)
+	badgerDB, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &DB{
-		KV:   db,
-		json: options.json,
-	}, nil
+	return openDB(badgerDB, options)
 }
 
 // OpenTest is a convenience function to wipe the existing data at the specified location and create a new connection.  As a safety measure against production use, it will append "-test" to the directory name
@@ -75,4 +83,32 @@ func OpenTest(dir string, options Options) (*DB, error) {
 // Close closes the connection to the DB
 func (db DB) Close() error {
 	return db.KV.Close()
+}
+
+func openDB(badgerDB *badger.DB, options Options) (*DB, error) {
+	db := &DB{
+		KV: badgerDB,
+	}
+
+	switch options.Serialiser {
+	case SerialiserJSONIter:
+		db.serialiseFunc = options.JsonIterAPI.Marshal
+		db.unserialiseFunc = options.JsonIterAPI.Unmarshal
+	case SerialiserJSONStdLib:
+		db.serialiseFunc = json.Marshal
+		db.unserialiseFunc = json.Unmarshal
+
+	default:
+		return db, fmt.Errorf("%s is not a valid serialiser", options.Serialiser)
+	}
+
+	return db, nil
+}
+
+func (db DB) unserialise(val []byte, entity Record) error {
+	return db.unserialiseFunc(val, entity)
+}
+
+func (db DB) serialise(entity Record) ([]byte, error) {
+	return db.serialiseFunc(entity)
 }

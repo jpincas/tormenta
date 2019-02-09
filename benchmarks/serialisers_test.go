@@ -3,18 +3,20 @@ package benchmarks
 import (
 	"testing"
 
-	"github.com/jpincas/tormenta/testtypes"
-
 	"github.com/jpincas/tormenta"
+	"github.com/jpincas/tormenta/testtypes"
+	jsoniter "github.com/json-iterator/go"
 )
 
-func Benchmark_Relations_HasOne(b *testing.B) {
+func prepareDB(dbOptions tormenta.Options) (*tormenta.DB, []tormenta.Record) {
 	noEntities := 1000
 	noRelations := 50
 
 	// Open the DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
-	defer db.Close()
+	db, err := tormenta.OpenTest("data/tests", dbOptions)
+	if err != nil {
+		panic("failed to open db")
+	}
 
 	// Created some nested structs and save
 	nestedStruct1 := testtypes.NestedRelatedStruct{}
@@ -44,11 +46,41 @@ func Benchmark_Relations_HasOne(b *testing.B) {
 	}
 	db.Save(fullStructs...)
 
-	// Reset the timer
+	return db, fullStructs
+}
+
+func Benchmark_Serialisers_JsonIter(b *testing.B) {
+	db, records := prepareDB(tormenta.Options{
+		JsonIterAPI: jsoniter.ConfigFastest,
+		Serialiser:  tormenta.SerialiserJSONIter,
+	})
+	defer db.Close()
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		tormenta.HasOne(db, []string{"HasOne.Nested", "HasAnotherOne.Nested"}, fullStructs...)
+		tormenta.HasOne(
+			db,
+			[]string{"HasOne.Nested", "HasAnotherOne.Nested"},
+			records...,
+		)
 	}
-
 }
+
+// CAUSES A REFLECT ERROR - don't know why
+// func Benchmark_Serialisers_StdLib(b *testing.B) {
+// 	db, records := prepareDB(tormenta.Options{
+// 		Serialiser: tormenta.SerialiserJSONStdLib,
+// 	})
+// 	defer db.Close()
+
+// 	b.ResetTimer()
+
+// 	for i := 0; i < b.N; i++ {
+// 		tormenta.HasOne(
+// 			db,
+// 			[]string{"HasOne.Nested", "HasAnotherOne.Nested"},
+// 			records...,
+// 		)
+// 	}
+// }
