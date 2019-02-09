@@ -13,18 +13,21 @@ import (
 
 const (
 	ErrIDFieldNotExist             = "%s field was not found"
+	ErrFieldNotExist               = "%s field was not found"
+	ErrFieldWrongType              = "%s field should be either a pointer to a struct, or slice thereof"
 	ErrIDFieldIncorrectType        = "%s is not an ID field of the type UUID"
 	ErrNoRecords                   = "at least 1 record is needed in order to load relations"
 	ErrRelationMustBeStructPointer = "relation must be a pointer to a struct"
 
-	idFieldPostFix = "ID"
-	fieldPathSep   = "."
+	idFieldPostfixSingle   = "ID"
+	idFieldPostfixMultiple = "IDs"
+	fieldPathSep           = "."
 )
 
 // TODO: clean this up when all relational stuff is done
 
-func idFieldName(fieldName string) string {
-	return fieldName + idFieldPostFix
+func idFieldName(fieldName string, postfix string) string {
+	return fieldName + postfix
 }
 
 func fieldPath(fieldName string) []string {
@@ -47,7 +50,7 @@ type relationsResult struct {
 }
 
 // HasOne
-func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
+func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 	// We need at least 1 entity to make this work
 	if len(entities) == 0 {
 		return errors.New(ErrNoRecords)
@@ -70,7 +73,7 @@ func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
 
 		wg.Add(1)
 		go func(thisPath []string) {
-			recordMap, err := hasOne(db, thisPath[0], entities...)
+			recordMap, err := getRelatedField(db, thisPath[0], entities...)
 
 			// If there is more than one component to the path,
 			// call HasOne recursively, passing in the rest of the path
@@ -83,7 +86,7 @@ func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
 					nestedEntities = append(nestedEntities, record)
 				}
 
-				if err := HasOne(db, reJoinFieldPath(path[1:]), nestedEntities...); err != nil {
+				if err := LoadByID(db, reJoinFieldPath(path[1:]), nestedEntities...); err != nil {
 					log.Println("error in nested HasOne")
 					// TODO: need to work out way of signaling this at top level
 				}
@@ -126,7 +129,7 @@ func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
 	// At this point we have a 'master' map that contains all the relations
 	// we need for each field requested and for all the entities.
 	// Now we have to go through each entity, and for each field requested, retrieve
-	// that record and 'attach' it according to the stored xxxID field.
+	// that record and 'attach' it according to the stored xxxID or xxxIDs field.
 	// We do that in parallel for each entity
 	var entityWg sync.WaitGroup
 	entityWg.Add(len(entities))
@@ -137,16 +140,36 @@ func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
 	for i := range entities {
 		go func(ii int) {
 			for fieldName, recordMap := range masterRecordMap {
-				field := recordValue(entities[ii]).FieldByName(idFieldName(fieldName))
-				// No need to confirm that the interface to UUID is OK
-				// as this is performed already in the inner loop so will
-				// always be OK at this point
-				id := field.Interface().(gouuidv6.UUID)
+				// First thing is to work out whether this is a single or multiple relation get
+				resultsField := recordValue(entities[ii]).FieldByName(fieldName)
 
-				// Get the record from the record map - if its nil
-				// don't worry, the relation will just be nil
-				fmt.Println(fieldName)
-				recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(recordMap[id]))
+				switch resultsField.Type().Kind() {
+				case reflect.Ptr:
+					field := recordValue(entities[ii]).FieldByName(idFieldName(fieldName, idFieldPostfixSingle))
+
+					// No need to confirm that the interface to UUID is OK
+					// as this is performed already in the inner loop so will
+					// always be OK at this point
+					id := field.Interface().(gouuidv6.UUID)
+
+					// Get the record from the record map and set onto target result field
+					// if its nil don't worry, the relation will just be nil
+					recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(recordMap[id]))
+
+				case reflect.Slice:
+					// For slices, things are slightly more complex,
+					// as we need to iterate all the related IDs and append the results one by one to the
+					// results target slice
+					field := recordValue(entities[ii]).FieldByName(idFieldName(fieldName, idFieldPostfixMultiple))
+					ids := field.Interface().([]gouuidv6.UUID)
+					for _, id := range ids {
+						// Nasty code - a reflect append!!
+						recordValue(entities[ii]).FieldByName(fieldName).Set(
+							reflect.Append(recordValue(entities[ii]).FieldByName(fieldName), reflect.ValueOf(recordMap[id])),
+						)
+
+					}
+				}
 			}
 
 			done <- true
@@ -163,24 +186,55 @@ func HasOne(db *DB, relationsToLoad []string, entities ...Record) error {
 	return nil
 }
 
-func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Record, error) {
-	idfieldName := idFieldName(fieldName)
+func getRelatedField(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Record, error) {
+
 	recordMap := map[gouuidv6.UUID]Record{}
 
 	// For each entity, add the ID of the relation to the map
 	// giving deduping for free
 	for _, entity := range entities {
-		field := recordValue(entity).FieldByName(idfieldName)
-		if !field.IsValid() {
-			return recordMap, fmt.Errorf(ErrIDFieldNotExist, idfieldName)
+
+		// Work out whether this is a single ID or a list of IDs
+		// by inspecting the resultsField name - bail if its not there
+		resultsField := recordValue(entity).FieldByName(fieldName)
+		if !resultsField.IsValid() {
+			return recordMap, fmt.Errorf(ErrFieldNotExist, fieldName)
 		}
 
-		id, ok := field.Interface().(gouuidv6.UUID)
-		if !ok {
-			return recordMap, fmt.Errorf(ErrIDFieldIncorrectType, idfieldName)
-		}
+		switch resultsField.Type().Kind() {
+		case reflect.Ptr:
+			idfieldName := idFieldName(fieldName, idFieldPostfixSingle)
+			field := recordValue(entity).FieldByName(idfieldName)
+			if !field.IsValid() {
+				return recordMap, fmt.Errorf(ErrIDFieldNotExist, idfieldName)
+			}
 
-		recordMap[id] = nil
+			id, ok := field.Interface().(gouuidv6.UUID)
+			if !ok {
+				return recordMap, fmt.Errorf(ErrIDFieldIncorrectType, idfieldName)
+			}
+
+			recordMap[id] = nil
+
+		case reflect.Slice:
+			idfieldName := idFieldName(fieldName, idFieldPostfixMultiple)
+			field := recordValue(entity).FieldByName(idfieldName)
+			if !field.IsValid() {
+				return recordMap, fmt.Errorf(ErrIDFieldNotExist, idfieldName)
+			}
+
+			ids, ok := field.Interface().([]gouuidv6.UUID)
+			if !ok {
+				return recordMap, fmt.Errorf(ErrIDFieldIncorrectType, idfieldName)
+			}
+
+			for _, id := range ids {
+				recordMap[id] = nil
+			}
+
+		default:
+			return recordMap, fmt.Errorf(ErrFieldWrongType, fieldName)
+		}
 	}
 
 	// id map -> list
@@ -192,22 +246,26 @@ func hasOne(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Rec
 	// Now we have the IDs of the related entities we need to get,
 	// we just have to work out what type we are getting.
 	// Use the first record as an exemplar -
-	// check that its a struct
 	fieldValue := fieldValue(entities[0], fieldName)
 
-	if fieldValue.Kind() != reflect.Ptr {
-		return recordMap, errors.New(ErrRelationMustBeStructPointer)
-	}
+	// Again, how we proceed here depends on whether this is a single or multiple
+	// relation get
+	var typeToGet reflect.Type
 
-	if reflect.ValueOf(fieldValue).Kind() != reflect.Struct {
-		return recordMap, errors.New(ErrRelationMustBeStructPointer)
+	switch fieldValue.Type().Kind() {
+	case reflect.Ptr:
+		typeToGet = fieldValue.Type().Elem()
+
+	case reflect.Slice:
+		// double Elem(): slice -> pointer -> actual type
+		typeToGet = fieldValue.Type().Elem().Elem()
 	}
 
 	// Set up a new slice of the type we are getting
 	// and use the multiple Get by ID api to grab all the
 	// relations
 
-	results := newSlice(fieldValue.Type().Elem(), len(ids))
+	results := newSlice(typeToGet, len(ids))
 	if _, err := db.GetIDs(results, ids...); err != nil {
 		return recordMap, err
 	}

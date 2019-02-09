@@ -3,12 +3,13 @@ package tormenta_test
 import (
 	"testing"
 
+	"github.com/jpincas/gouuidv6"
 	"github.com/jpincas/tormenta/testtypes"
 
 	"github.com/jpincas/tormenta"
 )
 
-func Test_Relations_HasOne(t *testing.T) {
+func Test_Relations_LoadByID(t *testing.T) {
 	// Open the DB
 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
 	defer db.Close()
@@ -39,16 +40,19 @@ func Test_Relations_HasOne(t *testing.T) {
 	struct1 := testtypes.FullStruct{
 		HasOneID:        relatedStruct1.ID,
 		HasAnotherOneID: relatedStruct1.ID,
+		HasManyIDs:      []gouuidv6.UUID{relatedStruct1.ID, relatedStruct2.ID},
 	}
 
 	struct2 := testtypes.FullStruct{
 		HasOneID:        relatedStruct2.ID,
 		HasAnotherOneID: relatedStruct2.ID,
+		HasManyIDs:      []gouuidv6.UUID{relatedStruct1.ID, relatedStruct2.ID},
 	}
 
 	struct3 := testtypes.FullStruct{
 		HasOneID:        relatedStruct1.ID,
 		HasAnotherOneID: relatedStruct1.ID,
+		HasManyIDs:      []gouuidv6.UUID{relatedStruct1.ID, relatedStruct2.ID},
 	}
 	db.Save(&struct1, &struct2, &struct3)
 
@@ -66,7 +70,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 
 	testName := "non existent relation"
-	if err := tormenta.HasOne(db, []string{"DoesntHaveOne"}, records...); err == nil {
+	if err := tormenta.LoadByID(db, []string{"DoesntHaveOne"}, records...); err == nil {
 		t.Errorf("Testing %s. Should have error but didn't", testName)
 	}
 
@@ -84,7 +88,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 
 	testName = "single, one level relation"
-	if err := tormenta.HasOne(db, []string{"HasOne"}, records...); err != nil {
+	if err := tormenta.LoadByID(db, []string{"HasOne"}, records...); err != nil {
 		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
 	}
 
@@ -114,7 +118,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 
 	testName = "two relations, one level, repeated"
-	if err := tormenta.HasOne(db, []string{"HasOne", "HasOne"}, records...); err != nil {
+	if err := tormenta.LoadByID(db, []string{"HasOne", "HasOne"}, records...); err != nil {
 		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
 	}
 
@@ -144,7 +148,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 
 	testName = "two relations, one level, repeated"
-	if err := tormenta.HasOne(db, []string{"HasOne", "HasAnotherOne"}, records...); err != nil {
+	if err := tormenta.LoadByID(db, []string{"HasOne", "HasAnotherOne"}, records...); err != nil {
 		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
 	}
 
@@ -184,7 +188,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 
 	testName = "single, nested relation"
-	if err := tormenta.HasOne(db, []string{"HasOne.Nested"}, records...); err != nil {
+	if err := tormenta.LoadByID(db, []string{"HasOne.Nested"}, records...); err != nil {
 		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
 	}
 
@@ -228,7 +232,7 @@ func Test_Relations_HasOne(t *testing.T) {
 	}
 
 	testName = "single, 3 level nested relation"
-	if err := tormenta.HasOne(db, []string{"HasOne.Nested.Nested"}, records...); err != nil {
+	if err := tormenta.LoadByID(db, []string{"HasOne.Nested.Nested"}, records...); err != nil {
 		t.Errorf("Testing %s. Error loading relations: %s", testName, err)
 	}
 
@@ -273,6 +277,44 @@ func Test_Relations_HasOne(t *testing.T) {
 				fullStruct.HasOne.NestedID,
 				fullStruct.HasOne.Nested.ID,
 			)
+		}
+	}
+
+	// 5) Multiple IDs
+	// Reload
+	fullStructs = []testtypes.FullStruct{}
+	if n, err := db.Find(&fullStructs).Run(); err != nil || n != 3 {
+		t.Errorf("Save/retrieve failed. Err: %v; n: %v", err, n)
+	}
+
+	// Convert to records
+	records = []tormenta.Record{}
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	testName = "multiple ids"
+	if err := tormenta.LoadByID(db, []string{"HasMany"}, records...); err != nil {
+		t.Fatalf("Testing %s. Error loading relations: %s", testName, err)
+	}
+
+	for i, fullStruct := range fullStructs {
+
+		if len(fullStruct.HasMany) == 0 {
+			t.Fatalf("Testing %s. No HasMany relations loaded", testName)
+		}
+
+		for j, hasManyId := range fullStruct.HasManyIDs {
+
+			if hasManyId != fullStruct.HasMany[j].ID {
+				t.Errorf(
+					"Testing %s. Comparing each HasManyID to the retrieved record ID for i:%v and they are not the same: %v vs %v",
+					testName,
+					i,
+					hasManyId,
+					fullStruct.HasMany[j].ID,
+				)
+			}
 		}
 
 	}

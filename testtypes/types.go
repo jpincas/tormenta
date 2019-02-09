@@ -132,6 +132,9 @@ type FullStruct struct {
 
 	HasAnotherOneID gouuidv6.UUID
 	HasAnotherOne   *RelatedStruct `tormenta:"-"`
+
+	HasManyIDs []gouuidv6.UUID
+	HasMany    []*RelatedStruct `tormenta:"-"`
 }
 
 func (t FullStruct) PreSave() error {
