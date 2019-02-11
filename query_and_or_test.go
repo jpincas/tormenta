@@ -19,6 +19,10 @@ type orAndTest struct {
 	// For 'AND' tests
 	expectedAndN       int
 	expectedAndResults []testtypes.FullStruct
+
+	// Sum
+	expectedOrSum  float64
+	expectedAndSum float64
 }
 
 // Note the order in which we expect the results - date/time order!
@@ -37,6 +41,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			[]testtypes.FullStruct{
 				{IntField: 1},
 			},
+			1,
+			1,
 		},
 		{
 			"2 clauses",
@@ -51,6 +57,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			3,
+			0,
 		},
 		{
 			"more than 2 clauses",
@@ -67,6 +75,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			6,
+			0,
 		},
 		{
 			"more than 2 clauses - order of clauses should not matter",
@@ -83,6 +93,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			6,
+			0,
 		},
 		{
 			"more than 2 clauses - mixed indexes",
@@ -99,6 +111,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			6,
+			0,
 		},
 		{
 			"more than 2 clauses - mixed indexes - mixed matchers",
@@ -115,6 +129,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			13,
+			0,
 		},
 		{
 			"more than 2 clauses - testing AND mainly",
@@ -134,6 +150,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			[]testtypes.FullStruct{
 				{IntField: 2},
 			},
+			15,
+			2,
 		},
 		{
 			"more than 2 clauses - testing AND in overlapping ranges",
@@ -155,6 +173,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 				{IntField: 3},
 				{IntField: 4},
 			},
+			15,
+			9,
 		},
 		{
 			"nested OR",
@@ -180,6 +200,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			15,
+			0,
 		},
 		{
 			"nested OR",
@@ -207,6 +229,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			[]testtypes.FullStruct{
 				{IntField: 4},
 			},
+			15,
+			4,
 		},
 		{
 			"nested AND",
@@ -230,6 +254,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			},
 			0,
 			[]testtypes.FullStruct{},
+			8,
+			0,
 		},
 		{
 			"nested AND",
@@ -256,6 +282,8 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 			[]testtypes.FullStruct{
 				{IntField: 4},
 			},
+			14,
+			4,
 		},
 	}
 }
@@ -314,6 +342,18 @@ func Test_And_Basic(t *testing.T) {
 
 		if c != testCase.expectedAndN {
 			t.Errorf("Testing basic AND (%s,count). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedAndN, c)
+		}
+
+		// Test 'Sum'
+
+		sum, _, err := tormenta.And(testCase.clauses...).Sum([]string{"IntField"})
+
+		if err != nil {
+			t.Errorf("Testing basic AND (%s, sum) - got error: %v", testCase.testName, err)
+		}
+
+		if sum != testCase.expectedAndSum {
+			t.Errorf("Testing basic AND (%s, sum). Wrong sum result. Expected: %v; got: %v", testCase.testName, testCase.expectedAndSum, sum)
 		}
 	}
 }
@@ -376,6 +416,18 @@ func Test_Or_Basic(t *testing.T) {
 
 		if c != testCase.expectedOrN {
 			t.Errorf("Testing basic OR (%s,count). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedOrN, c)
+		}
+
+		// Test 'Sum'
+
+		sum, _, err := tormenta.Or(testCase.clauses...).Sum([]string{"IntField"})
+
+		if err != nil {
+			t.Errorf("Testing basic OR (%s, sum) - got error: %v", testCase.testName, err)
+		}
+
+		if sum != testCase.expectedOrSum {
+			t.Errorf("Testing basic OR (%s, sum). Wrong sum result. Expected: %v; got: %v", testCase.testName, testCase.expectedOrSum, sum)
 		}
 
 	}

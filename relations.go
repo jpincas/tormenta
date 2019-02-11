@@ -50,19 +50,27 @@ func LoadByQuery(db *DB, fieldName string, entities ...Record) error {
 	for i, entity := range entities {
 		// Reflect on the specified field - bail if its not there
 		field := recordValue(entities[i]).FieldByName(fieldName)
-		// if !field.IsValid() {
-		// 	return fmt.Errorf(ErrFieldNotExist, fieldName)
-		// }
+		if !field.IsValid() {
+			return fmt.Errorf(ErrFieldNotExist, fieldName)
+		}
 
 		// Create a new pointer for the query results
 		target := reflect.New(field.Type().Elem()).Interface()
 
 		// Run a match query restricting results to match the ID of this entity
 		indexString := indexStringForThisEntity(entity) + idFieldPostfixSingleForIndex
-		And(
+		query := And(
 			db.Find(target).Match(indexString, entity.GetID()),
 			// This is where the rest of the clauses need to go
-		).Run()
+		)
+
+		err := query.queryIDs()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("ids ", query.ids)
+		// TODO: get all the ids in parallel like before and recombine them later
 
 		// Set the results pointer on the entity
 		field.Set(reflect.ValueOf(target))

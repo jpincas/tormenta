@@ -191,15 +191,33 @@ func (q *Query) Count() (int, error) {
 }
 
 // QuickSum produces a sum aggregation using the index only, which is much faster
-// than accessing every record, but requires an index query
+// than accessing every record, but requires an single index query, so is therefore
+// incompatible with complex multiple-index queries
 func (q *Query) QuickSum(a interface{}) (int, error) {
 	if !q.isIndexQuery || len(q.indexName) == 0 {
 		return 0, errors.New("Quicksum must use an index Query")
 	}
 
 	q.aggTarget = a
-	q.isAggQuery = true
+	q.isQuickSumQuery = true
 	return q.execute()
+}
+
+// Sum takes a slightly sifferent approach to aggregation - you might call it 'slow sum'.
+// It doesn't use index keys, instead it partially unserialises each record in the results set
+// - only unserialising the single required field for the aggregation (so its not too slow).
+// For simplicity of code, API and to reduce reflection, the result returned is a float64,
+// but Sum() will work on any number that is parsable from JSON as a float - so just convert to
+// your required number type after the result is in.
+// Sum() expects you to specify the path to the number of interest in your JSON using a string of field
+// names representing the nested JSON path.  It's fairly intuitive,
+// but see the docs for json parser (https://github.com/buger/jsonparser) for full details
+func (q *Query) Sum(jsonPath []string) (float64, int, error) {
+	var sum float64
+	q.aggTarget = &sum
+	q.slowSumPath = jsonPath
+	n, err := q.execute()
+	return sum, n, err
 }
 
 // Query Combination

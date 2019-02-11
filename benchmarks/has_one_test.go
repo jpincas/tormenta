@@ -48,7 +48,7 @@ func Benchmark_Relations_HasOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		tormenta.HasOne(db, []string{"HasOne.Nested", "HasAnotherOne.Nested"}, fullStructs...)
+		tormenta.LoadByID(db, []string{"HasOne.Nested", "HasAnotherOne.Nested"}, fullStructs...)
 	}
 
 }

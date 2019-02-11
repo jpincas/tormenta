@@ -281,7 +281,7 @@ func Test_BuildQuery(t *testing.T) {
 
 		// Set up a base query and then build it out
 		q := blankQuery()
-		if err := BuildQuery(q, values); err != nil && !test.expectError {
+		if err := BuildQuery(q, values, false); err != nil && !test.expectError {
 			t.Errorf("Testing %s. Building query returned error: %s", test.testName, err)
 		} else if test.expectError && err == nil {
 			t.Errorf("Testing %s. Was expecting the built query to error but it didn't", test.testName)

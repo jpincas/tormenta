@@ -59,7 +59,7 @@ func Benchmark_Serialisers_JsonIter(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		tormenta.HasOne(
+		tormenta.LoadByID(
 			db,
 			[]string{"HasOne.Nested", "HasAnotherOne.Nested"},
 			records...,

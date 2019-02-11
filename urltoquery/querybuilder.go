@@ -48,7 +48,10 @@ func HasReverseBeenSet(values url.Values) bool {
 	return false
 }
 
-func BuildQuery(q *tormenta.Query, values url.Values) error {
+// BuildQuery builds up a passed-in query from url parameters.  It includes the option
+// to ignore any limit param, which is useful if you want an overall count for a particular
+// set of query conditions
+func BuildQuery(q *tormenta.Query, values url.Values, ignoreLimitOffset bool) error {
 	// Reverse
 	reverseString := values.Get(reverse)
 	if reverseString == "true" {
@@ -60,26 +63,29 @@ func BuildQuery(q *tormenta.Query, values url.Values) error {
 		return fmt.Errorf(ErrBadReverseFormat, reverseString)
 	}
 
-	// Limit
-	limitString := values.Get(limit)
-	if limitString != "" {
-		n, err := strconv.Atoi(limitString)
-		if err != nil {
-			return fmt.Errorf(ErrBadLimitFormat, limitString)
+	// Only apply limit and offset if required
+	if !ignoreLimitOffset {
+		// Limit
+		limitString := values.Get(limit)
+		if limitString != "" {
+			n, err := strconv.Atoi(limitString)
+			if err != nil {
+				return fmt.Errorf(ErrBadLimitFormat, limitString)
+			}
+
+			q.Limit(n)
 		}
 
-		q.Limit(n)
-	}
+		// Offset
+		offsetString := values.Get(offset)
+		if offsetString != "" {
+			n, err := strconv.Atoi(offsetString)
+			if err != nil {
+				return fmt.Errorf(ErrBadOffsetFormat, offsetString)
+			}
 
-	// Offset
-	offsetString := values.Get(offset)
-	if offsetString != "" {
-		n, err := strconv.Atoi(offsetString)
-		if err != nil {
-			return fmt.Errorf(ErrBadOffsetFormat, limitString)
+			q.Offset(n)
 		}
-
-		q.Offset(n)
 	}
 
 	// From / To

@@ -176,3 +176,84 @@ func (db DB) GetIDsSerial(target interface{}, ids ...gouuidv6.UUID) (int, error)
 
 	return counter, nil
 }
+
+////////////////////////////////////////////////
+
+type getRawResult struct {
+	id     gouuidv6.UUID
+	record []byte
+	found  bool
+	err    error
+}
+
+func (db DB) getIDsWithContextRaw(record Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) ([][]byte, error) {
+	ch := make(chan getRawResult)
+	var wg sync.WaitGroup
+
+	for _, id := range ids {
+		wg.Add(1)
+
+		go func(thisID gouuidv6.UUID) {
+			bytes, found, err := db.getRaw(record, ctx, thisID)
+			ch <- getRawResult{
+				id:     thisID,
+				record: bytes,
+				found:  found,
+				err:    err,
+			}
+		}(id)
+	}
+
+	var resultsList [][]byte
+	var errorsList []error
+	go func() {
+		for getRawResult := range ch {
+			if getRawResult.err != nil {
+				errorsList = append(errorsList, getRawResult.err)
+			} else if getRawResult.found {
+				resultsList = append(resultsList, getRawResult.record)
+			}
+
+			// Only signal to the wait group that a record has been fetched
+			// at this point rather than the anonymous func above, otherwise
+			// you tend to lose the last result
+			wg.Done()
+		}
+	}()
+
+	// Once all the results are in, we need to
+	// sort them according to the original order
+	// But we'll bail now if there were any errors
+	wg.Wait()
+
+	if len(errorsList) > 0 {
+		return resultsList, errorsList[0]
+	}
+
+	return resultsList, nil
+}
+
+func (db DB) getRaw(entity Record, ctx map[string]interface{}, id gouuidv6.UUID) ([]byte, bool, error) {
+	var result []byte
+
+	err := db.KV.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(newContentKey(KeyRoot(entity), id).bytes())
+		if err != nil {
+			return err
+		}
+
+		return item.Value(func(val []byte) {
+			result = val
+		})
+	})
+
+	// We are not treating 'not found' as an actual error,
+	// instead we return 'false' and nil (unless there is an actual error)
+	if err == badger.ErrKeyNotFound {
+		return result, false, nil
+	} else if err != nil {
+		return result, false, err
+	}
+
+	return result, true, nil
+}

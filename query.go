@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
@@ -57,8 +58,8 @@ type Query struct {
 	seekFrom, validTo, compareTo []byte
 
 	// Is this an aggregation Query?
-	isAggQuery bool
-	aggTarget  interface{}
+	isQuickSumQuery bool
+	aggTarget       interface{}
 
 	// Is already prepared?
 	isReversePrepared bool
@@ -70,6 +71,8 @@ type Query struct {
 	ids idList
 
 	combinedQuery bool
+
+	slowSumPath []string
 }
 
 func (q Query) String() string {
@@ -88,7 +91,7 @@ func (q Query) String() string {
 			"isIndexQuery":      q.isIndexQuery,
 			"isStartsWithQuery": q.isStartsWithQuery,
 			"countOnly":         q.countOnly,
-			"isAggQuery":        q.isAggQuery,
+			"isQuickSumQuery":   q.isQuickSumQuery,
 			"ctx":               q.ctx,
 		},
 	)
@@ -108,7 +111,7 @@ func (q Query) Compare(cq Query) bool {
 		q.isIndexQuery == cq.isIndexQuery &&
 		q.isStartsWithQuery == cq.isStartsWithQuery &&
 		q.countOnly == cq.countOnly &&
-		q.isAggQuery == cq.isAggQuery &&
+		q.isQuickSumQuery == cq.isQuickSumQuery &&
 		ToJSON(q.ctx) == ToJSON(q.ctx)
 }
 
@@ -197,7 +200,7 @@ func (q Query) endIteration(it *badger.Iterator) bool {
 	return false
 }
 
-func (q Query) sum(item *badger.Item) {
+func (q Query) quickSum(item *badger.Item) {
 	// TODO: is there a more efficient way to increment
 	// the sum target given that we don't know what type it is
 	switch q.aggTarget.(type) {
@@ -424,8 +427,8 @@ func (q *Query) queryIDs() error {
 			item := it.Item()
 			q.ids = append(q.ids, extractID(item.Key()))
 
-			if q.isAggQuery {
-				q.sum(item)
+			if q.isQuickSumQuery {
+				q.quickSum(item)
 			}
 
 			// If this is a first-only search, break out of the iteration now
@@ -486,6 +489,28 @@ func (q *Query) execute() (int, error) {
 		q.ids.sort(q.reverse)
 	}
 
+	// If a slow sum field has been specified
+	// run 'slow sum' procedure by gettung unserialised results,
+	// unserialise only the required field,
+	// calculate accumulator and set on query
+	if len(q.slowSumPath) != 0 {
+		rawResults, err := q.db.getIDsWithContextRaw(newRecordFromSlice(q.target), q.ctx, q.ids...)
+
+		// TODO - this is no good - it needs to be done inside the get loop so its parallel
+		var sum float64
+		for i := range rawResults {
+			f, err := jsonparser.GetFloat(rawResults[i], q.slowSumPath...)
+			if err != nil {
+				return 0, err
+			}
+			sum = sum + f
+		}
+
+		*q.aggTarget.(*float64) = sum
+		return len(rawResults), err
+	}
+
+	// Otherwise we just get the records and return
 	n, err := q.db.GetIDsWithContext(q.target, q.ctx, q.ids...)
 	if err != nil {
 		return 0, err
