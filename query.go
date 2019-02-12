@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/buger/jsonparser"
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
@@ -494,20 +493,9 @@ func (q *Query) execute() (int, error) {
 	// unserialise only the required field,
 	// calculate accumulator and set on query
 	if len(q.slowSumPath) != 0 {
-		rawResults, err := q.db.getIDsWithContextRaw(newRecordFromSlice(q.target), q.ctx, q.ids...)
-
-		// TODO - this is no good - it needs to be done inside the get loop so its parallel
-		var sum float64
-		for i := range rawResults {
-			f, err := jsonparser.GetFloat(rawResults[i], q.slowSumPath...)
-			if err != nil {
-				return 0, err
-			}
-			sum = sum + f
-		}
-
+		sum, err := q.db.getIDsWithContextFloat64AtPath(newRecordFromSlice(q.target), q.ctx, q.slowSumPath, q.ids...)
 		*q.aggTarget.(*float64) = sum
-		return len(rawResults), err
+		return len(q.ids), err
 	}
 
 	// Otherwise we just get the records and return

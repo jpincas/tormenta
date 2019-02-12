@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/buger/jsonparser"
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
@@ -179,39 +180,39 @@ func (db DB) GetIDsSerial(target interface{}, ids ...gouuidv6.UUID) (int, error)
 
 ////////////////////////////////////////////////
 
-type getRawResult struct {
+type getFloat64Result struct {
 	id     gouuidv6.UUID
-	record []byte
+	result float64
 	found  bool
 	err    error
 }
 
-func (db DB) getIDsWithContextRaw(record Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) ([][]byte, error) {
-	ch := make(chan getRawResult)
+func (db DB) getIDsWithContextFloat64AtPath(record Record, ctx map[string]interface{}, slowSumPath []string, ids ...gouuidv6.UUID) (float64, error) {
+	var sum float64
+	ch := make(chan getFloat64Result)
 	var wg sync.WaitGroup
 
 	for _, id := range ids {
 		wg.Add(1)
 
 		go func(thisID gouuidv6.UUID) {
-			bytes, found, err := db.getRaw(record, ctx, thisID)
-			ch <- getRawResult{
+			f, found, err := db.getFloat64AtPath(record, ctx, thisID, slowSumPath)
+			ch <- getFloat64Result{
 				id:     thisID,
-				record: bytes,
+				result: f,
 				found:  found,
 				err:    err,
 			}
 		}(id)
 	}
 
-	var resultsList [][]byte
 	var errorsList []error
 	go func() {
-		for getRawResult := range ch {
-			if getRawResult.err != nil {
-				errorsList = append(errorsList, getRawResult.err)
-			} else if getRawResult.found {
-				resultsList = append(resultsList, getRawResult.record)
+		for getResult := range ch {
+			if getResult.err != nil {
+				errorsList = append(errorsList, getResult.err)
+			} else if getResult.found {
+				sum = sum + getResult.result
 			}
 
 			// Only signal to the wait group that a record has been fetched
@@ -227,14 +228,14 @@ func (db DB) getIDsWithContextRaw(record Record, ctx map[string]interface{}, ids
 	wg.Wait()
 
 	if len(errorsList) > 0 {
-		return resultsList, errorsList[0]
+		return sum, errorsList[0]
 	}
 
-	return resultsList, nil
+	return sum, nil
 }
 
-func (db DB) getRaw(entity Record, ctx map[string]interface{}, id gouuidv6.UUID) ([]byte, bool, error) {
-	var result []byte
+func (db DB) getFloat64AtPath(entity Record, ctx map[string]interface{}, id gouuidv6.UUID, slowSumPath []string) (float64, bool, error) {
+	var result float64
 
 	err := db.KV.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(newContentKey(KeyRoot(entity), id).bytes())
@@ -243,7 +244,9 @@ func (db DB) getRaw(entity Record, ctx map[string]interface{}, id gouuidv6.UUID)
 		}
 
 		return item.Value(func(val []byte) {
-			result = val
+			// TODO: What to do with parsing errors?
+			f, _ := jsonparser.GetFloat(val, slowSumPath...)
+			result = f
 		})
 	})
 

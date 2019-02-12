@@ -13,7 +13,7 @@ func Benchmark_SlowSum_Test(b *testing.B) {
 
 	var toSave []tormenta.Record
 
-	n := 1000
+	n := 10000
 	for i := 0; i < n; i++ {
 		toSave = append(toSave, stdRecord())
 	}
