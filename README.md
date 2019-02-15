@@ -55,12 +55,14 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - Querying isn't quite as pain-free as I'd like and requires a little understanding of the indexing system. Due to the way Tormenta returns results by iterating ordered keys, ordering functionality is limited to non-index query searches.  Essentially, adding `Order("myField")` creates an index search on `myField` but without any range (i.e. returns all results).  If you are already using an index, e.g. with `Range("someOtherField", 1, 2)` then that index will take priority and results would be ordered by `someOtherField`.  If you are only filtering by date with `From()/.To()` you CAN independently order as that doesn't use indexes.  If you are doing complex AND/OR query combinations which rely on multiple indexes, then date/ID ordering is the only option - sorry!  In general, best practice would be to limit your results set as much as possible and order results in application code if you require a different order to what you get from Tormenta. `Order("myField")` could also be used to enable `QuickSum` where you otherwise aren't searching by index.
 - 'Defined' `time.Time` fields e.g. `myTime time.Time` won't serialise properly as the fields on the underlying struct are unexported and you lose the marshal/unmarshal methods specified by `time.Time`.  If you must use defined time fields, specify custom marshalling functions.
 
-## Help Needed
+## Help Needed / Contributing
 
 - I don't have a lot of low level Go experience, so I reckon the reflect and/or concurrency code could be significantly improved
 - I could really do with some help setting up some proper benchmarks
 - Load testing or anything similar
 - A performant command-line backup utility that could read raw JSON from keys and write to files in a folder structure, without even going through Tormenta (i.e. just hitting the Badger KV store and writing each key to a json file)
+- Can anyone come up with a solution for skipping saving of fields with a `tormenta:"-"` tag.  I've tried using a 'remove' method with `jsonparser` *after* the JSON has been serialised, but it's slow and for some reason garbles stdlib generated JSON (but not jsoniter generated JSON).
+- Related to the above, it would be nice to "auto" omit empty fields from serialisation rather than add a json tag to each and every field.
 
 ## To Do
 
