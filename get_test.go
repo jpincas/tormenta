@@ -10,7 +10,7 @@ import (
 )
 
 func Test_BasicGet(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// Create basic fullStruct and save, then blank the ID
@@ -45,7 +45,7 @@ func Test_BasicGet(t *testing.T) {
 }
 
 func Test_GetByID(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	fullStruct := testtypes.FullStruct{}
@@ -69,7 +69,7 @@ func Test_GetByID(t *testing.T) {
 }
 
 func Test_GetByMultipleIDs(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	noOfTests := 500
@@ -112,7 +112,7 @@ func Test_GetByMultipleIDs(t *testing.T) {
 }
 
 func Test_GetTriggers(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	fullStruct := testtypes.FullStruct{}

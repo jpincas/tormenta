@@ -75,7 +75,7 @@ func Test_QuickSum(t *testing.T) {
 
 	// Randomise and save
 	tormenta.RandomiseRecords(fullStructs)
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 

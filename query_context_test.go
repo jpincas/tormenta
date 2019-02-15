@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Context(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	entity := testtypes.FullStruct{}
@@ -26,7 +26,7 @@ func Test_Context(t *testing.T) {
 // search used the Public 'query.Get' function which did not take a context as a parameter and therefore simply
 // passes the empty context to the PostGet trigger.
 func Test_Context_Match(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	entity := testtypes.FullStruct{}
@@ -42,7 +42,7 @@ func Test_Context_Match(t *testing.T) {
 }
 
 func Test_Context_Get(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	savedEntity := testtypes.FullStruct{}

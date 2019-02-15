@@ -8,7 +8,7 @@ import (
 )
 
 func Benchmark_SlowSum_Test(b *testing.B) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	var toSave []tormenta.Record

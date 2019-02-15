@@ -15,7 +15,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 	ttFalse := testtypes.FullStruct{}
 	ttTrue := testtypes.FullStruct{BoolField: true}
 	ttTrue2 := testtypes.FullStruct{BoolField: true}
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(&ttFalse, &ttTrue, &ttTrue2)
 
@@ -52,7 +52,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 
@@ -119,7 +119,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 
@@ -180,7 +180,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 
@@ -249,7 +249,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 
 	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 

@@ -11,7 +11,7 @@ import (
 )
 
 func Test_BuildQuery(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	var results []testtypes.FullStruct

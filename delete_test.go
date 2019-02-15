@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Delete_EntityID(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	fullStruct := testtypes.FullStruct{}
@@ -37,7 +37,7 @@ func Test_Delete_EntityID(t *testing.T) {
 }
 
 func Test_Delete_SeparateID(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	fullStruct := testtypes.FullStruct{}

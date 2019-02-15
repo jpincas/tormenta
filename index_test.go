@@ -13,7 +13,7 @@ import (
 
 // Index Creation
 func Test_MakeIndexKeys(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	id := gouuidv6.New()
@@ -120,7 +120,7 @@ func Test_MakeIndexKeys(t *testing.T) {
 }
 
 func Test_ReIndex(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	entity := testtypes.FullStruct{
@@ -184,7 +184,7 @@ func Test_ReIndex(t *testing.T) {
 }
 
 func Test_MakeIndexKeys_Split(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	fullStruct := testtypes.FullStruct{

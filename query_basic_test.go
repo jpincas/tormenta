@@ -9,7 +9,7 @@ import (
 )
 
 func Test_BasicQuery(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// 1 fullStruct
@@ -79,7 +79,7 @@ func Test_BasicQuery(t *testing.T) {
 }
 
 func Test_BasicQuery_First(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	tt1 := testtypes.FullStruct{}

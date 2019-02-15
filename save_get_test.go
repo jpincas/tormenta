@@ -12,7 +12,7 @@ import (
 )
 
 func Test_Save_Get(t *testing.T) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// Test Entity
@@ -52,6 +52,15 @@ func Test_Save_Get(t *testing.T) {
 		DefinedBoolField:   testtypes.DefinedBool(true),
 		DefinedIDField:     testtypes.DefinedID(gouuidv6.New()),
 		DefinedDateField:   testtypes.DefinedDate(time.Date(2011, time.November, 10, 23, 0, 0, 0, time.UTC)),
+		DefinedStructField: testtypes.DefinedStruct(
+			testtypes.MyStruct{
+				StructIntField:    1,
+				StructStringField: "test",
+				StructFloatField:  0.99,
+				StructBoolField:   true,
+				StructDateField:   time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			},
+		),
 
 		// Defined Slice Type Fields
 		DefinedIDSliceField: []testtypes.DefinedID{
@@ -122,7 +131,8 @@ func Test_Save_Get(t *testing.T) {
 		{"DefinedStringField", entity.DefinedStringField, result.DefinedStringField, false},
 		{"DefinedFloatField", entity.DefinedFloatField, result.DefinedFloatField, false},
 		{"DefinedBoolField", entity.DefinedBoolField, result.DefinedBoolField, false},
-		// {"DefinedDateField", entity.DefinedDateField, result.DefinedDateField, false},
+		{"DefinedDateField", entity.DefinedDateField, result.DefinedDateField, false},
+		{"DefinedStructField", entity.DefinedStructField, result.DefinedStructField, false},
 
 		// Defined Slice Types
 		{"DefinedIDSliceField", entity.DefinedIDSliceField, result.DefinedIDSliceField, true},
@@ -130,7 +140,7 @@ func Test_Save_Get(t *testing.T) {
 		{"DefinedStringSliceField", entity.DefinedStringSliceField, result.DefinedStringSliceField, true},
 		{"DefinedFloatSliceField", entity.DefinedFloatSliceField, result.DefinedFloatSliceField, true},
 		{"DefinedBoolSliceField", entity.DefinedBoolSliceField, result.DefinedBoolSliceField, true},
-		// {"DefinedDateSliceField", entity.DefinedDateSliceField, result.DefinedDateSliceField, true},
+		{"DefinedDateSliceField", entity.DefinedDateSliceField, result.DefinedDateSliceField, true},
 
 		// Embedded Struct
 		{"StructID", entity.ID, result.ID, false},

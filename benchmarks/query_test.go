@@ -8,7 +8,7 @@ import (
 )
 
 func Benchmark_QueryCount(b *testing.B) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	var toSave []tormenta.Record
@@ -31,7 +31,7 @@ func Benchmark_QueryCount(b *testing.B) {
 }
 
 func Benchmark_QueryRun(b *testing.B) {
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	var toSave []tormenta.Record

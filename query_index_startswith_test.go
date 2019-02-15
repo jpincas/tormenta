@@ -18,7 +18,7 @@ func Test_IndexQuery_StartsWith(t *testing.T) {
 		})
 	}
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 

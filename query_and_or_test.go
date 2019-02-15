@@ -290,7 +290,7 @@ func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 
 func Test_And_Basic(t *testing.T) {
 	// DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// Generate some simple data and save
@@ -360,7 +360,7 @@ func Test_And_Basic(t *testing.T) {
 
 func Test_Or_Basic(t *testing.T) {
 	// DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// Generate some simple data and save

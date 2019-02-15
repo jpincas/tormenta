@@ -34,7 +34,7 @@ func printlinef(formatString string, x interface{}) {
 
 func Example() {
 	// Open the DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// Create some products

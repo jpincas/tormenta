@@ -13,7 +13,7 @@ func Benchmark_Relations_HasOne(b *testing.B) {
 	noRelations := 50
 
 	// Open the DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	// Created some nested structs and save

@@ -28,7 +28,7 @@ func Test_IndexQuery_Range_Simple_Reverse(t *testing.T) {
 	}
 
 	tormenta.RandomiseRecords(fullStructs)
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 
@@ -75,7 +75,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 	// in some roundabout way
 	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	db.Save(fullStructs...)
@@ -324,7 +324,7 @@ func Test_IndexQuery_Range_MultipleIndexMembers(t *testing.T) {
 
 	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 
@@ -391,7 +391,7 @@ func Test_IndexQuery_Range_DateRange(t *testing.T) {
 
 	tormenta.RandomiseRecords(fullStructs)
 
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 	db.Save(fullStructs...)
 

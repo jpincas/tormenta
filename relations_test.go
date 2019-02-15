@@ -11,7 +11,7 @@ import (
 
 func Test_Relations_LoadByID(t *testing.T) {
 	// Open the DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
 
 	doubleNestedStruct1 := testtypes.DoubleNestedRelatedStruct{}
@@ -322,7 +322,7 @@ func Test_Relations_LoadByID(t *testing.T) {
 
 // func Test_Relations_LoadByQuery_Basic(t *testing.T) {
 // 	// Open the DB
-// 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+// 	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 // 	defer db.Close()
 
 // 	// Create a full struct

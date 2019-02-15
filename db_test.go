@@ -10,7 +10,7 @@ func Test_Open_ValidDirectory(t *testing.T) {
 	dir := "data/test"
 
 	// Create a connection to a test DB
-	db, err := Open(dir, DefaultOptions)
+	db, err := OpenWithOptions(dir, DefaultOptions)
 	defer db.Close()
 
 	if err != nil {
@@ -30,7 +30,7 @@ func Test_Open_ValidDirectory(t *testing.T) {
 func Test_Close(t *testing.T) {
 	testName := "Testing closing TormentaDB connection"
 
-	db, _ := Open("data/test", DefaultOptions)
+	db, _ := OpenWithOptions("data/test", DefaultOptions)
 	err := db.Close()
 	if err != nil {
 		t.Errorf("%s. Failed to close connection with error: %v", testName, err)
@@ -41,7 +41,7 @@ func Test_Open_InvalidDirectory(t *testing.T) {
 	testName := "Testing opening Torment DB connection with an invalid directory"
 
 	// Create a connection to a test DB
-	db, err := Open("", DefaultOptions)
+	db, err := OpenWithOptions("", DefaultOptions)
 
 	if err == nil {
 		t.Errorf("%s. Should have returned an error but did not", testName)
@@ -57,7 +57,7 @@ func Test_Open_Test(t *testing.T) {
 	dir := "data/test"
 
 	// Create a connection to a test DB
-	db, err := OpenTest(dir, DefaultOptions)
+	db, err := OpenTestWithOptions(dir, DefaultOptions)
 
 	if err != nil {
 		t.Errorf("%s. Failed to open connection with error %v", testName, err)

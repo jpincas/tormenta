@@ -8,6 +8,8 @@ import (
 	"github.com/jpincas/tormenta"
 )
 
+//go:generate ffjson $GOFILE
+
 type (
 	DefinedID     gouuidv6.UUID
 	DefinedInt    int
@@ -17,6 +19,7 @@ type (
 	DefinedFloat  float64
 	DefinedBool   bool
 	DefinedDate   time.Time
+	DefinedStruct MyStruct
 )
 
 type MyStruct struct {
@@ -96,6 +99,7 @@ type FullStruct struct {
 	DefinedFloatField  DefinedFloat
 	DefinedBoolField   DefinedBool
 	DefinedDateField   DefinedDate
+	DefinedStructField DefinedStruct
 
 	// Defined Fixed-length types - just a sample
 	DefinedInt16Field  DefinedInt16
