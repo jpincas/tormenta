@@ -131,7 +131,6 @@ func Test_Save_Get(t *testing.T) {
 		{"DefinedStringField", entity.DefinedStringField, result.DefinedStringField, false},
 		{"DefinedFloatField", entity.DefinedFloatField, result.DefinedFloatField, false},
 		{"DefinedBoolField", entity.DefinedBoolField, result.DefinedBoolField, false},
-		{"DefinedDateField", entity.DefinedDateField, result.DefinedDateField, false},
 		{"DefinedStructField", entity.DefinedStructField, result.DefinedStructField, false},
 
 		// Defined Slice Types
@@ -140,7 +139,6 @@ func Test_Save_Get(t *testing.T) {
 		{"DefinedStringSliceField", entity.DefinedStringSliceField, result.DefinedStringSliceField, true},
 		{"DefinedFloatSliceField", entity.DefinedFloatSliceField, result.DefinedFloatSliceField, true},
 		{"DefinedBoolSliceField", entity.DefinedBoolSliceField, result.DefinedBoolSliceField, true},
-		{"DefinedDateSliceField", entity.DefinedDateSliceField, result.DefinedDateSliceField, true},
 
 		// Embedded Struct
 		{"StructID", entity.ID, result.ID, false},
@@ -152,6 +150,12 @@ func Test_Save_Get(t *testing.T) {
 
 		//Named Struct
 		{"EmbeddedStructField", entity.StructField, result.StructField, true},
+
+		// Defined time.Time fields don't serialise - see README
+		// These are just here to remind us not to add them again and wonder why they don't work
+		// {"DefinedDateField", entity.DefinedDateField, result.DefinedDateField, false},
+		// {"DefinedDateSliceField", entity.DefinedDateSliceField, result.DefinedDateSliceField, true},
+
 	}
 
 	for _, test := range testCases[0:] {
