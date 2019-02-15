@@ -59,16 +59,16 @@ func getJsonOpts(field reflect.StructField) (bool, string) {
 		return true, field.Name
 	}
 
-	// If there is a Json flag, parse it with the code from
-	// the std lib
-	overridenFieldName, opts := parseTag(jsonTag)
-
 	// Check the options - if the field has been Json tagged
 	// with "-" then it won't be in the marshalled Json output
 	// anyway, so there's no point trying to delete it
-	if opts.Contains("-") {
+	if jsonTag == "-" {
 		return false, ""
 	}
+
+	// If there is a Json flag, parse it with the code from
+	// the std lib
+	overridenFieldName, _ := parseTag(jsonTag)
 
 	// IF we are here then we are good to delete the field
 	// we just need to decide whether to use an overriden field name or not

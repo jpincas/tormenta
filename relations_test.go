@@ -320,31 +320,31 @@ func Test_Relations_LoadByID(t *testing.T) {
 	}
 }
 
-func Test_Relations_LoadByQuery_Basic(t *testing.T) {
-	// Open the DB
-	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
-	defer db.Close()
+// func Test_Relations_LoadByQuery_Basic(t *testing.T) {
+// 	// Open the DB
+// 	db, _ := tormenta.OpenTest("data/tests", tormenta.DefaultOptions)
+// 	defer db.Close()
 
-	// Create a full struct
-	struct1 := testtypes.FullStruct{}
-	if _, err := db.Save(&struct1); err != nil {
-		t.Error("Saving error")
-	}
+// 	// Create a full struct
+// 	struct1 := testtypes.FullStruct{}
+// 	if _, err := db.Save(&struct1); err != nil {
+// 		t.Error("Saving error")
+// 	}
 
-	// Some related structs that reference the above full structs
-	relatedStruct1 := testtypes.RelatedStruct{
-		FullStructID: struct1.ID,
-	}
-	relatedStruct2 := testtypes.RelatedStruct{
-		FullStructID: struct1.ID,
-	}
-	if _, err := db.Save(&relatedStruct1, &relatedStruct2); err != nil {
-		t.Error("Saving error")
-	}
+// 	// Some related structs that reference the above full structs
+// 	relatedStruct1 := testtypes.RelatedStruct{
+// 		FullStructID: struct1.ID,
+// 	}
+// 	relatedStruct2 := testtypes.RelatedStruct{
+// 		FullStructID: struct1.ID,
+// 	}
+// 	if _, err := db.Save(&relatedStruct1, &relatedStruct2); err != nil {
+// 		t.Error("Saving error")
+// 	}
 
-	tormenta.LoadByQuery(db, "RelatedStructsByQuery", &struct1)
-	if len(*struct1.RelatedStructsByQuery) != 2 {
-		t.Error("Did not get 2 related structs")
-	}
+// 	tormenta.LoadByQuery(db, "RelatedStructsByQuery", &struct1)
+// 	if len(*struct1.RelatedStructsByQuery) != 2 {
+// 		t.Error("Did not get 2 related structs")
+// 	}
 
-}
+// }
