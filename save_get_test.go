@@ -98,11 +98,15 @@ func Test_Save_Get(t *testing.T) {
 	}
 
 	// Save
-	db.Save(&entity)
+	if n, err := db.Save(&entity); n != 1 || err != nil {
+		t.Error("Error saving entity")
+	}
 
 	// Get
 	var result testtypes.FullStruct
-	db.Get(&result, entity.ID)
+	if n, err := db.Get(&result, entity.ID); n != true || err != nil {
+		t.Error("Error getting entity")
+	}
 
 	testCases := []struct {
 		name             string
@@ -149,7 +153,7 @@ func Test_Save_Get(t *testing.T) {
 		{"StructDateField", entity.StructDateField, result.StructDateField, false},
 
 		//Named Struct
-		{"EmbeddedStructField", entity.StructField, result.StructField, true},
+		{"NamedStructField", entity.StructField, result.StructField, true},
 
 		// Defined time.Time fields don't serialise - see README
 		// These are just here to remind us not to add them again and wonder why they don't work

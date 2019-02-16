@@ -1,16 +1,6 @@
 # ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)
 
-Tormenta is a functionality layer over BadgerDB key/value store.  It provides simple, embedded object persistence for Go projects with some data querying capabilities and ORM-like features.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm) and powered by:
-
-- [BadgerDB](https://github.com/dgraph-io/badger)
-- ['V6' UUIDs](https://github.com/bradleypeabody/gouuidv6)
-- [JSONIter](https://github.com/json-iterator/go)
-
-### (Update Jan 2019)
-
-- Refactored the repo and removed the REST API layer and GUI for now. The REST layer will make a reappearance some time in the future, along with a better GUI built on top of it (in Elm!).  
-- Switch from MessagePack in favour of good old JSON.  Although this will worsen performance a bit, it means no more codegen, making Tormenta easier to get started with, which fits with the philosophy of the project. 
-- Still a WIP, but being used in two projects, both in dev and going to production in the next couple of months, so the API will have to become at least somewhat stable soon! Any questions, hit me up.
+Tormenta is a functionality layer over [BadgerDB](https://github.com/dgraph-io/badger) key/value store.  It provides simple, embedded-object persistence for Go projects with indexing, data querying capabilities and ORM-like features, including loading of relations.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ## Why would you use this?
 
@@ -36,6 +26,7 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 
 - Add import `"github.com/jpincas/tormenta"`
 - Add `tormenta.Model` to structs you want to persist
+- Add `tormenta:"-"` tag to fields you want to exclude from saving
 - Add `tormenta:"noindex"` tag to fields you want to exclude from secondary indexing
 - Add `tormenta:"split"` tag to string fields where you'd like to index each word separately instead of the the whole sentence
 - Open a DB connection with standard options with `db, err := tormenta.Open("mydatadirectory")` (dont forget to `defer db.Close()`). For auto-deleting test DB, use `tormenta.OpenTest`
@@ -61,7 +52,6 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - I could really do with some help setting up some proper benchmarks
 - Load testing or anything similar
 - A performant command-line backup utility that could read raw JSON from keys and write to files in a folder structure, without even going through Tormenta (i.e. just hitting the Badger KV store and writing each key to a json file)
-- Can anyone come up with a solution for skipping saving of fields with a `tormenta:"-"` tag.  I've tried using a 'remove' method with `jsonparser` *after* the JSON has been serialised, but it's slow and for some reason garbles stdlib generated JSON (but not jsoniter generated JSON).
 - Related to the above, it would be nice to "auto" omit empty fields from serialisation rather than add a json tag to each and every field.
 
 ## To Do

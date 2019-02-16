@@ -8,6 +8,7 @@ import (
 const (
 	tormentaTag        = "tormenta"
 	tormentaTagNoIndex = "noindex"
+	tormentaTagNoSave  = "-"
 	tormentaTagSplit   = "split"
 	tagSeparator       = ";"
 )

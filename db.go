@@ -101,10 +101,10 @@ func openDB(badgerDB *badger.DB, options Options) (*DB, error) {
 	}, nil
 }
 
-func (db DB) unserialise(val []byte, entity Record) error {
+func (db DB) unserialise(val []byte, entity interface{}) error {
 	return db.Options.UnserialiseFunc(val, entity)
 }
 
-func (db DB) serialise(entity Record) ([]byte, error) {
+func (db DB) serialise(entity interface{}) ([]byte, error) {
 	return db.Options.SerialiseFunc(entity)
 }

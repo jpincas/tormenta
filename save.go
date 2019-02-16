@@ -58,7 +58,10 @@ func (db DB) Save(entities ...Record) (int, error) {
 			// Set the new model back on the entity
 			modelField.Set(reflect.ValueOf(model))
 
-			data, err := db.serialise(entity)
+			// Before serialisation, we turn the entity
+			// into a map, with nosave fields removed
+			data, err := db.serialise(removeSkippedFields(e))
+
 			if err != nil {
 				return err
 			}
@@ -106,4 +109,60 @@ func (db DB) SaveIndividually(entities ...Record) (counter int, lastErr error) {
 	}
 
 	return counter, lastErr
+}
+
+func removeSkippedFields(entityValue reflect.Value) map[string]interface{} {
+	return structToMap(entityValue)
+}
+
+func structToMap(entityValue reflect.Value) map[string]interface{} {
+	// Set up the top level map that represents the struct
+	target := map[string]interface{}{}
+
+	// Start the iteration through each struct field
+	for i := 0; i < entityValue.NumField(); i++ {
+
+		// We are only interestd in fields that are not tagged to exclude
+		fieldType := entityValue.Type().Field(i)
+		if !isTaggedWith(fieldType, tormentaTagNoSave) {
+
+			// 1 - For anonymous embedded structs,
+			// perform structToMap recursively,
+			// but set the results on the top level map
+			if fieldType.Type.Kind() == reflect.Struct && fieldType.Anonymous {
+				nested := structToMap(entityValue.Field(i))
+				for key, val := range nested {
+					target[key] = val
+				}
+
+				// 2 - For named struct fields,
+				// perform structToMap recursively,
+				// but if the resulting map has no keys
+				// (because there was not exported fields in the struct)
+				// don't even bother setting the top-level key
+				// so there won't be any wierd serialisations
+			} else if fieldType.Type.Kind() == reflect.Struct && !fieldType.Anonymous {
+				nested := structToMap(entityValue.Field(i))
+				if len(nested) > 0 {
+					target[fieldType.Name] = nested
+				} else {
+					fieldValue := entityValue.Field(i)
+					if fieldValue.CanInterface() {
+						target[fieldType.Name] = fieldValue.Interface()
+					}
+				}
+
+				// For everything else, just set the value on the top level map,
+				// remembering to test whether a value can be interfaced without
+				// panic!
+			} else {
+				fieldValue := entityValue.Field(i)
+				if fieldValue.CanInterface() {
+					target[fieldType.Name] = fieldValue.Interface()
+				}
+			}
+		}
+	}
+
+	return target
 }
