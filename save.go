@@ -120,6 +120,10 @@ func removeSkippedFields(entityValue reflect.Value) map[string]interface{} {
 // Then you'd iterate the fields of the struct, find the nosave tags,
 // and remove (recursively) the keys from the map.
 // Might be worth a try at some point to see if it's more performant.
+
+// Other ideas: use a json parser libarary to delete keys after serialising,
+// fork a serialiser and just add the tormenta tag in so that nosave
+// tags don't get serialised in the first place
 func structToMap(entityValue reflect.Value) map[string]interface{} {
 	// Set up the top level map that represents the struct
 	target := map[string]interface{}{}
