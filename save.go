@@ -115,6 +115,11 @@ func removeSkippedFields(entityValue reflect.Value) map[string]interface{} {
 	return structToMap(entityValue)
 }
 
+// Note - another possible technique here would be to use a different encoder
+// (not JSON, as that would produce crosstalk) to serialise then unserialise to a map[string]interface{}
+// Then you'd iterate the fields of the struct, find the nosave tags,
+// and remove (recursively) the keys from the map.
+// Might be worth a try at some point to see if it's more performant.
 func structToMap(entityValue reflect.Value) map[string]interface{} {
 	// Set up the top level map that represents the struct
 	target := map[string]interface{}{}
