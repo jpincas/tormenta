@@ -20,7 +20,7 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - 'Slow' sums by partial decoding of JSON where the index-based sum is not available
 - Business logic using 'triggers' on save and get, including the ability to pass a 'context' through a query
 - URL parameter -> query builder in package `urltoquery`, for quick construction of queries from URL strings
-- Helpers for loading relations (WIP)
+- Helpers for loading relations (WIP - currently working but tests and docs needed)
 
 ## Quick How To
 
@@ -71,7 +71,7 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - [x] Relation loading helpers: load nested relations
 - [x] Relation loading helpers: load multiple relations by slice of IDs
 - [?] Relation loading helpers: load relations of embedded structs
-- [ ] Relation loading helpers: load relations by query (e.g. all unpaid invoices) - using reference ID stored on relation (WIP)
+- [x] Relation loading helpers: load relations by query (e.g. all unpaid invoices) - using reference ID stored on relation (WIP)
 - [ ] Document all the relation loading stuff
 - [ ] Better error reporting from query construction
 - [ ] Better protection against unsupported types being passed around as interfaces
