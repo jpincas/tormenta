@@ -68,9 +68,17 @@ func (db DB) First(entity interface{}) *Query {
 	return db.newQuery(entity, true)
 }
 
-// Limit limits the number of results a Query will return to n
+// Limit limits the number of results a Query will return to n.
+// If a limit has already been set on a query and you try to set a new one, it will only
+// be overriden if it is lower.  This allows you easily set a 'hard' limit up front,
+// that cannot be overriden for that query.
 func (q *Query) Limit(n int) *Query {
-	q.limit = n
+	if q.limit == 0 {
+		q.limit = n
+	} else if n < q.limit {
+		q.limit = n
+	}
+
 	return q
 }
 

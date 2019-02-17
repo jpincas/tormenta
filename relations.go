@@ -25,9 +25,9 @@ const (
 	fieldPathSep                 = "."
 )
 
-// TODO: clean this up when all relational stuff is done
-// There is a lot of reflect code repeated that can be refactored to the
-// 'reflect.go' file.
+// TODO: this code is currently horribly complex in terms of
+// reflection and concurrency and needs to be refactored.
+// But first we need a proper test suite on all the relational stuff
 
 func idFieldName(fieldName string, postfix string) string {
 	return fieldName + postfix
@@ -46,34 +46,121 @@ func reJoinFieldPath(pathComponents []string) []string {
 	return []string{strings.Join(pathComponents, fieldPathSep)}
 }
 
-func LoadByQuery(db *DB, fieldName string, entities ...Record) error {
-	for i, entity := range entities {
-		// Reflect on the specified field - bail if its not there
-		field := recordValue(entities[i]).FieldByName(fieldName)
-		if !field.IsValid() {
-			return fmt.Errorf(ErrFieldNotExist, fieldName)
+// QueryModifier is a function that modifies and existing query
+type QueryModifier = func(q *Query) *Query
+
+func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities ...Record) error {
+	if len(entities) == 0 {
+		return fmt.Errorf("LoadByQuery requires at least one entity")
+	}
+
+	type relationsQueryResult struct {
+		entityID    gouuidv6.UUID
+		relationIDs idList
+		err         error
+	}
+
+	ch := make(chan relationsQueryResult)
+	defer close(ch)
+	var wg sync.WaitGroup
+
+	// Do some reflect work up front on the first entity
+	exampleEntity := entities[0]
+
+	// Reflect on the specified field - bail if its not there
+	field := recordValue(exampleEntity).FieldByName(fieldName)
+	if !field.IsValid() {
+		return fmt.Errorf(ErrFieldNotExist, fieldName)
+	}
+
+	// The related field on the entity is a slice of pointers,
+	// but queries expect a pointer to a slice,
+	// So we do a bit of reflect magic to get a target for the query
+	target := reflect.New(reflect.SliceOf(field.Type().Elem().Elem())).Interface()
+
+	indexString := indexStringForThisEntity(exampleEntity) + idFieldPostfixSingleForIndex
+
+	for i := range entities {
+		wg.Add(1)
+		go func(ii int) {
+			query := And(
+				// We combine a query for records whose related ID field
+				// matches the ID of the entity (that part is fixed),
+				// along with any query passed in by the caller
+				db.Find(target).Match(indexString, entities[ii].GetID()),
+				queryModifier(db.Find(target)),
+			)
+
+			err := query.queryIDs()
+			if err != nil {
+				ch <- relationsQueryResult{
+					entityID:    entities[ii].GetID(),
+					relationIDs: query.ids,
+					err:         err,
+				}
+			}
+
+			_, err = db.GetIDs(target, query.ids...)
+			ch <- relationsQueryResult{
+				entityID:    entities[ii].GetID(),
+				relationIDs: query.ids,
+				err:         err,
+			}
+		}(i)
+	}
+
+	relatedEntitiesForEachEntity := map[gouuidv6.UUID]idList{}
+	allIDsToGet := idList{}
+	var errorsList []error
+	go func() {
+		for relationsQueryResult := range ch {
+			if relationsQueryResult.err != nil {
+				errorsList = append(errorsList, relationsQueryResult.err)
+			} else {
+				relatedEntitiesForEachEntity[relationsQueryResult.entityID] = relationsQueryResult.relationIDs
+				allIDsToGet = append(allIDsToGet, relationsQueryResult.relationIDs...)
+			}
+
+			wg.Done()
 		}
+	}()
 
-		// Create a new pointer for the query results
-		target := reflect.New(field.Type().Elem()).Interface()
+	wg.Wait()
+	if len(errorsList) > 0 {
+		return errorsList[0]
+	}
 
-		// Run a match query restricting results to match the ID of this entity
-		indexString := indexStringForThisEntity(entity) + idFieldPostfixSingleForIndex
-		query := And(
-			db.Find(target).Match(indexString, entity.GetID()),
-			// This is where the rest of the clauses need to go
-		)
+	// Now we can go ahead and get results for all the IDs
+	// Note: this function already runs everything parallel
+	db.GetIDs(target, allIDsToGet...)
 
-		err := query.queryIDs()
-		if err != nil {
-			return err
+	// Once we have all the results,
+	// we build up a map of results keyed by ID
+	resultsMap := map[gouuidv6.UUID]Record{}
+	s := reflect.ValueOf(target).Elem()
+	for i := 0; i < s.Len(); i++ {
+		e := s.Index(i).Addr().Interface().(Record)
+		resultsMap[e.GetID()] = e
+	}
+
+	// Now, finally, for each entity we originally passed in
+	// we can go back, retrieve the list of its related entities
+	// from the first map that resulted from the query,
+	// and then for each of those IDs, get the actual result
+	// from the final results map and append it the target slice on the entity
+	// (as a slice of pointers)
+	for _, entity := range entities {
+		thisEntityRelatedIDs := relatedEntitiesForEachEntity[entity.GetID()]
+
+		for _, relatedID := range thisEntityRelatedIDs {
+			field.Set(
+				reflect.Append(
+					field,
+					reflect.ValueOf(resultsMap[relatedID]),
+				),
+			)
+
 		}
-
-		fmt.Println("ids ", query.ids)
-		// TODO: get all the ids in parallel like before and recombine them later
-
-		// Set the results pointer on the entity
-		field.Set(reflect.ValueOf(target))
 	}
 
 	return nil
