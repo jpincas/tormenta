@@ -129,9 +129,8 @@ func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID
 			return err
 		}
 
-		return item.Value(func(val []byte) {
-			// TODO: unmarshalling error?
-			db.unserialise(val, entity)
+		return item.Value(func(val []byte) error {
+			return db.unserialise(val, entity)
 		})
 	})
 
@@ -243,10 +242,11 @@ func (db DB) getFloat64AtPath(entity Record, ctx map[string]interface{}, id gouu
 			return err
 		}
 
-		return item.Value(func(val []byte) {
+		return item.Value(func(val []byte) error {
 			// TODO: What to do with parsing errors?
-			f, _ := jsonparser.GetFloat(val, slowSumPath...)
+			f, err := jsonparser.GetFloat(val, slowSumPath...)
 			result = f
+			return err
 		})
 	})
 
