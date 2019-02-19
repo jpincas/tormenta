@@ -43,44 +43,52 @@ func Test_MakeIndexKeys(t *testing.T) {
 			StructFloatField:  0.99,
 			StructBoolField:   true,
 		},
+		NoSaveSimple: "dontsaveitsodontindexit",
 	}
 
 	db.Save(&entity)
 
 	testCases := []struct {
-		testName   string
-		indexName  string
-		indexValue interface{}
+		testName    string
+		indexName   string
+		indexValue  interface{}
+		shouldIndex bool
 	}{
 		// Basic testtypes
-		{"int field", "intfield", 1},
-		{"id field", "idfield", id},
-		{"string field", "stringfield", "test"},
-		{"float field", "floatfield", 0.99},
-		{"bool field", "boolfield", true},
-		{"date field", "datefield", time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC).Unix()},
+		{"int field", "intfield", 1, true},
+		{"id field", "idfield", id, true},
+		{"string field", "stringfield", "test", true},
+		{"float field", "floatfield", 0.99, true},
+		{"bool field", "boolfield", true, true},
+		{"date field", "datefield", time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC).Unix(), true},
 
 		// Slice testtypes - check both members
-		{"int slice field", "intslicefield", 1},
-		{"int slice field", "intslicefield", 2},
-		{"string slice field", "stringslicefield", "test1"},
-		{"string slice field", "stringslicefield", "test2"},
-		{"float slice field", "floatslicefield", 0.99},
-		{"float slice field", "floatslicefield", 1.99},
-		{"bool slice field", "boolslicefield", true},
-		{"bool slice field", "boolslicefield", false},
+		{"int slice field", "intslicefield", 1, true},
+		{"int slice field", "intslicefield", 2, true},
+		{"string slice field", "stringslicefield", "test1", true},
+		{"string slice field", "stringslicefield", "test2", true},
+		{"float slice field", "floatslicefield", 0.99, true},
+		{"float slice field", "floatslicefield", 1.99, true},
+		{"bool slice field", "boolslicefield", true, true},
+		{"bool slice field", "boolslicefield", false, true},
 
 		// Defined testtypes
-		{"defined int field", "definedintfield", 1},
-		{"defined string field", "definedstringfield", "test"},
-		{"defined float field", "definedfloatfield", 0.99},
-		{"defined bool field", "definedboolfield", true},
+		{"defined int field", "definedintfield", 1, true},
+		{"defined string field", "definedstringfield", "test", true},
+		{"defined float field", "definedfloatfield", 0.99, true},
+		{"defined bool field", "definedboolfield", true, true},
 
 		// Struct structs
-		{"embedded struct - int field", "structintfield", 1},
-		{"embedded struct - string field", "structstringfield", "test"},
-		{"embedded struct - float field", "structfloatfield", 0.99},
-		{"embedded struct - bool field", "structboolfield", true},
+		{"embedded struct - int field", "structintfield", 1, true},
+		{"embedded struct - string field", "structstringfield", "test", true},
+		{"embedded struct - float field", "structfloatfield", 0.99, true},
+		{"embedded struct - bool field", "structboolfield", true, true},
+
+		// No save / No Index
+		{"no index field simple", "noindexsimple", "dontsaveitsodontindexit", false},
+		{"no index field two tags", "noindextwotags", "dontsaveitsodontindexit", false},
+		{"no index field, two tags, different order", "noindextwotagsdifferentorder", "dontsaveitsodontindexit", false},
+		{"no save field", "nosavesimple", "dontsaveitsodontindexit", false},
 	}
 
 	// Step 1 - make sure that the keys that we expect are present after saving
@@ -90,8 +98,10 @@ func Test_MakeIndexKeys(t *testing.T) {
 			i := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, testCase.indexName, testCase.indexValue)
 
 			_, err := txn.Get(i)
-			if err == badger.ErrKeyNotFound {
+			if testCase.shouldIndex && err == badger.ErrKeyNotFound {
 				t.Errorf("Testing %s. Could not get index key", testCase.testName)
+			} else if !testCase.shouldIndex && err != badger.ErrKeyNotFound {
+				t.Errorf("Testing %s. Should not have found the index key but did", testCase.testName)
 			}
 		}
 

@@ -125,6 +125,11 @@ type FullStruct struct {
 	IsSaved         bool
 	ShouldBlockSave bool
 
+	// Fields for 'no index' testing
+	NoIndexSimple                string `tormenta:"noindex"`
+	NoIndexTwoTags               string `tormenta:"noindex; split"`
+	NoIndexTwoTagsDifferentOrder string `tormenta:"split;noindex"`
+
 	// Fields for 'no save' testing
 	NoSaveSimple                string `tormenta:"-"`
 	NoSaveTwoTags               string `tormenta:"split;-"`

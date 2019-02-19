@@ -55,7 +55,7 @@ func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUI
 
 		// If the 'tormenta:noindex' tag is present, don't index
 		fieldType := v.Type().Field(i)
-		if idx := fieldType.Tag.Get(tormentaTag); idx != tormentaTagNoIndex {
+		if !isTaggedWith(fieldType, tormentaTagNoIndex, tormentaTagNoSave) {
 			switch fieldType.Type.Kind() {
 			case reflect.Slice:
 				keys = append(keys, getMultipleIndexKeys(v.Field(i), keyRoot, id, fieldType.Name)...)
@@ -71,7 +71,7 @@ func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUI
 			case reflect.String:
 				// If the string is tagged with 'split',
 				// then index each of the words separately
-				if idx == tormentaTagSplit {
+				if isTaggedWith(fieldType, tormentaTagSplit) {
 					keys = append(keys, getSplitStringIndexes(v.Field(i), keyRoot, id, fieldType.Name)...)
 				} else {
 					keys = append(keys, makeIndexKey(keyRoot, id, fieldType.Name, v.Field(i).Interface()))

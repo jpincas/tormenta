@@ -20,11 +20,13 @@ func getTormentaTags(field reflect.StructField) []string {
 	return strings.Split(compositeTag, tagSeparator)
 }
 
-func isTaggedWith(field reflect.StructField, targetTag string) bool {
+func isTaggedWith(field reflect.StructField, targetTags ...string) bool {
 	tags := getTormentaTags(field)
 	for _, tag := range tags {
-		if tag == targetTag {
-			return true
+		for _, targetTag := range targetTags {
+			if tag == targetTag {
+				return true
+			}
 		}
 	}
 
