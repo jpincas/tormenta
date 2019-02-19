@@ -45,6 +45,14 @@ func Test_Save_Get(t *testing.T) {
 			time.Date(2011, time.November, 10, 23, 0, 0, 0, time.UTC),
 		},
 
+		// Map Types
+		IDMapField:     map[string]gouuidv6.UUID{"key": gouuidv6.New()},
+		IntMapField:    map[string]int{"key": 1},
+		StringMapField: map[string]string{"key": "value"},
+		FloatMapField:  map[string]float64{"key": 9.99},
+		BoolMapField:   map[string]bool{"key": true},
+		DateMapField:   map[string]time.Time{"key": time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)},
+
 		// Basic Defined Fields
 		DefinedIntField:    testtypes.DefinedInt(1),
 		DefinedStringField: testtypes.DefinedString("test"),
@@ -128,6 +136,14 @@ func Test_Save_Get(t *testing.T) {
 		{"FloatSliceField", entity.FloatSliceField, result.FloatSliceField, true},
 		{"BoolSliceField", entity.BoolSliceField, result.BoolSliceField, true},
 		{"DateSliceField", entity.DateSliceField, result.DateSliceField, true},
+
+		// Map Types
+		{"IDMapField", entity.IDMapField, result.IDMapField, true},
+		{"IntMapField", entity.IntMapField, result.IntMapField, true},
+		{"StringMapField", entity.StringMapField, result.StringMapField, true},
+		{"FloatMapField", entity.FloatMapField, result.FloatMapField, true},
+		{"BoolMapField", entity.BoolMapField, result.BoolMapField, true},
+		{"DateMapField", entity.DateMapField, result.DateMapField, true},
 
 		// Basic Defined Types
 		{"DefinedID", entity.DefinedIDField, result.DefinedIDField, false},

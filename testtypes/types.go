@@ -92,6 +92,14 @@ type FullStruct struct {
 	BoolSliceField   []bool
 	DateSliceField   []time.Time
 
+	// Map types
+	IDMapField     map[string]gouuidv6.UUID
+	IntMapField    map[string]int
+	StringMapField map[string]string
+	FloatMapField  map[string]float64
+	BoolMapField   map[string]bool
+	DateMapField   map[string]time.Time
+
 	// Defined types
 	DefinedIDField     DefinedID
 	DefinedIntField    DefinedInt
