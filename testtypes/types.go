@@ -117,7 +117,7 @@ type FullStruct struct {
 	MyStruct
 
 	// Named Struct
-	StructField MyStruct
+	StructField MyStruct `tormenta:"nested"`
 
 	// Fields for trigger testing
 	TriggerString   string

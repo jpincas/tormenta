@@ -22,13 +22,14 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - URL parameter -> query builder in package `urltoquery`, for quick construction of queries from URL strings
 - Helpers for loading relations (WIP - currently working but tests and docs needed)
 
-## Quick How To
+## Quick How To (in place of better docs to come)
 
 - Add import `"github.com/jpincas/tormenta"`
 - Add `tormenta.Model` to structs you want to persist
 - Add `tormenta:"-"` tag to fields you want to exclude from saving
 - Add `tormenta:"noindex"` tag to fields you want to exclude from secondary indexing
 - Add `tormenta:"split"` tag to string fields where you'd like to index each word separately instead of the the whole sentence
+- Add `tormenta:"nested"` tag to struct fields where you'd like to index each member (using the index syntax "toplevelfield.nextlevelfield")
 - Open a DB connection with standard options with `db, err := tormenta.Open("mydatadirectory")` (dont forget to `defer db.Close()`). For auto-deleting test DB, use `tormenta.OpenTest`
 - If you want faster serialisation, I suggest [JSONIter](https://github.com/json-iterator/go)
 - Save a single entity with `db.Save(&MyEntity)` or multiple (possibly different type) entities in a transaction with `db.Save(&MyEntity1, &MyEntity2)`.

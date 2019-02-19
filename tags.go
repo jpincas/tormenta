@@ -6,11 +6,12 @@ import (
 )
 
 const (
-	tormentaTag        = "tormenta"
-	tormentaTagNoIndex = "noindex"
-	tormentaTagNoSave  = "-"
-	tormentaTagSplit   = "split"
-	tagSeparator       = ";"
+	tormentaTag            = "tormenta"
+	tormentaTagNoIndex     = "noindex"
+	tormentaTagNestedIndex = "nested"
+	tormentaTagNoSave      = "-"
+	tormentaTagSplit       = "split"
+	tagSeparator           = ";"
 )
 
 // Tormenta-specific tags

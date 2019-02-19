@@ -113,7 +113,7 @@ func Test_makeIndexKey(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		result := makeIndexKey(testCase.root, id, testCase.indexName, testCase.indexContent)
+		result := makeIndexKey(testCase.root, id, []byte(testCase.indexName), testCase.indexContent)
 		a := string(result)
 		b := string(testCase.expected)
 		if a != b {

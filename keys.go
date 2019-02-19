@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	contentKeyPrefix = "c"
-	indexKeyPrefix   = "i"
-	keySeparator     = "~±^"
+	contentKeyPrefix  = "c"
+	indexKeyPrefix    = "i"
+	indexKeySeparator = "."
+	keySeparator      = "~±^"
 )
 
 type key struct {
@@ -38,6 +39,10 @@ func newIndexKey(root, indexName []byte, indexContent interface{}, id ...gouuidv
 		indexName:    indexName,
 		indexContent: indexContent,
 	}, id)
+}
+
+func nestedIndexKeyRoot(base, next []byte) []byte {
+	return bytes.Join([][]byte{base, next}, []byte(indexKeySeparator))
 }
 
 func newIndexMatchKey(root, indexName []byte, indexContent interface{}, id ...gouuidv6.UUID) key {
