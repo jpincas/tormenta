@@ -86,7 +86,7 @@ func indexStruct(v reflect.Value, entity Record, keyRoot []byte, id gouuidv6.UUI
 					keys = append(keys, makeIndexKey(keyRoot, id, indexName, v.Field(i).Interface()))
 				}
 
-			// Structs
+			// Anonymous/ Nested Structs
 			case reflect.Struct:
 				// time.Time is a struct, so we'll intercept it here
 				// and send it to the index key maker which will translate it to int64
