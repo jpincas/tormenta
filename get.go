@@ -40,6 +40,7 @@ func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
 
 func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
 	ch := make(chan getResult)
+	defer close(ch)
 	var wg sync.WaitGroup
 
 	for _, id := range ids {
@@ -189,6 +190,8 @@ type getFloat64Result struct {
 func (db DB) getIDsWithContextFloat64AtPath(record Record, ctx map[string]interface{}, slowSumPath []string, ids ...gouuidv6.UUID) (float64, error) {
 	var sum float64
 	ch := make(chan getFloat64Result)
+	defer close(ch)
+
 	var wg sync.WaitGroup
 
 	for _, id := range ids {

@@ -7,7 +7,7 @@ import (
 )
 
 type Record interface {
-	PreSave() error
+	PreSave(DB) ([]Record, error)
 	PostSave()
 	PostGet(ctx map[string]interface{})
 	GetCreated() time.Time
@@ -32,13 +32,13 @@ func newModel() Model {
 	}
 }
 
-func (m Model) PreSave() error {
-	return nil
+func (m *Model) PreSave(db DB) ([]Record, error) {
+	return nil, nil
 }
 
-func (m Model) PostSave() {}
+func (m *Model) PostSave() {}
 
-func (m Model) PostGet(ctx map[string]interface{}) {}
+func (m *Model) PostGet(ctx map[string]interface{}) {}
 
 func (m *Model) SetID(id gouuidv6.UUID) {
 	m.ID = id

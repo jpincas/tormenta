@@ -160,12 +160,14 @@ type FullStruct struct {
 	RelatedStructsByQuery []*RelatedStruct `tormenta:"-"`
 }
 
-func (t FullStruct) PreSave() error {
+func (t *FullStruct) PreSave(db tormenta.DB) ([]tormenta.Record, error) {
+	t.TriggerString = "triggered"
+
 	if t.ShouldBlockSave {
-		return errors.New("presave trigger is blocking save")
+		return nil, errors.New("presave trigger is blocking save")
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (t *FullStruct) PostSave() {

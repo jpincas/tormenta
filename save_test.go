@@ -99,10 +99,49 @@ func Test_SaveTrigger(t *testing.T) {
 
 	// Test presave trigger
 	n, err := db.Save(&fullStruct)
+	if fullStruct.TriggerString != "triggered" {
+		t.Errorf("Testing presave trigger.  TriggerStringField wrong. Expected %s, got %s", "triggered", fullStruct.TriggerString)
+	}
+
 	if n != 0 || err == nil {
 		t.Error("Testing presave trigger.  This record should not have saved, but it did and no error returned")
 	}
+}
 
+type structA struct {
+	StringField string
+	tormenta.Model
+}
+
+type structB struct {
+	StringField string
+	tormenta.Model
+}
+
+func (s *structA) PreSave(db tormenta.DB) ([]tormenta.Record, error) {
+	return []tormenta.Record{&structB{StringField: "b"}}, nil
+}
+
+func Test_SaveTrigger_CascadingSaves(t *testing.T) {
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
+	defer db.Close()
+
+	// Saving A should also create and save a B according to the presave trigger
+	if _, err := db.Save(&structA{}); err != nil {
+		t.Errorf("Testing presave trigger with cascades. Got error %v", err)
+	}
+
+	// So lets see if its there
+	res := structB{}
+	if n, err := db.First(&res).Run(); err != nil {
+		t.Errorf("Testing presave trigger with cascades. Got error %v", err)
+	} else if n != 1 {
+		t.Errorf("Testing presave trigger with cascades. Trying to retrieve struct B, but got n=%v", n)
+	}
+
+	if res.StringField != "b" {
+		t.Errorf("Testing presave trigger with cascades. Checking struct B string value, expected %s but got %s", "b", res.StringField)
+	}
 }
 
 func Test_SaveMultiple(t *testing.T) {

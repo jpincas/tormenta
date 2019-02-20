@@ -15,7 +15,9 @@ const (
 func (db DB) Save(entities ...Record) (int, error) {
 
 	err := db.KV.Update(func(txn *badger.Txn) error {
-		for _, entity := range entities {
+		for i := 0; i < len(entities); i++ {
+			entity := entities[i]
+
 			// Make a copy of the entity and attempt to get the old
 			// version from the DB for deindexing
 			newEntity := newRecord(entity)
@@ -33,8 +35,13 @@ func (db DB) Save(entities ...Record) (int, error) {
 			}
 
 			// Presave trigger
-			if err := entity.PreSave(); err != nil {
+			// If any more records need saving after the trigger,
+			// we simply add them to the list of entities to save,
+			// which keeps them in the same transaction
+			if moreRecordsToSave, err := entity.PreSave(db); err != nil {
 				return err
+			} else if len(moreRecordsToSave) > 0 {
+				entities = append(entities, moreRecordsToSave...)
 			}
 
 			// Build the key root
