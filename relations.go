@@ -279,9 +279,13 @@ func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 					// always be OK at this point
 					id := field.Interface().(gouuidv6.UUID)
 
-					// Get the record from the record map and set onto target result field
-					// if its nil don't worry, the relation will just be nil
-					recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(recordMap[id]))
+					// Check that the record is in the map and set if it is
+					// Since the inner loop won't add zero identifiers to the map,
+					// this also acts as a sanity check against those zero identifiers
+					record, relationFound := recordMap[id]
+					if relationFound {
+						recordValue(entities[ii]).FieldByName(fieldName).Set(reflect.ValueOf(record))
+					}
 
 				case reflect.Slice:
 					// For slices, things are slightly more complex,
@@ -290,11 +294,15 @@ func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 					field := recordValue(entities[ii]).FieldByName(idFieldName(fieldName, idFieldPostfixMultiple))
 					ids := field.Interface().([]gouuidv6.UUID)
 					for _, id := range ids {
-						// Nasty code - a reflect append!!
-						recordValue(entities[ii]).FieldByName(fieldName).Set(
-							reflect.Append(recordValue(entities[ii]).FieldByName(fieldName), reflect.ValueOf(recordMap[id])),
-						)
-
+						record, relationFound := recordMap[id]
+						if relationFound {
+							// Nasty code - a reflect append!!
+							recordValue(entities[ii]).FieldByName(fieldName).Set(
+								reflect.
+									Append(recordValue(entities[ii]).
+										FieldByName(fieldName), reflect.ValueOf(record)),
+							)
+						}
 					}
 				}
 			}
@@ -341,7 +349,9 @@ func getRelatedField(db *DB, fieldName string, entities ...Record) (map[gouuidv6
 				return recordMap, fmt.Errorf(ErrIDFieldIncorrectType, idfieldName)
 			}
 
-			recordMap[id] = nil
+			if !id.IsNil() {
+				recordMap[id] = nil
+			}
 
 		case reflect.Slice:
 			idfieldName := idFieldName(fieldName, idFieldPostfixMultiple)
@@ -356,7 +366,9 @@ func getRelatedField(db *DB, fieldName string, entities ...Record) (map[gouuidv6
 			}
 
 			for _, id := range ids {
-				recordMap[id] = nil
+				if !id.IsNil() {
+					recordMap[id] = nil
+				}
 			}
 
 		default:

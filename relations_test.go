@@ -320,6 +320,26 @@ func Test_Relations_LoadByID(t *testing.T) {
 	}
 }
 
+func Test_Relations_LoadByID_InvalidID(t *testing.T) {
+	// Open the DB
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
+	defer db.Close()
+
+	// Save a compleletely blank struct
+	myStruct := &testtypes.FullStruct{}
+	if _, err := db.Save(myStruct); err != nil {
+		t.Errorf("Testing relations load by ID (invalid ID) - could not save: %s", err)
+	}
+
+	// Attempt load by ID using the "HasOne" and "HasMany" fields,
+	// but since the ids on those fields are going to be blank, there is no relation to get,
+	// That should not cause an error or crash
+	if err := tormenta.LoadByID(db, []string{"HasOne", "HasMany"}, myStruct); err != nil {
+		t.Errorf("Testing relations load by ID (invalid ID) - got error: %s", err)
+	}
+
+}
+
 func Test_Relations_LoadByQuery_Basic(t *testing.T) {
 	// Open the DB
 	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
