@@ -397,7 +397,11 @@ func (q *Query) queryIDs() error {
 	}
 
 	// Iterate through records according to calcuted range limits
+	// Note: there is a problem here.  We should really be passing a txn in,
+	// but badger only supports 1 iterator per txn at once, so this causes
+	// a big explosion when multiple queries try to run in parallel
 	err := q.db.KV.View(func(txn *badger.Txn) error {
+
 		it := txn.NewIterator(q.getIteratorOptions(q.shouldGetValues()))
 		defer it.Close()
 
@@ -443,6 +447,9 @@ func (q *Query) queryIDs() error {
 }
 
 func (q *Query) execute() (int, error) {
+	txn := q.db.KV.NewTransaction(true)
+	defer txn.Discard()
+
 	// Combined queries have already had their IDs retrieved,
 	// so we can skip this step
 	if !q.combinedQuery {
@@ -471,7 +478,7 @@ func (q *Query) execute() (int, error) {
 		// and then set the result of get to the target aftwards
 		record := newRecord(q.target)
 		id := q.ids[0]
-		if found, err := q.db.get(record, q.ctx, id); err != nil {
+		if found, err := q.db.get(txn, record, q.ctx, id); err != nil {
 			return 0, err
 		} else if !found {
 			return 0, fmt.Errorf("Could not retrieve record with id: %v", id)
@@ -493,13 +500,13 @@ func (q *Query) execute() (int, error) {
 	// unserialise only the required field,
 	// calculate accumulator and set on query
 	if len(q.slowSumPath) != 0 {
-		sum, err := q.db.getIDsWithContextFloat64AtPath(newRecordFromSlice(q.target), q.ctx, q.slowSumPath, q.ids...)
+		sum, err := q.db.getIDsWithContextFloat64AtPath(txn, newRecordFromSlice(q.target), q.ctx, q.slowSumPath, q.ids...)
 		*q.aggTarget.(*float64) = sum
 		return len(q.ids), err
 	}
 
 	// Otherwise we just get the records and return
-	n, err := q.db.GetIDsWithContext(q.target, q.ctx, q.ids...)
+	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, q.ids...)
 	if err != nil {
 		return 0, err
 	}

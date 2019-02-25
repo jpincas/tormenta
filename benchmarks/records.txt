@@ -36,3 +36,13 @@ Has One:
 1000 records, 50 relations, 2 related fields, 1 nested relation
 
 Benchmark_Relations_HasOne-8   	    1000	   2235074 ns/op	  467909 B/op	   18811 allocs/op
+
+Get:
+
+Before TX
+
+20000	     86104 ns/op	    3180 B/op	     110 allocs/op
+500000	      2318 ns/op	     568 B/op	      14 allocs/op
+
+50	  30813559 ns/op	12219539 B/op	  129096 allocs/op
+1000	   2396463 ns/op	 1995783 B/op	   21045 allocs/op

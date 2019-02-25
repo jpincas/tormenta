@@ -8,6 +8,7 @@ type queryResult struct {
 }
 
 func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query {
+
 	firstQuery := queries[0]
 	combinedQuery := &Query{
 		db:            firstQuery.db,
@@ -15,6 +16,9 @@ func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query 
 		target:        firstQuery.target,
 		ctx:           firstQuery.ctx,
 	}
+
+	txn := combinedQuery.db.KV.NewTransaction(true)
+	defer txn.Discard()
 
 	ch := make(chan queryResult)
 	var wg sync.WaitGroup

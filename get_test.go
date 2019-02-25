@@ -16,14 +16,17 @@ func Test_BasicGet(t *testing.T) {
 	// Create basic fullStruct and save, then blank the ID
 	fullStruct := testtypes.FullStruct{}
 
-	db.Save(&fullStruct)
+	if _, err := db.Save(&fullStruct); err != nil {
+		t.Errorf("Testing get entity without ID. Got error on save (%v)", err)
+	}
+
 	ttIDBeforeBlanking := fullStruct.ID
 	fullStruct.ID = gouuidv6.UUID{}
 
 	// Attempt to get entity without ID
 	found, err := db.Get(&fullStruct)
 	if err != nil {
-		t.Error("Testing get entity without ID. Got error but should simply fail to find")
+		t.Errorf("Testing get entity without ID. Got error (%v) but should simply fail to find", err)
 	}
 
 	if found {

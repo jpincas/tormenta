@@ -21,7 +21,7 @@ func (db DB) Save(entities ...Record) (int, error) {
 			// Make a copy of the entity and attempt to get the old
 			// version from the DB for deindexing
 			newEntity := newRecord(entity)
-			found, err := db.Get(newEntity, entity.GetID())
+			found, err := db.get(txn, newEntity, noCTX, entity.GetID())
 			if err != nil {
 				return err
 			}
