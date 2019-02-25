@@ -4,14 +4,10 @@ import (
 	"testing"
 
 	"github.com/jpincas/tormenta"
-	jsoniter "github.com/json-iterator/go"
 )
 
 func Benchmark_Save_JSONIter_Fastest(b *testing.B) {
-	db, _ := tormenta.OpenTestWithOptions("data/tests", tormenta.Options{
-		Serialiser:  tormenta.SerialiserJSONIter,
-		JsonIterAPI: jsoniter.ConfigFastest,
-	})
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testOptionsJSONIterFastest)
 	defer db.Close()
 
 	// Reset the timer
@@ -24,9 +20,7 @@ func Benchmark_Save_JSONIter_Fastest(b *testing.B) {
 }
 
 func Benchmark_Save_FFJson(b *testing.B) {
-	db, _ := tormenta.OpenTestWithOptions("data/tests", tormenta.Options{
-		Serialiser: tormenta.SerialiserJSONff,
-	})
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testOptionsFFJson)
 	defer db.Close()
 
 	var toSave []tormenta.Record
@@ -45,9 +39,7 @@ func Benchmark_Save_FFJson(b *testing.B) {
 }
 
 func Benchmark_Save_StdLib(b *testing.B) {
-	db, _ := tormenta.OpenTestWithOptions("data/tests", tormenta.Options{
-		Serialiser: tormenta.SerialiserJSONStdLib,
-	})
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testOptionsStdLib)
 	defer db.Close()
 
 	var toSave []tormenta.Record

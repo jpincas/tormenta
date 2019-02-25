@@ -30,28 +30,6 @@ func Benchmark_Get(b *testing.B) {
 	}
 }
 
-func Benchmark_Get_StdLib(b *testing.B) {
-	db, _ := tormenta.OpenTestWithOptions("data/tests", tormenta.Options{
-		Serialiser: tormenta.SerialiserJSONStdLib,
-	})
-	defer db.Close()
-
-	toSave := stdRecord()
-	db.Save(toSave)
-	id := toSave.GetID()
-
-	// Reuse the same results
-	result := testtypes.FullStruct{}
-
-	// Reset the timer
-	b.ResetTimer()
-
-	// Run the aggregation
-	for i := 0; i < b.N; i++ {
-		db.Get(&result, id)
-	}
-}
-
 func Benchmark_GetIDs(b *testing.B) {
 	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
 	defer db.Close()
@@ -81,31 +59,31 @@ func Benchmark_GetIDs(b *testing.B) {
 	}
 }
 
-func Benchmark_GetIDsSerial(b *testing.B) {
-	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
-	defer db.Close()
+// func Benchmark_GetIDsSerial(b *testing.B) {
+// 	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
+// 	defer db.Close()
 
-	var toSave []tormenta.Record
-	var ids []gouuidv6.UUID
+// 	var toSave []tormenta.Record
+// 	var ids []gouuidv6.UUID
 
-	for i := 0; i <= nRecords; i++ {
-		id := gouuidv6.NewFromTime(time.Now())
-		record := stdRecord()
-		record.SetID(id)
-		toSave = append(toSave, record)
-		ids = append(ids, id)
-	}
+// 	for i := 0; i <= nRecords; i++ {
+// 		id := gouuidv6.NewFromTime(time.Now())
+// 		record := stdRecord()
+// 		record.SetID(id)
+// 		toSave = append(toSave, record)
+// 		ids = append(ids, id)
+// 	}
 
-	db.Save(toSave...)
+// 	db.Save(toSave...)
 
-	// Reuse the same results
-	results := []testtypes.FullStruct{}
+// 	// Reuse the same results
+// 	results := []testtypes.FullStruct{}
 
-	// Reset the timer
-	b.ResetTimer()
+// 	// Reset the timer
+// 	b.ResetTimer()
 
-	// Run the aggregation
-	for i := 0; i < b.N; i++ {
-		db.GetIDsSerial(&results, ids...)
-	}
-}
+// 	// Run the aggregation
+// 	for i := 0; i < b.N; i++ {
+// 		db.GetIDsSerial(&results, ids...)
+// 	}
+// }

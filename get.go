@@ -13,18 +13,31 @@ const (
 	ErrNoID = "Cannot get entity %s - ID is nil"
 )
 
-var noCTX = make(map[string]interface{})
+func (db DB) get(txn *badger.Txn, entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
+	// If an override id has been specified, set it on the entity
+	if len(ids) > 0 {
+		entity.SetID(ids[0])
+	}
 
-// Get retrieves an entity, either according to the ID set on the entity,
-// or using a separately specified ID (optional, takes priority)
-func (db DB) Get(entity Record, ids ...gouuidv6.UUID) (bool, error) {
-	return db.get(entity, noCTX, ids...)
-}
+	// We are not treating 'not found' as an actual error,
+	// instead we return 'false' and nil (unless there is an actual error)
+	item, err := txn.Get(newContentKey(KeyRoot(entity), entity.GetID()).bytes())
+	if err == badger.ErrKeyNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
 
-// GetWithContext retrieves an entity, either according to the ID set on the entity,
-// or using a separately specified ID (optional, takes priority), and allows the passing of a non-empty context.
-func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
-	return db.get(entity, ctx, ids...)
+	if err := item.Value(func(val []byte) error {
+		return db.unserialise(val, entity)
+	}); err != nil {
+		return false, err
+	}
+
+	entity.GetCreated()
+	entity.PostGet(ctx)
+
+	return true, nil
 }
 
 type getResult struct {
@@ -34,11 +47,7 @@ type getResult struct {
 	err    error
 }
 
-func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
-	return db.GetIDsWithContext(target, noCTX, ids...)
-}
-
-func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
+func (db DB) getIDsWithContext(txn *badger.Txn, target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
 	ch := make(chan getResult)
 	defer close(ch)
 	var wg sync.WaitGroup
@@ -54,7 +63,7 @@ func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, i
 		// Unlikely if the all JSON is saved with the schema, but I don't
 		// think we can risk it
 		go func(thisRecord Record, thisID gouuidv6.UUID) {
-			found, err := db.get(thisRecord, ctx, thisID)
+			found, err := db.get(txn, thisRecord, ctx, thisID)
 			ch <- getResult{
 				id:     thisID,
 				record: thisRecord,
@@ -93,91 +102,6 @@ func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, i
 	return sortToOriginalIDsOrder(target, resultsList, ids), nil
 }
 
-func sortToOriginalIDsOrder(target interface{}, resultList []Record, ids []gouuidv6.UUID) (counter int) {
-	resultMap := map[gouuidv6.UUID]Record{}
-	for _, record := range resultList {
-		resultMap[record.GetID()] = record
-	}
-
-	records := newResultsArray(target)
-
-	// Remember, we didn't bail if a record was not found
-	// so there is a chance it won't be in the map - thats ok - just keep count
-	// of the ones that are there
-	for _, id := range ids {
-		record, found := resultMap[id]
-		if found {
-			records = reflect.Append(records, recordValue(record))
-			counter++
-		}
-	}
-
-	// Set the accumulated results back onto the target
-	setResultsArrayOntoTarget(target, records)
-
-	return counter
-}
-
-func (db DB) get(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
-	// If an override id has been specified, set it on the entity
-	if len(ids) > 0 {
-		entity.SetID(ids[0])
-	}
-
-	err := db.KV.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(newContentKey(KeyRoot(entity), entity.GetID()).bytes())
-		if err != nil {
-			return err
-		}
-
-		return item.Value(func(val []byte) error {
-			return db.unserialise(val, entity)
-		})
-	})
-
-	// We are not treating 'not found' as an actual error,
-	// instead we return 'false' and nil (unless there is an actual error)
-	if err == badger.ErrKeyNotFound {
-		return false, nil
-	} else if err != nil {
-		return false, err
-	}
-
-	// Get triggers
-	entity.GetCreated()
-	entity.PostGet(ctx)
-
-	return true, nil
-}
-
-// For benchmarking / comparison with parallel get
-
-func (db DB) GetIDsSerial(target interface{}, ids ...gouuidv6.UUID) (int, error) {
-	records := newResultsArray(target)
-
-	var counter int
-	for _, id := range ids {
-		// It's inefficient creating a new entity target for the result
-		// on every loop, but we can't just create a single one
-		// and reuse it, because there would be risk of data from 'previous'
-		// entities 'infecting' later ones if a certain field wasn't present
-		// in that later entity, but was in the previous one.
-		// Unlikely if the all JSON is saved with the schema, but I don't
-		// think we can risk it
-		record := newRecordFromSlice(target)
-
-		// For an error, we'll bail, if we simply can't find the record, we'll continue
-		if found, err := db.get(record, noCTX, id); err != nil {
-			return counter, err
-		} else if found {
-			records = reflect.Append(records, recordValue(record))
-			counter++
-		}
-	}
-
-	return counter, nil
-}
-
 ////////////////////////////////////////////////
 
 type getFloat64Result struct {
@@ -187,7 +111,7 @@ type getFloat64Result struct {
 	err    error
 }
 
-func (db DB) getIDsWithContextFloat64AtPath(record Record, ctx map[string]interface{}, slowSumPath []string, ids ...gouuidv6.UUID) (float64, error) {
+func (db DB) getIDsWithContextFloat64AtPath(txn *badger.Txn, record Record, ctx map[string]interface{}, slowSumPath []string, ids ...gouuidv6.UUID) (float64, error) {
 	var sum float64
 	ch := make(chan getFloat64Result)
 	defer close(ch)
@@ -198,7 +122,7 @@ func (db DB) getIDsWithContextFloat64AtPath(record Record, ctx map[string]interf
 		wg.Add(1)
 
 		go func(thisID gouuidv6.UUID) {
-			f, found, err := db.getFloat64AtPath(record, ctx, thisID, slowSumPath)
+			f, found, err := db.getFloat64AtPath(txn, record, ctx, thisID, slowSumPath)
 			ch <- getFloat64Result{
 				id:     thisID,
 				result: f,
@@ -236,23 +160,10 @@ func (db DB) getIDsWithContextFloat64AtPath(record Record, ctx map[string]interf
 	return sum, nil
 }
 
-func (db DB) getFloat64AtPath(entity Record, ctx map[string]interface{}, id gouuidv6.UUID, slowSumPath []string) (float64, bool, error) {
+func (db DB) getFloat64AtPath(txn *badger.Txn, entity Record, ctx map[string]interface{}, id gouuidv6.UUID, slowSumPath []string) (float64, bool, error) {
 	var result float64
 
-	err := db.KV.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(newContentKey(KeyRoot(entity), id).bytes())
-		if err != nil {
-			return err
-		}
-
-		return item.Value(func(val []byte) error {
-			// TODO: What to do with parsing errors?
-			f, err := jsonparser.GetFloat(val, slowSumPath...)
-			result = f
-			return err
-		})
-	})
-
+	item, err := txn.Get(newContentKey(KeyRoot(entity), id).bytes())
 	// We are not treating 'not found' as an actual error,
 	// instead we return 'false' and nil (unless there is an actual error)
 	if err == badger.ErrKeyNotFound {
@@ -261,5 +172,37 @@ func (db DB) getFloat64AtPath(entity Record, ctx map[string]interface{}, id gouu
 		return result, false, err
 	}
 
+	if err := item.Value(func(val []byte) error {
+		result, err = jsonparser.GetFloat(val, slowSumPath...)
+		return err
+	}); err != nil {
+		return result, false, err
+	}
+
 	return result, true, nil
+}
+
+func sortToOriginalIDsOrder(target interface{}, resultList []Record, ids []gouuidv6.UUID) (counter int) {
+	resultMap := map[gouuidv6.UUID]Record{}
+	for _, record := range resultList {
+		resultMap[record.GetID()] = record
+	}
+
+	records := newResultsArray(target)
+
+	// Remember, we didn't bail if a record was not found
+	// so there is a chance it won't be in the map - thats ok - just keep count
+	// of the ones that are there
+	for _, id := range ids {
+		record, found := resultMap[id]
+		if found {
+			records = reflect.Append(records, recordValue(record))
+			counter++
+		}
+	}
+
+	// Set the accumulated results back onto the target
+	setResultsArrayOntoTarget(target, records)
+
+	return counter
 }

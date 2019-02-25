@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/dgraph-io/badger"
+
 	"github.com/jpincas/gouuidv6"
 )
 
@@ -53,6 +55,9 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 	if len(entities) == 0 {
 		return fmt.Errorf("LoadByQuery requires at least one entity")
 	}
+
+	txn := db.KV.NewTransaction(true)
+	defer txn.Discard()
 
 	type relationsQueryResult struct {
 		entityID    gouuidv6.UUID
@@ -105,7 +110,7 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 				}
 			}
 
-			_, err = db.GetIDs(target, query.ids...)
+			_, err = db.getIDsWithContext(txn, target, noCTX, query.ids...)
 			ch <- relationsQueryResult{
 				entityID:    entities[ii].GetID(),
 				relationIDs: query.ids,
@@ -137,7 +142,7 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 
 	// Now we can go ahead and get results for all the IDs
 	// Note: this function already runs everything parallel
-	db.GetIDs(target, allIDsToGet...)
+	db.getIDsWithContext(txn, target, noCTX, allIDsToGet...)
 
 	// Once we have all the results,
 	// we build up a map of results keyed by ID
@@ -178,6 +183,12 @@ type relationsResult struct {
 }
 
 func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
+	txn := db.KV.NewTransaction(true)
+	defer txn.Discard()
+	return loadByID(db, txn, relationsToLoad, entities...)
+}
+
+func loadByID(db *DB, txn *badger.Txn, relationsToLoad []string, entities ...Record) error {
 	// We need at least 1 entity to make this work
 	if len(entities) == 0 {
 		return errors.New(ErrNoRecords)
@@ -200,7 +211,7 @@ func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 
 		wg.Add(1)
 		go func(thisPath []string) {
-			recordMap, err := getRelatedField(db, thisPath[0], entities...)
+			recordMap, err := getRelatedField(db, txn, thisPath[0], entities...)
 
 			// If there is more than one component to the path,
 			// call HasOne recursively, passing in the rest of the path
@@ -213,7 +224,7 @@ func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 					nestedEntities = append(nestedEntities, record)
 				}
 
-				if err := LoadByID(db, reJoinFieldPath(path[1:]), nestedEntities...); err != nil {
+				if err := loadByID(db, txn, reJoinFieldPath(path[1:]), nestedEntities...); err != nil {
 					log.Println("error in nested HasOne")
 					// TODO: need to work out way of signaling this at top level
 				}
@@ -321,7 +332,7 @@ func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
 	return nil
 }
 
-func getRelatedField(db *DB, fieldName string, entities ...Record) (map[gouuidv6.UUID]Record, error) {
+func getRelatedField(db *DB, txn *badger.Txn, fieldName string, entities ...Record) (map[gouuidv6.UUID]Record, error) {
 
 	recordMap := map[gouuidv6.UUID]Record{}
 
@@ -405,7 +416,7 @@ func getRelatedField(db *DB, fieldName string, entities ...Record) (map[gouuidv6
 	// relations
 
 	results := newSlice(typeToGet, len(ids))
-	if _, err := db.GetIDs(results, ids...); err != nil {
+	if _, err := db.getIDsWithContext(txn, results, noCTX, ids...); err != nil {
 		return recordMap, err
 	}
 

@@ -1,7 +1,12 @@
 package benchmarks
 
 import (
+	"encoding/json"
+
+	"github.com/jpincas/tormenta"
 	"github.com/jpincas/tormenta/testtypes"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 const nRecords = 1000
@@ -24,4 +29,39 @@ func stdRecord() *testtypes.FullStruct {
 			StructStringField: "embedded string field",
 		},
 	}
+}
+
+var testDBOptions = testOptionsStdLib
+
+// var testDBOptions = testOptionsFFJson
+// var testDBOptions = testOptionsJSONIterFastest
+// var testDBOptions = testOptionsJSONIterDefault
+// var testDBOptions = testOptionsJSONIterCompatible
+
+var testOptionsStdLib = tormenta.Options{
+	SerialiseFunc:   json.Marshal,
+	UnserialiseFunc: json.Unmarshal,
+}
+
+var testOptionsFFJson = tormenta.Options{
+	SerialiseFunc:   ffjson.Marshal,
+	UnserialiseFunc: ffjson.Unmarshal,
+}
+
+var testOptionsJSONIterFastest = tormenta.Options{
+	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
+	SerialiseFunc:   jsoniter.ConfigFastest.Marshal,
+	UnserialiseFunc: jsoniter.ConfigFastest.Unmarshal,
+}
+
+var testOptionsJSONIterDefault = tormenta.Options{
+	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
+	SerialiseFunc:   jsoniter.ConfigDefault.Marshal,
+	UnserialiseFunc: jsoniter.ConfigDefault.Unmarshal,
+}
+
+var testOptionsJSONIterCompatible = tormenta.Options{
+	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
+	SerialiseFunc:   jsoniter.ConfigCompatibleWithStandardLibrary.Marshal,
+	UnserialiseFunc: jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal,
 }
