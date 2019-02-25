@@ -134,10 +134,10 @@ func (db DB) newQuery(target interface{}, first bool) *Query {
 	return q
 }
 
-func (q Query) getIteratorOptions(getValues bool) badger.IteratorOptions {
+func (q Query) getIteratorOptions() badger.IteratorOptions {
 	options := badger.DefaultIteratorOptions
 	options.Reverse = q.reverse
-	options.PrefetchValues = getValues
+	options.PrefetchValues = false
 	return options
 }
 
@@ -402,7 +402,7 @@ func (q *Query) queryIDs() error {
 	// a big explosion when multiple queries try to run in parallel
 	err := q.db.KV.View(func(txn *badger.Txn) error {
 
-		it := txn.NewIterator(q.getIteratorOptions(q.shouldGetValues()))
+		it := txn.NewIterator(q.getIteratorOptions())
 		defer it.Close()
 
 		// Start iteration
