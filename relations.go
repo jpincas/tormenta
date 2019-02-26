@@ -88,19 +88,18 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 	for i := range entities {
 		wg.Add(1)
 		go func(ii int) {
-			baseQuery := db.Find(target)
 
 			// The starting point of the query is to filter down by the related ID
 			andClauses := []*Query{
-				baseQuery.Cp().Match(indexString, entities[ii].GetID()),
+				db.Find(target).Match(indexString, entities[ii].GetID()),
 			}
 
 			// If a query modifier has been passed in, use it to add a new AND clause
 			if queryModifier != nil {
-				andClauses = append(andClauses, queryModifier(baseQuery.Cp()))
+				andClauses = append(andClauses, queryModifier(db.Find(target)))
 			}
 
-			query := baseQuery.And(andClauses...)
+			query := db.And(target, andClauses...)
 
 			err := query.queryIDs()
 			if err != nil {

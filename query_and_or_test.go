@@ -37,14 +37,11 @@ func Test_Full_Example(t *testing.T) {
 
 	results := []testtypes.FullStruct{}
 
-	q := db.Find(&results)
-	n, err := q.
-		And(
-			q.Cp().Match("stringfield", "test"),
-			q.Cp().Match("intfield", 5),
-			q.Cp().Match("floatfield", float64(5)),
-		).
-		Run()
+	n, err := db.And(&results,
+		db.Find(&results).Match("stringfield", "test"),
+		db.Find(&results).Match("intfield", 5),
+		db.Find(&results).Match("floatfield", float64(5)),
+	).Run()
 
 	if err != nil {
 		t.Fatalf("Error finding results: %v", err)
@@ -73,12 +70,12 @@ type orAndTest struct {
 }
 
 // Note the order in which we expect the results - date/time order!
-func testCases(q *tormenta.Query) []orAndTest {
+func testCases(db *tormenta.DB, results *[]testtypes.FullStruct) []orAndTest {
 	return []orAndTest{
 		{
 			"single clause",
 			[]*tormenta.Query{
-				q.Cp().Match("intfield", 1),
+				db.Find(results).Match("intfield", 1),
 			},
 			1,
 			[]testtypes.FullStruct{
@@ -94,8 +91,8 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"2 clauses",
 			[]*tormenta.Query{
-				q.Cp().Match("intfield", 1),
-				q.Cp().Match("intfield", 2),
+				db.Find(results).Match("intfield", 1),
+				db.Find(results).Match("intfield", 2),
 			},
 			2,
 			[]testtypes.FullStruct{
@@ -110,9 +107,9 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"more than 2 clauses",
 			[]*tormenta.Query{
-				q.Cp().Match("intfield", 1),
-				q.Cp().Match("intfield", 2),
-				q.Cp().Match("intfield", 3),
+				db.Find(results).Match("intfield", 1),
+				db.Find(results).Match("intfield", 2),
+				db.Find(results).Match("intfield", 3),
 			},
 			3,
 			[]testtypes.FullStruct{
@@ -128,9 +125,9 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"more than 2 clauses - order of clauses should not matter",
 			[]*tormenta.Query{
-				q.Cp().Match("intfield", 2),
-				q.Cp().Match("intfield", 1),
-				q.Cp().Match("intfield", 3),
+				db.Find(results).Match("intfield", 2),
+				db.Find(results).Match("intfield", 1),
+				db.Find(results).Match("intfield", 3),
 			},
 			3,
 			[]testtypes.FullStruct{
@@ -146,9 +143,9 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"more than 2 clauses - mixed indexes",
 			[]*tormenta.Query{
-				q.Cp().Match("intfield", 2),
-				q.Cp().Match("stringfield", "int-1"),
-				q.Cp().Match("intfield", 3),
+				db.Find(results).Match("intfield", 2),
+				db.Find(results).Match("stringfield", "int-1"),
+				db.Find(results).Match("intfield", 3),
 			},
 			3,
 			[]testtypes.FullStruct{
@@ -164,8 +161,8 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"more than 2 clauses - mixed indexes - mixed matchers",
 			[]*tormenta.Query{
-				q.Cp().Range("intfield", 3, 5),
-				q.Cp().Match("stringfield", "int-1"),
+				db.Find(results).Range("intfield", 3, 5),
+				db.Find(results).Match("stringfield", "int-1"),
 			},
 			4,
 			[]testtypes.FullStruct{
@@ -182,8 +179,8 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"more than 2 clauses - testing AND mainly",
 			[]*tormenta.Query{
-				q.Cp().Range("intfield", 1, 5),
-				q.Cp().Match("stringfield", "int-2"),
+				db.Find(results).Range("intfield", 1, 5),
+				db.Find(results).Match("stringfield", "int-2"),
 			},
 			5,
 			[]testtypes.FullStruct{
@@ -203,8 +200,8 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"more than 2 clauses - testing AND in overlapping ranges",
 			[]*tormenta.Query{
-				q.Cp().Range("intfield", 1, 5),
-				q.Cp().Range("stringfield", "int-2", "int-4"),
+				db.Find(results).Range("intfield", 1, 5),
+				db.Find(results).Range("stringfield", "int-2", "int-4"),
 			},
 			5,
 			[]testtypes.FullStruct{
@@ -226,14 +223,16 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested OR",
 			[]*tormenta.Query{
-				q.Or(
-					q.Cp().Range("intfield", 1, 3),
-					q.Cp().Range("stringfield", "int-1", "int-2"),
+				db.Or(
+					results,
+					db.Find(results).Range("intfield", 1, 3),
+					db.Find(results).Range("stringfield", "int-1", "int-2"),
 					// -> 1, 2, 3
 				),
-				q.Or(
-					q.Cp().Range("intfield", 4, 5),
-					q.Cp().Range("stringfield", "int-5", "int-5"),
+				db.Or(
+					results,
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
 					// -> 4, 5
 				),
 			},
@@ -253,14 +252,16 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested OR",
 			[]*tormenta.Query{
-				q.Or(
-					q.Cp().Range("intfield", 1, 4),
-					q.Cp().Range("stringfield", "int-1", "int-2"),
+				db.Or(
+					results,
+					db.Find(results).Range("intfield", 1, 4),
+					db.Find(results).Range("stringfield", "int-1", "int-2"),
 					// -> 1, 2, 3, 4
 				),
-				q.Or(
-					q.Cp().Range("intfield", 4, 5),
-					q.Cp().Range("stringfield", "int-5", "int-5"),
+				db.Or(
+					results,
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
 					// -> 4, 5
 				),
 			},
@@ -282,14 +283,16 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested AND",
 			[]*tormenta.Query{
-				q.And(
-					q.Cp().Range("intfield", 1, 4),
-					q.Cp().Range("stringfield", "int-1", "int-2"),
+				db.And(
+					results,
+					db.Find(results).Range("intfield", 1, 4),
+					db.Find(results).Range("stringfield", "int-1", "int-2"),
 					// -> 1, 2
 				),
-				q.And(
-					q.Cp().Range("intfield", 4, 5),
-					q.Cp().Range("stringfield", "int-5", "int-5"),
+				db.And(
+					results,
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
 					// -> 5
 				),
 			},
@@ -307,14 +310,16 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested AND",
 			[]*tormenta.Query{
-				q.And(
-					q.Cp().Range("intfield", 2, 4),
-					q.Cp().Range("stringfield", "int-1", "int-4"),
+				db.And(
+					results,
+					db.Find(results).Range("intfield", 2, 4),
+					db.Find(results).Range("stringfield", "int-1", "int-4"),
 					// -> 2, 3, 4
 				),
-				q.Or(
-					q.Cp().Range("intfield", 4, 5),
-					q.Cp().Range("stringfield", "int-5", "int-5"),
+				db.Or(
+					results,
+					db.Find(results).Range("intfield", 4, 5),
+					db.Find(results).Range("stringfield", "int-5", "int-5"),
 					// -> 4, 5
 				),
 			},
@@ -352,15 +357,14 @@ func Test_And_Basic(t *testing.T) {
 
 	// Results placeholder and generate test cases
 	results := []testtypes.FullStruct{}
-	q := db.Find(&results)
-	testCases := testCases(q)
+	testCases := testCases(db, &results)
 
 	for _, testCase := range testCases {
 		results = []testtypes.FullStruct{}
 
 		// Test 'Run'
 
-		n, err := q.And(testCase.clauses...).Run()
+		n, err := db.And(&results, testCase.clauses...).Run()
 
 		if err != nil {
 			t.Errorf("Testing basic AND (%s,run)- got error", testCase.testName)
@@ -382,7 +386,7 @@ func Test_And_Basic(t *testing.T) {
 
 		// Test 'Count'
 
-		c, err := q.And(testCase.clauses...).Count()
+		c, err := db.And(&results, testCase.clauses...).Count()
 
 		if err != nil {
 			t.Errorf("Testing basic AND (%s,count) - got error", testCase.testName)
@@ -394,7 +398,7 @@ func Test_And_Basic(t *testing.T) {
 
 		// Test 'Sum'
 
-		sum, _, err := q.And(testCase.clauses...).Sum([]string{"IntField"})
+		sum, _, err := db.And(&results, testCase.clauses...).Sum([]string{"IntField"})
 
 		if err != nil {
 			t.Errorf("Testing basic AND (%s, sum) - got error: %v", testCase.testName, err)
@@ -423,8 +427,7 @@ func Test_Or_Basic(t *testing.T) {
 
 	// Results placeholder and generate test cases
 	results := []testtypes.FullStruct{}
-	q := db.Find(&results)
-	testCases := testCases(q)
+	testCases := testCases(db, &results)
 
 	for _, testCase := range testCases {
 		results = []testtypes.FullStruct{}
@@ -435,7 +438,7 @@ func Test_Or_Basic(t *testing.T) {
 
 		// Test 'Run'
 
-		n, err := q.Or(testCase.clauses...).Run()
+		n, err := db.Or(&results, testCase.clauses...).Run()
 
 		if err != nil {
 			t.Errorf("Testing basic OR (%s,run)- got error", testCase.testName)
@@ -457,7 +460,7 @@ func Test_Or_Basic(t *testing.T) {
 
 		// Test 'Count'
 
-		c, err := q.Or(testCase.clauses...).Count()
+		c, err := db.Or(&results, testCase.clauses...).Count()
 
 		if err != nil {
 			t.Errorf("Testing basic OR (%s,count) - got error", testCase.testName)
@@ -469,7 +472,7 @@ func Test_Or_Basic(t *testing.T) {
 
 		// Test 'Sum'
 
-		sum, _, err := q.Or(testCase.clauses...).Sum([]string{"IntField"})
+		sum, _, err := db.Or(&results, testCase.clauses...).Sum([]string{"IntField"})
 
 		if err != nil {
 			t.Errorf("Testing basic OR (%s, sum) - got error: %v", testCase.testName, err)

@@ -7,13 +7,11 @@ type queryResult struct {
 	err error
 }
 
-func (q Query) queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query {
-
+func queryCombine(db DB, target interface{}, combineFunc func(...idList) idList, queries ...*Query) *Query {
 	combinedQuery := &Query{
-		db:            q.db,
+		db:            db,
 		combinedQuery: true,
-		target:        q.target,
-		ctx:           q.ctx,
+		target:        target,
 	}
 
 	ch := make(chan queryResult)
