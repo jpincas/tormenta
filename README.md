@@ -1,5 +1,7 @@
 # ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)
 
+## WIP: Master branch is under active development.  API still in flux. Not ready for seroious use yet.
+
 Tormenta is a functionality layer over [BadgerDB](https://github.com/dgraph-io/badger) key/value store.  It provides simple, embedded-object persistence for Go projects with indexing, data querying capabilities and ORM-like features, including loading of relations.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm).
 
 ## Why would you use this?
@@ -46,6 +48,10 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - Be type-specific when specifying index searches; e.g. `Match("int16field", int(16)")` if you are searching on an `int16` field.  This is due to slight encoding differences between variable/fixed length ints, signed/unsigned ints and floats.  If you let the compiler infer the type and the type you are searching on isn't the default `int` (or `int32`) or `float64`, you'll get odd results.  I understand this is a pain - perhaps we should switch to a fixed indexing scheme in all cases?
 - Querying isn't quite as pain-free as I'd like and requires a little understanding of the indexing system. Due to the way Tormenta returns results by iterating ordered keys, ordering functionality is limited to non-index query searches.  Essentially, adding `Order("myField")` creates an index search on `myField` but without any range (i.e. returns all results).  If you are already using an index, e.g. with `Range("someOtherField", 1, 2)` then that index will take priority and results would be ordered by `someOtherField`.  If you are only filtering by date with `From()/.To()` you CAN independently order as that doesn't use indexes.  If you are doing complex AND/OR query combinations which rely on multiple indexes, then date/ID ordering is the only option - sorry!  In general, best practice would be to limit your results set as much as possible and order results in application code if you require a different order to what you get from Tormenta. `Order("myField")` could also be used to enable `QuickSum` where you otherwise aren't searching by index.
 - 'Defined' `time.Time` fields e.g. `myTime time.Time` won't serialise properly as the fields on the underlying struct are unexported and you lose the marshal/unmarshal methods specified by `time.Time`.  If you must use defined time fields, specify custom marshalling functions.
+
+## Known Issues
+
+- Multiple-query combination does not run over a consistent snapshot of the database.  Because of the limitation in Badger that only one concurrent iterator per transaction is available, queries currently use their own transactions.  Doesn't apply to multiple `Get by ID` or relational loading, which don't use iteration.
 
 ## Help Needed / Contributing
 
