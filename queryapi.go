@@ -233,18 +233,21 @@ func (q *Query) Sum(jsonPath []string) (float64, int, error) {
 // Or takes any number of queries and combines their results (as IDs) in a logical OR manner,
 // returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
 // can be run, or combined further
-func Or(queries ...*Query) *Query {
-	return queryCombine(union, queries...)
+func (q Query) Or(queries ...*Query) *Query {
+	return q.queryCombine(union, queries...)
 }
 
 // Or takes any number of queries and combines their results (as IDs) in a logical AND manner,
 // returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
 // can be run, or combined further
-func And(queries ...*Query) *Query {
-	return queryCombine(intersection, queries...)
+func (q Query) And(queries ...*Query) *Query {
+	return q.queryCombine(intersection, queries...)
 }
 
-// Cp creates a new copy of an existing query, which is useful for extending a base query
+// Cp creates a new query from an existing query, using only the DB pointer and target entity.
+// It's useful when you want to create a few similar queries to feed into and AND or OR clause
+// and don't want to repat db.Find(&myRecords) over and over.
 func (q Query) Cp() *Query {
-	return &q
+	return q.db.newQuery(q.target, q.first)
+	// return &q
 }

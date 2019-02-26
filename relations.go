@@ -88,18 +88,19 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 	for i := range entities {
 		wg.Add(1)
 		go func(ii int) {
-			modifiedQuery := db.Find(target)
-			if queryModifier != nil {
-				modifiedQuery = queryModifier(modifiedQuery)
+			baseQuery := db.Find(target)
+
+			// The starting point of the query is to filter down by the related ID
+			andClauses := []*Query{
+				baseQuery.Cp().Match(indexString, entities[ii].GetID()),
 			}
 
-			query := And(
-				// We combine a query for records whose related ID field
-				// matches the ID of the entity (that part is fixed),
-				// along with any query passed in by the caller
-				db.Find(target).Match(indexString, entities[ii].GetID()),
-				modifiedQuery,
-			)
+			// If a query modifier has been passed in, use it to add a new AND clause
+			if queryModifier != nil {
+				andClauses = append(andClauses, queryModifier(baseQuery.Cp()))
+			}
+
+			query := baseQuery.And(andClauses...)
 
 			err := query.queryIDs()
 			if err != nil {

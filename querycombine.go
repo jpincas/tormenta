@@ -7,20 +7,17 @@ type queryResult struct {
 	err error
 }
 
-func queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query {
+func (q Query) queryCombine(combineFunc func(...idList) idList, queries ...*Query) *Query {
 
-	firstQuery := queries[0]
 	combinedQuery := &Query{
-		db:            firstQuery.db,
+		db:            q.db,
 		combinedQuery: true,
-		target:        firstQuery.target,
-		ctx:           firstQuery.ctx,
+		target:        q.target,
+		ctx:           q.ctx,
 	}
 
-	txn := combinedQuery.db.KV.NewTransaction(true)
-	defer txn.Discard()
-
 	ch := make(chan queryResult)
+	defer close(ch)
 	var wg sync.WaitGroup
 
 	var queryIDs []idList

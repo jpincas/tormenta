@@ -8,6 +8,53 @@ import (
 	"github.com/jpincas/tormenta/testtypes"
 )
 
+func Test_Full_Example(t *testing.T) {
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
+	defer db.Close()
+
+	record1 := testtypes.FullStruct{
+		StringField: "test",
+		IntField:    5,
+		FloatField:  5,
+	}
+
+	record2 := testtypes.FullStruct{
+		StringField: "test",
+		IntField:    5,
+		FloatField:  10,
+	}
+
+	record3 := testtypes.FullStruct{
+		StringField: "test2",
+		IntField:    5,
+		FloatField:  5,
+	}
+
+	_, err := db.Save(&record1, &record2, &record3)
+	if err != nil {
+		t.Fatalf("Error saving")
+	}
+
+	results := []testtypes.FullStruct{}
+
+	q := db.Find(&results)
+	n, err := q.
+		And(
+			q.Cp().Match("stringfield", "test"),
+			q.Cp().Match("intfield", 5),
+			q.Cp().Match("floatfield", float64(5)),
+		).
+		Run()
+
+	if err != nil {
+		t.Fatalf("Error finding results: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("Incorrect number of records retreived.  Expected %v, got %v", 1, n)
+	}
+
+}
+
 type orAndTest struct {
 	testName string
 	clauses  []*tormenta.Query
@@ -179,12 +226,12 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested OR",
 			[]*tormenta.Query{
-				tormenta.Or(
+				q.Or(
 					q.Cp().Range("intfield", 1, 3),
 					q.Cp().Range("stringfield", "int-1", "int-2"),
 					// -> 1, 2, 3
 				),
-				tormenta.Or(
+				q.Or(
 					q.Cp().Range("intfield", 4, 5),
 					q.Cp().Range("stringfield", "int-5", "int-5"),
 					// -> 4, 5
@@ -206,12 +253,12 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested OR",
 			[]*tormenta.Query{
-				tormenta.Or(
+				q.Or(
 					q.Cp().Range("intfield", 1, 4),
 					q.Cp().Range("stringfield", "int-1", "int-2"),
 					// -> 1, 2, 3, 4
 				),
-				tormenta.Or(
+				q.Or(
 					q.Cp().Range("intfield", 4, 5),
 					q.Cp().Range("stringfield", "int-5", "int-5"),
 					// -> 4, 5
@@ -235,12 +282,12 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested AND",
 			[]*tormenta.Query{
-				tormenta.And(
+				q.And(
 					q.Cp().Range("intfield", 1, 4),
 					q.Cp().Range("stringfield", "int-1", "int-2"),
 					// -> 1, 2
 				),
-				tormenta.And(
+				q.And(
 					q.Cp().Range("intfield", 4, 5),
 					q.Cp().Range("stringfield", "int-5", "int-5"),
 					// -> 5
@@ -260,12 +307,12 @@ func testCases(q *tormenta.Query) []orAndTest {
 		{
 			"nested AND",
 			[]*tormenta.Query{
-				tormenta.And(
+				q.And(
 					q.Cp().Range("intfield", 2, 4),
 					q.Cp().Range("stringfield", "int-1", "int-4"),
 					// -> 2, 3, 4
 				),
-				tormenta.Or(
+				q.Or(
 					q.Cp().Range("intfield", 4, 5),
 					q.Cp().Range("stringfield", "int-5", "int-5"),
 					// -> 4, 5
@@ -313,7 +360,7 @@ func Test_And_Basic(t *testing.T) {
 
 		// Test 'Run'
 
-		n, err := tormenta.And(testCase.clauses...).Run()
+		n, err := q.And(testCase.clauses...).Run()
 
 		if err != nil {
 			t.Errorf("Testing basic AND (%s,run)- got error", testCase.testName)
@@ -335,7 +382,7 @@ func Test_And_Basic(t *testing.T) {
 
 		// Test 'Count'
 
-		c, err := tormenta.And(testCase.clauses...).Count()
+		c, err := q.And(testCase.clauses...).Count()
 
 		if err != nil {
 			t.Errorf("Testing basic AND (%s,count) - got error", testCase.testName)
@@ -347,7 +394,7 @@ func Test_And_Basic(t *testing.T) {
 
 		// Test 'Sum'
 
-		sum, _, err := tormenta.And(testCase.clauses...).Sum([]string{"IntField"})
+		sum, _, err := q.And(testCase.clauses...).Sum([]string{"IntField"})
 
 		if err != nil {
 			t.Errorf("Testing basic AND (%s, sum) - got error: %v", testCase.testName, err)
@@ -359,77 +406,78 @@ func Test_And_Basic(t *testing.T) {
 	}
 }
 
-// func Test_Or_Basic(t *testing.T) {
-// 	// DB
-// 	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
-// 	defer db.Close()
+func Test_Or_Basic(t *testing.T) {
+	// DB
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
+	defer db.Close()
 
-// 	// Generate some simple data and save
-// 	var toSave []tormenta.Record
-// 	for i := 0; i < 10; i++ {
-// 		toSave = append(toSave, &testtypes.FullStruct{
-// 			IntField:    i,
-// 			StringField: fmt.Sprintf("int-%v", i),
-// 		})
-// 	}
-// 	db.Save(toSave...)
+	// Generate some simple data and save
+	var toSave []tormenta.Record
+	for i := 0; i < 10; i++ {
+		toSave = append(toSave, &testtypes.FullStruct{
+			IntField:    i,
+			StringField: fmt.Sprintf("int-%v", i),
+		})
+	}
+	db.Save(toSave...)
 
-// 	// Results placeholder and generate test cases
-// 	results := []testtypes.FullStruct{}
-// 	testCases := testCases(db, &results)
+	// Results placeholder and generate test cases
+	results := []testtypes.FullStruct{}
+	q := db.Find(&results)
+	testCases := testCases(q)
 
-// 	for _, testCase := range testCases {
-// 		results = []testtypes.FullStruct{}
+	for _, testCase := range testCases {
+		results = []testtypes.FullStruct{}
 
-// 		////////
-// 		// OR //
-// 		////////
+		////////
+		// OR //
+		////////
 
-// 		// Test 'Run'
+		// Test 'Run'
 
-// 		n, err := tormenta.Or(testCase.clauses...).Run()
+		n, err := q.Or(testCase.clauses...).Run()
 
-// 		if err != nil {
-// 			t.Errorf("Testing basic OR (%s,run)- got error", testCase.testName)
-// 		}
+		if err != nil {
+			t.Errorf("Testing basic OR (%s,run)- got error", testCase.testName)
+		}
 
-// 		if n != len(results) {
-// 			t.Errorf("Testing basic OR (%s,run) - n does not equal length of results. N: %v; Length results: %v", testCase.testName, n, len(results))
-// 		}
+		if n != len(results) {
+			t.Errorf("Testing basic OR (%s,run) - n does not equal length of results. N: %v; Length results: %v", testCase.testName, n, len(results))
+		}
 
-// 		if n != testCase.expectedOrN {
-// 			t.Errorf("Testing basic OR (%s,run). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedOrN, n)
-// 		}
+		if n != testCase.expectedOrN {
+			t.Errorf("Testing basic OR (%s,run). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedOrN, n)
+		}
 
-// 		for i, _ := range results {
-// 			if results[i].IntField != testCase.expectedOrResults[i].IntField {
-// 				t.Errorf("Testing basic OR (%s,run). Mismatch in array member %v", testCase.testName, i)
-// 			}
-// 		}
+		for i, _ := range results {
+			if results[i].IntField != testCase.expectedOrResults[i].IntField {
+				t.Errorf("Testing basic OR (%s,run). Mismatch in array member %v", testCase.testName, i)
+			}
+		}
 
-// 		// Test 'Count'
+		// Test 'Count'
 
-// 		c, err := tormenta.Or(testCase.clauses...).Count()
+		c, err := q.Or(testCase.clauses...).Count()
 
-// 		if err != nil {
-// 			t.Errorf("Testing basic OR (%s,count) - got error", testCase.testName)
-// 		}
+		if err != nil {
+			t.Errorf("Testing basic OR (%s,count) - got error", testCase.testName)
+		}
 
-// 		if c != testCase.expectedOrN {
-// 			t.Errorf("Testing basic OR (%s,count). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedOrN, c)
-// 		}
+		if c != testCase.expectedOrN {
+			t.Errorf("Testing basic OR (%s,count). Wrong number of results. Expected: %v; got: %v", testCase.testName, testCase.expectedOrN, c)
+		}
 
-// 		// Test 'Sum'
+		// Test 'Sum'
 
-// 		sum, _, err := tormenta.Or(testCase.clauses...).Sum([]string{"IntField"})
+		sum, _, err := q.Or(testCase.clauses...).Sum([]string{"IntField"})
 
-// 		if err != nil {
-// 			t.Errorf("Testing basic OR (%s, sum) - got error: %v", testCase.testName, err)
-// 		}
+		if err != nil {
+			t.Errorf("Testing basic OR (%s, sum) - got error: %v", testCase.testName, err)
+		}
 
-// 		if sum != testCase.expectedOrSum {
-// 			t.Errorf("Testing basic OR (%s, sum). Wrong sum result. Expected: %v; got: %v", testCase.testName, testCase.expectedOrSum, sum)
-// 		}
+		if sum != testCase.expectedOrSum {
+			t.Errorf("Testing basic OR (%s, sum). Wrong sum result. Expected: %v; got: %v", testCase.testName, testCase.expectedOrSum, sum)
+		}
 
-// 	}
-// }
+	}
+}
