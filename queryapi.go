@@ -243,3 +243,8 @@ func Or(queries ...*Query) *Query {
 func And(queries ...*Query) *Query {
 	return queryCombine(intersection, queries...)
 }
+
+// Cp creates a new copy of an existing query, which is useful for extending a base query
+func (q Query) Cp() *Query {
+	return &q
+}
