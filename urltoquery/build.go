@@ -62,6 +62,17 @@ func BuildQuery(db *tormenta.DB, target interface{}, values url.Values, ignoreLi
 		return nil, err
 	}
 
+	// If no queries could be built from the url params,
+	// then we'll just default to all entities
+	if len(queries) == 0 {
+		return db.Find(target), nil
+	}
+
+	// If only 1 query has been built, no need to combine
+	if len(queries) == 1 {
+		return queries[0], nil
+	}
+
 	return combineQueries(db, target, values, queries)
 }
 
