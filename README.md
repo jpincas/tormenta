@@ -1,6 +1,6 @@
 # ⚡ Tormenta [![GoDoc](https://godoc.org/github.com/jpincas/tormenta?status.svg)](https://godoc.org/github.com/jpincas/tormenta)
 
-## WIP: Master branch is under active development.  API still in flux. Not ready for seroious use yet.
+## WIP: Master branch is under active development.  API still in flux. Not ready for serious use yet.
 
 Tormenta is a functionality layer over [BadgerDB](https://github.com/dgraph-io/badger) key/value store.  It provides simple, embedded-object persistence for Go projects with indexing, data querying capabilities and ORM-like features, including loading of relations.  It uses date-based IDs so is particuarly good for data sets that are naturally chronological, like financial transactions, soical media posts etc. Greatly inspired by [Storm](https://github.com/asdine/storm).
 
