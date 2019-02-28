@@ -123,7 +123,7 @@ func Test_QuickSum(t *testing.T) {
 
 		// We use OrderBy in order to specify an index without any range -
 		// see notes on OrderBy
-		_, err := db.Find(&results).OrderBy(test.fieldName).QuickSum(test.sumResult)
+		_, err := db.Find(&results).OrderBy(test.fieldName).QuickSum(test.sumResult, test.fieldName)
 
 		// Check for error
 		if err != nil {

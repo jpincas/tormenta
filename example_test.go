@@ -150,7 +150,7 @@ func Example() {
 
 	// Index range, QuickSum (based on index)
 	var sum float64
-	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).QuickSum(&sum)
+	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).QuickSum(&sum, "shippingfee")
 	printlinef("Index range, date range, index sum query. Sum: %v", sum)
 
 	// Secondary index on 'customer' - index range and count

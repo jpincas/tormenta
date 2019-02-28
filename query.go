@@ -1,7 +1,6 @@
 package tormenta
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
@@ -19,6 +18,11 @@ type Query struct {
 	// Target is the pointer passed into the Query where results will be set
 	target interface{}
 
+	single bool
+
+	// Order by index name
+	orderByIndexName []byte
+
 	// Limit number of returned results
 	limit int
 
@@ -29,23 +33,8 @@ type Query struct {
 	// Reverse fullStruct of searching and returned results
 	reverse bool
 
-	// Is this a 'first only' search
-	first bool
-
-	// The start and end points of the index range search
-	start, end interface{}
-
 	// From and To dates for the search
 	from, to gouuidv6.UUID
-
-	// If this is an index search, this is the name of the index
-	indexName []byte
-
-	// Is this an index Query
-	isIndexQuery bool
-
-	// Is this a 'starts with' index query
-	isStartsWithQuery bool
 
 	// Is this a count only search
 	countOnly bool
@@ -56,65 +45,65 @@ type Query struct {
 	// Ranges and comparision key
 	seekFrom, validTo, compareTo []byte
 
-	// Is this an aggregation Query?
-	isQuickSumQuery bool
-	aggTarget       interface{}
-
-	// Is already prepared?
-	isReversePrepared bool
+	sumIndexName []byte
+	sumTarget    interface{}
 
 	// Pass-through context
 	ctx map[string]interface{}
 
-	// Ids for retrieval
-	ids idList
+	// Filter
+	filters    []filter
+	basicQuery *basicQuery
 
-	combinedQuery bool
+	// Logical ID combinator
+	idsCombinator func(...idList) idList
 
-	slowSumPath []string
+	// Is already prepared?
+	prepared bool
 }
 
 func (q Query) String() string {
 	return ToJSON(
 		map[string]interface{}{
-			"keyRoot":           q.keyRoot,
-			"offset":            q.offset,
-			"limit":             q.limit,
-			"reverse":           q.reverse,
-			"first":             q.first,
-			"start":             q.start,
-			"end":               q.end,
-			"from":              q.from,
-			"to":                q.to,
-			"indexName":         q.indexName,
-			"isIndexQuery":      q.isIndexQuery,
-			"isStartsWithQuery": q.isStartsWithQuery,
-			"countOnly":         q.countOnly,
-			"isQuickSumQuery":   q.isQuickSumQuery,
-			"ctx":               q.ctx,
+			"keyRoot":   q.keyRoot,
+			"reverse":   q.reverse,
+			"from":      q.from,
+			"to":        q.to,
+			"countOnly": q.countOnly,
+			"ctx":       q.ctx,
 		},
 	)
 }
 
 func (q Query) Compare(cq Query) bool {
+	for i := range q.filters {
+		if !q.filters[i].compare(cq.filters[i]) {
+			return false
+		}
+	}
+
 	return string(q.keyRoot) == string(cq.keyRoot) &&
 		q.offset == cq.offset &&
 		q.limit == cq.limit &&
 		q.reverse == cq.reverse &&
-		q.first == cq.first &&
-		q.start == cq.start &&
-		q.end == cq.end &&
 		q.from == cq.from &&
 		q.to == cq.to &&
-		string(q.indexName) == string(cq.indexName) &&
-		q.isIndexQuery == cq.isIndexQuery &&
-		q.isStartsWithQuery == cq.isStartsWithQuery &&
 		q.countOnly == cq.countOnly &&
-		q.isQuickSumQuery == cq.isQuickSumQuery &&
 		ToJSON(q.ctx) == ToJSON(q.ctx)
 }
 
-func (db DB) newQuery(target interface{}, first bool) *Query {
+func fromUUID(t time.Time) gouuidv6.UUID {
+	// Subtract 1 nanosecond form the specified time
+	// Leads to an inclusive date search
+	t = t.Add(-1 * time.Nanosecond)
+	return gouuidv6.NewFromTime(t)
+}
+
+func toUUID(t time.Time) gouuidv6.UUID {
+	return gouuidv6.NewFromTime(t)
+}
+
+func (db DB) newQuery(target interface{}) *Query {
 	// Create the base Query
 	q := &Query{
 		db:      db,
@@ -122,362 +111,169 @@ func (db DB) newQuery(target interface{}, first bool) *Query {
 		target:  target,
 	}
 
-	// If this is a 'first only' Query
-	if first {
-		q.limit = 1
-		q.first = true
-	}
-
 	// Start with blank context
 	q.ctx = make(map[string]interface{})
+
+	// Defualt to logical AND combination
+	q.idsCombinator = intersection
 
 	return q
 }
 
-func (q Query) getIteratorOptions() badger.IteratorOptions {
-	options := badger.DefaultIteratorOptions
-	options.Reverse = q.reverse
-	options.PrefetchValues = false
-	return options
+func (q *Query) addFilter(f filter) {
+	q.filters = append(q.filters, f)
 }
 
-func (q Query) isExactIndexMatchSearch() bool {
-	return q.start == q.end && q.start != nil && q.end != nil
+func (q Query) shouldApplyLimitOffsetToFilter() bool {
+	// We only pass the limit/offset to a filter if
+	// there is only 1 filter AND there is no order by index
+	return len(q.filters) == 1 && len(q.orderByIndexName) == 0
 }
 
-func (q Query) isIndexRangeSearch() bool {
-	return q.start != q.end && !q.isStartsWithQuery
-}
-
-func (q Query) shouldGetValues() bool {
-	// For index queries or count only queries, don't get values
-	if q.isIndexQuery || q.countOnly {
-		return false
-	}
-
-	return true
-}
-
-func (q Query) shouldStripKeyID() bool {
-	// Regular queries never need to have ID stripped
-	if !q.isIndexQuery {
-		return false
-	}
-
-	// Index queries which are exact match AND have a 'to' clause
-	// also never need to have ID stripped
-	if q.isExactIndexMatchSearch() && !q.to.IsNil() {
-		return false
-	}
-
-	return true
-}
-
-func (q Query) isEndOfRange(it *badger.Iterator) bool {
-	key := it.Item().Key()
-
-	if q.isIndexQuery {
-		return q.end != nil && compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
-	}
-
-	return !q.to.IsNil() && compareKeyBytes(q.compareTo, key, q.reverse, q.shouldStripKeyID())
-}
-
-func (q Query) isLimitMet() bool {
-	return q.limit > 0 && len(q.ids) >= q.limit
-}
-
-func (q Query) endIteration(it *badger.Iterator) bool {
-	if it.ValidForPrefix(q.validTo) {
-		if q.isLimitMet() || q.isEndOfRange(it) {
-			return false
-		}
-
-		return true
-	}
-
-	return false
-}
-
-func (q Query) quickSum(item *badger.Item) {
-	// TODO: is there a more efficient way to increment
-	// the sum target given that we don't know what type it is
-	switch q.aggTarget.(type) {
-
-	// Signed Ints
-	case *int:
-		// Reminder - decoding the index values only works for fixed length integers
-		// So in the case of ints, we set up an int32 target and use
-		// that to accumulate
-		acc := *q.aggTarget.(*int)
-		var int32target int32
-		extractIndexValue(item.Key(), &int32target)
-		*q.aggTarget.(*int) = acc + int(int32target)
-	case *int8:
-		acc := *q.aggTarget.(*int8)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*int8) = acc + *q.aggTarget.(*int8)
-	case *int16:
-		acc := *q.aggTarget.(*int16)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*int16) = acc + *q.aggTarget.(*int16)
-	case *int32:
-		acc := *q.aggTarget.(*int32)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*int32) = acc + *q.aggTarget.(*int32)
-	case *int64:
-		acc := *q.aggTarget.(*int64)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*int64) = acc + *q.aggTarget.(*int64)
-
-	// Unsigned ints
-	case *uint:
-		// See above for notes on variable vs fixed length
-		acc := *q.aggTarget.(*uint)
-		var uint32target uint32
-		extractIndexValue(item.Key(), &uint32target)
-		*q.aggTarget.(*uint) = acc + uint(uint32target)
-	case *uint8:
-		acc := *q.aggTarget.(*uint8)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*uint8) = acc + *q.aggTarget.(*uint8)
-	case *uint16:
-		acc := *q.aggTarget.(*uint16)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*uint16) = acc + *q.aggTarget.(*uint16)
-	case *uint32:
-		acc := *q.aggTarget.(*uint32)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*uint32) = acc + *q.aggTarget.(*uint32)
-	case *uint64:
-		acc := *q.aggTarget.(*uint64)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*uint64) = acc + *q.aggTarget.(*uint64)
-
-	// Floats
-	case *float64:
-		acc := *q.aggTarget.(*float64)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*float64) = acc + *q.aggTarget.(*float64)
-
-	case *float32:
-		acc := *q.aggTarget.(*float32)
-		extractIndexValue(item.Key(), q.aggTarget)
-		*q.aggTarget.(*float32) = acc + *q.aggTarget.(*float32)
-	}
-}
-
-func (q *Query) setRanges() {
-	var seekFrom, validTo, compareTo []byte
-
-	// For reverse queries, flick-flack start/end and from/to
-	// to provide a standardised user API
-	// CAUTION: we don't want to do this more than once for a query,
-	// so just in case this is a query being run for a second time,
-	// we maintain the flag 'is reverse prepared' to guard against this
-	if q.reverse && !q.isReversePrepared {
-		tempEnd := q.end
-		q.end = q.start
-		q.start = tempEnd
-
-		tempTo := q.to
-		q.to = q.from
-		q.from = tempTo
-	}
-
-	if q.isIndexQuery && q.isExactIndexMatchSearch() {
-		// For index searches with exact match
-		seekFrom = newIndexMatchKey(q.keyRoot, q.indexName, q.start, q.from).bytes()
-		validTo = newIndexMatchKey(q.keyRoot, q.indexName, q.end).bytes()
-		compareTo = newIndexMatchKey(q.keyRoot, q.indexName, q.end, q.to).bytes()
-	} else if q.isIndexQuery {
-		// For regular index searches
-		seekFrom = newIndexKey(q.keyRoot, q.indexName, q.start).bytes()
-		validTo = newIndexKey(q.keyRoot, q.indexName, nil).bytes()
-		compareTo = newIndexKey(q.keyRoot, q.indexName, q.end).bytes()
-	} else {
-		seekFrom = newContentKey(q.keyRoot, q.from).bytes()
-		validTo = newContentKey(q.keyRoot).bytes()
-		compareTo = newContentKey(q.keyRoot, q.to).bytes()
-	}
-
-	// For reverse queries, append the byte 0xFF to get inclusive results
-	// See Badger issue: https://github.com/dgraph-io/badger/issues/347
-	// We can now mark the query as 'reverse prepared'
-	if q.reverse && !q.isReversePrepared {
-		seekFrom = append(seekFrom, 0xFF)
-		q.isReversePrepared = true
-	}
-
-	q.seekFrom = seekFrom
-	q.validTo = validTo
-	q.compareTo = compareTo
-}
-
-func (q *Query) resetQuery() {
-	// Counter should always be reset before executing a Query.
-	// Just in case a Query is built then executed twice.
-	q.offsetCounter = q.offset
-
-	// Also, id list should be reset -
-	// UNLESS this is an 'already executed' query!!!
-	if !q.combinedQuery {
-		q.ids = idList{}
-	}
-}
-
-func (q *Query) setFromToIfEmpty() {
-	// For index range searches - we don't do this,
-	// so exit right away
-	if q.isIndexRangeSearch() {
-		return
-	}
-
-	// If 'from' or 'to' have not been specified manually by the user,
-	// then we set them to the 'widest' times possible,
-	// i.e. 'between beginning of time' and 'now'
-	// If we don't do this, then some searches work OK, but particuarly reversed searches
-	// can experience strange behaviour (namely returned 0 results), because the iteration
-	// ends up starting from the end of the list.
-	// Another side-effect of not doing this is that exact match string searches would become 'starts with' searches.  We might want that behaviour though, so we include a check for this type of search below
-
-	t1 := time.Time{}
-	t2 := time.Now()
-
-	// Reverse the endpoints of the range for 'reverse' searches
-	// if q.reverse {
-	// 	temp := t1
-	// 	t1 = t2
-	// 	t2 = temp
-	// }
-
-	if q.from.IsNil() {
-		// If we are doing a 'starts with' query,
-		// then we DON'T want to set the from point
-		// This magically gives us 'starts with'
-		// instead of exact match,
-		// BUT - this trick only works for forward searches,
-		// not 'reverse' searches,
-		// so there is a protection in the query preparation
-		if !q.isStartsWithQuery {
-			q.From(t1)
-		}
-	}
-
-	if q.to.IsNil() {
-		q.To(t2)
-	}
+func (q Query) shouldApplyLimitOffsetToBasicQuery() bool {
+	return len(q.orderByIndexName) == 0
 }
 
 func (q *Query) prepareQuery() {
-	// 'starts with' type query doesn't work with reverse
-	// so switch it back to a regular search
-	if q.isIndexQuery && q.isStartsWithQuery && q.reverse {
-		q.reverse = false
+	// Each filter also needs some of the top level information
+	// e.g keyroot, date range, limit, offset etc,
+	// so we copy that in now
+	for i := range q.filters {
+		q.filters[i].keyRoot = q.keyRoot
+		q.filters[i].reverse = q.reverse
+		q.filters[i].from = q.from
+		q.filters[i].to = q.to
+
+		if q.shouldApplyLimitOffsetToFilter() {
+			q.filters[i].limit = q.limit
+			q.filters[i].offset = q.offset
+		}
 	}
 
-	// Lowercase index name
-	if q.isIndexQuery {
-		q.indexName = bytes.ToLower(q.indexName)
-	}
+	// If there are no filters, then we prepare a 'basic query'
+	if len(q.filters) == 0 {
+		bq := &basicQuery{
+			from:    q.from,
+			to:      q.to,
+			reverse: q.reverse,
+			keyRoot: q.keyRoot,
+		}
 
-	q.setFromToIfEmpty()
-	q.setRanges()
+		if q.shouldApplyLimitOffsetToBasicQuery() {
+			bq.limit = q.limit
+			bq.offset = q.offset
+		}
+	}
 }
 
-func (q *Query) queryIDs() error {
-	q.prepareQuery()
-	q.resetQuery()
+func (q *Query) queryIDs(txn *badger.Txn) (idList, error) {
+	if !q.prepared {
+		q.prepareQuery()
+	}
 
-	// Now, if during the query planning and preparation,
+	var allResults []idList
+
+	// If during the query planning and preparation,
 	// something has gone wrong and an error has been set on the query,
 	// we'll return right here and now
 	if q.err != nil {
-		return q.err
+		return idList{}, q.err
 	}
 
-	// Iterate through records according to calcuted range limits
-	// Note: there is a problem here.  We should really be passing a txn in,
-	// but badger only supports 1 iterator per txn at once, so this causes
-	// a big explosion when multiple queries try to run in parallel
-	err := q.db.KV.View(func(txn *badger.Txn) error {
-
-		it := txn.NewIterator(q.getIteratorOptions())
-		defer it.Close()
-
-		// Start iteration
-		for it.Seek(q.seekFrom); q.endIteration(it); it.Next() {
-			// If this is a 'range index' type Query
-			// that ALSO has a date range, the procedure is a little more complicated
-			// compared to an exact index match.
-			// Since the start/end points of the iteration focus on the index, e.g. E-J (alphabetical index)
-			// we need to manually check all the keys and reject those that don't fit the date range
-			if q.isIndexQuery && !q.isExactIndexMatchSearch() {
-				key := extractID(it.Item().Key())
-				if keyIsOutsideDateRange(key, q.from, q.to) {
-					continue
-				}
-			}
-
-			// Skip the first N entities according to the specified offset
-			if q.offsetCounter > 0 {
-				q.offsetCounter--
-				continue
-			}
-
-			// For non-count-only queries, we'll actually get the record
-			// How this is done depends on whether this is an index-based search or not
-			item := it.Item()
-			q.ids = append(q.ids, extractID(item.Key()))
-
-			if q.isQuickSumQuery {
-				q.quickSum(item)
-			}
-
-			// If this is a first-only search, break out of the iteration now
-			if q.first {
-				return nil
-			}
+	if len(q.filters) > 0 {
+		// FOR WHEN THERE ARE INDEX FILTERS
+		// We process them serially at the moment, becuase Badger can only support 1 iterator
+		// per transaction.  If that limitation is ever removed, we could do this in parallel
+		for _, filter := range q.filters {
+			thisFilterResults := filter.queryIDs(txn)
+			allResults = append(allResults, thisFilterResults)
 		}
+	} else {
+		// FOR WHEN THERE ARE NO INDEX FILTERS
+		allResults = []idList{q.basicQuery.queryIDs(txn)}
+	}
 
-		return nil
-	})
-
-	return err
+	// Combine the results from multiple filters,
+	// or the single top level id list into one, final id list
+	// according to the required AND/OR logic
+	return q.idsCombinator(allResults...), nil
 }
 
 func (q *Query) execute() (int, error) {
 	txn := q.db.KV.NewTransaction(true)
 	defer txn.Discard()
 
-	// Combined queries have already had their IDs retrieved,
-	// so we can skip this step
-	if !q.combinedQuery {
-		// Step 1: get the IDs returned for this query
-		err := q.queryIDs()
-		if err != nil {
-			return 0, err
+	finalIDList, err := q.queryIDs(txn)
+	if err != nil {
+		return 0, err
+	}
+
+	// TODO: more conditions
+	if len(q.orderByIndexName) > 0 {
+		is := indexSearch{
+			reverse:   q.reverse,
+			limit:     q.limit,
+			keyRoot:   q.keyRoot,
+			indexName: q.orderByIndexName,
+			offset:    q.offset,
 		}
+
+		// If we are doing a quicksum and the sum index is the same
+		// as the order index, we can take advantage of this index
+		// iteration to do the sum
+		if len(q.sumIndexName) > 0 && q.sumTarget != nil {
+			if string(q.sumIndexName) == string(q.orderByIndexName) {
+				is.sumIndexName = q.sumIndexName
+				is.sumTarget = q.sumTarget
+			}
+		}
+
+		// This will order and apply limit/offset
+		finalIDList = is.execute(txn)
 	}
 
 	// For count-only, there's nothing more to do
 	if q.countOnly {
-		return len(q.ids), nil
+		return len(finalIDList), nil
 	}
 
-	// Step 2:
+	// If a sumIndexName and a target have been specified,
+	// then we will take that to mean that this is a quicksum execution
+	// How we handle quicksum depends on wehther the sum index is different from the order index.
+	// If the two are the same, then we have already worked out the quicksum in the index iteration above, and theres
+	// no need to do it again
+	if len(q.sumIndexName) > 0 && q.sumTarget != nil {
+		if string(q.sumIndexName) != string(q.orderByIndexName) {
+			is := indexSearch{
+				reverse:      q.reverse,
+				limit:        q.limit,
+				keyRoot:      q.keyRoot,
+				indexName:    q.orderByIndexName,
+				offset:       q.offset,
+				sumIndexName: q.sumIndexName,
+				sumTarget:    q.sumTarget,
+			}
+
+			is.execute(txn)
+		}
+
+		// Now, whether the quicksum was on the same index as order,
+		// or any other index, we will have the result in the target, so we can return now
+		return len(finalIDList), nil
+	}
+
 	// For 'First' type queries
-	if q.first {
+	if q.single {
 		// For 'first' queries, we should check that there is at least 1 record found
 		// before trying to set it
-		if len(q.ids) == 0 {
+		if len(finalIDList) == 0 {
 			return 0, nil
 		}
 
 		// db.get ususally takes a 'Record', so we need to set a new one up
 		// and then set the result of get to the target aftwards
 		record := newRecord(q.target)
-		id := q.ids[0]
+		id := finalIDList[0]
 		if found, err := q.db.get(txn, record, q.ctx, id); err != nil {
 			return 0, err
 		} else if !found {
@@ -488,25 +284,8 @@ func (q *Query) execute() (int, error) {
 		return 1, nil
 	}
 
-	// For non 'first' type queries
-	// In the case of combined queries, the IDs are going to be mixed up because they come
-	// from a combination of multiple queries, so lets remedy that first
-	if q.combinedQuery {
-		q.ids.sort(q.reverse)
-	}
-
-	// If a slow sum field has been specified
-	// run 'slow sum' procedure by gettung unserialised results,
-	// unserialise only the required field,
-	// calculate accumulator and set on query
-	if len(q.slowSumPath) != 0 {
-		sum, err := q.db.getIDsWithContextFloat64AtPath(txn, newRecordFromSlice(q.target), q.ctx, q.slowSumPath, q.ids...)
-		*q.aggTarget.(*float64) = sum
-		return len(q.ids), err
-	}
-
 	// Otherwise we just get the records and return
-	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, q.ids...)
+	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, finalIDList...)
 	if err != nil {
 		return 0, err
 	}

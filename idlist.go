@@ -8,6 +8,10 @@ import (
 
 type idList []gouuidv6.UUID
 
+func (ids idList) length() int {
+	return len(ids)
+}
+
 func (ids idList) sort(reverse bool) {
 	compareFunc := func(i, j int) bool {
 		return ids[i].Compare(ids[j])
