@@ -91,7 +91,7 @@ func (b basicQuery) getIteratorOptions() badger.IteratorOptions {
 
 func (b basicQuery) endIteration(it *badger.Iterator, noIDsSoFar int) bool {
 	if it.ValidForPrefix(b.validTo) {
-		if b.isLimitMet(noIDsSoFar) {
+		if b.isLimitMet(noIDsSoFar) || b.isEndOfRange(it) {
 			return false
 		}
 
@@ -99,6 +99,11 @@ func (b basicQuery) endIteration(it *badger.Iterator, noIDsSoFar int) bool {
 	}
 
 	return false
+}
+
+func (b basicQuery) isEndOfRange(it *badger.Iterator) bool {
+	key := it.Item().Key()
+	return !b.to.IsNil() && compareKeyBytes(b.compareTo, key, b.reverse, false)
 }
 
 func (b basicQuery) isLimitMet(noIDsSoFar int) bool {
