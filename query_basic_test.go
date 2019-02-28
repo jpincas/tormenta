@@ -36,8 +36,12 @@ func Test_BasicQuery(t *testing.T) {
 	// 2 fullStructs
 	tt2 := testtypes.FullStruct{}
 	db.Save(&tt2)
+	if tt1.ID == tt2.ID {
+		t.Errorf("Testing querying with 2 entities saved. 2 entities saved both have same ID")
+	}
 
 	fullStructs = []testtypes.FullStruct{}
+
 	if n, _ := db.Find(&fullStructs).Run(); n != 2 {
 		t.Errorf("Testing querying with 2 entity saved. Expecting 2 entities - got %v", n)
 	}
@@ -45,9 +49,7 @@ func Test_BasicQuery(t *testing.T) {
 	if c, _ := db.Find(&fullStructs).Count(); c != 2 {
 		t.Errorf("Testing count 2 entities saved. Expecting 2 - got %v", c)
 	}
-	if tt1.ID == tt2.ID {
-		t.Errorf("Testing querying with 2 entities saved. 2 entities saved both have same ID")
-	}
+
 	if fullStructs[0].ID == fullStructs[1].ID {
 		t.Errorf("Testing querying with 2 entities saved. 2 results returned. Both have same ID")
 	}
@@ -74,6 +76,15 @@ func Test_BasicQuery(t *testing.T) {
 	fullStructs = []testtypes.FullStruct{}
 	if c, _ := db.Find(&fullStructs).Reverse().Count(); c != 2 {
 		t.Errorf("Testing count with 2 entities saved + reverse. Expected %v, got %v", 2, c)
+	}
+
+	// Compare forwards and backwards
+	forwards := []testtypes.FullStruct{}
+	backwards := []testtypes.FullStruct{}
+	db.Find(&forwards).Run()
+	db.Find(&backwards).Reverse().Run()
+	if forwards[0].ID != backwards[1].ID || forwards[1].ID != backwards[0].ID {
+		t.Error("Comparing regular and reversed results. Fist and last of each list should be the same but were not")
 	}
 
 }

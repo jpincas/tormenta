@@ -163,6 +163,8 @@ func (q *Query) prepareQuery() {
 			bq.limit = q.limit
 			bq.offset = q.offset
 		}
+
+		q.basicQuery = bq
 	}
 }
 
