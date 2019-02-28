@@ -7,7 +7,7 @@ import (
 
 func Test_Open_ValidDirectory(t *testing.T) {
 	testName := "Testing opening Torment DB connection with a valid directory"
-	dir := "data/test"
+	dir := "data/testing"
 
 	// Create a connection to a test DB
 	db, err := OpenWithOptions(dir, DefaultOptions)
@@ -25,6 +25,7 @@ func Test_Open_ValidDirectory(t *testing.T) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		t.Errorf("%s. Failed to create Torment data directory", testName)
 	}
+
 }
 
 func Test_Close(t *testing.T) {

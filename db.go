@@ -32,7 +32,7 @@ func testDirectory(dir string) string {
 }
 
 func Open(dir string) (*DB, error) {
-	return OpenTestWithOptions(dir, DefaultOptions)
+	return OpenWithOptions(dir, DefaultOptions)
 }
 
 // Open returns a connection to TormentDB connection
