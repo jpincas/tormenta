@@ -364,8 +364,52 @@ func Test_Relations_LoadByQuery_Basic(t *testing.T) {
 
 	tormenta.LoadByQuery(db, "RelatedStructsByQuery", nil, &struct1)
 	if len(struct1.RelatedStructsByQuery) != 2 {
-		t.Error("Did not get 2 related structs")
+		t.Errorf("Did not get 2 related structs, got %v", len(struct1.RelatedStructsByQuery))
 	}
+}
+
+func Test_Relations_LoadByQuery_MultipleEntities(t *testing.T) {
+	// Open the DB
+	db, _ := tormenta.OpenTestWithOptions("data/tests", testDBOptions)
+	defer db.Close()
+
+	var fullStructs []testtypes.FullStruct
+	for i := 0; i < 2; i++ {
+		// Start with a struct
+		struct1 := testtypes.FullStruct{}
+		if _, err := db.Save(&struct1); err != nil {
+			t.Fatal("Saving error")
+		}
+
+		// Keep a record of it
+		fullStructs = append(fullStructs, struct1)
+
+		// Some related structs that reference the above full structs
+		relatedStruct1 := testtypes.RelatedStruct{
+			FullStructID: struct1.ID,
+		}
+		relatedStruct2 := testtypes.RelatedStruct{
+			FullStructID: struct1.ID,
+		}
+
+		if _, err := db.Save(&relatedStruct1, &relatedStruct2); err != nil {
+			t.Fatal("Saving error")
+		}
+	}
+
+	var records []tormenta.Record
+	for i := range fullStructs {
+		records = append(records, &fullStructs[i])
+	}
+
+	tormenta.LoadByQuery(db, "RelatedStructsByQuery", nil, records...)
+
+	for _, f := range fullStructs {
+		if len(f.RelatedStructsByQuery) != 2 {
+			t.Errorf("Expected 2 related structs, got %v", len(f.RelatedStructsByQuery))
+		}
+	}
+
 }
 
 func Test_Relations_LoadByQuery_Additional_Clauses(t *testing.T) {

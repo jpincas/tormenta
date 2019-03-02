@@ -56,7 +56,7 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 		return fmt.Errorf("LoadByQuery requires at least one entity")
 	}
 
-	txn := db.KV.NewTransaction(true)
+	txn := db.KV.NewTransaction(false)
 	defer txn.Discard()
 
 	type relationsQueryResult struct {
@@ -78,12 +78,13 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 		return fmt.Errorf(ErrFieldNotExist, fieldName)
 	}
 
+	indexString := indexStringForThisEntity(exampleEntity) + idFieldPostfixSingleForIndex
+
+	// Now we can go ahead and get results for all the IDs
 	// The related field on the entity is a slice of pointers,
 	// but queries expect a pointer to a slice,
 	// So we do a bit of reflect magic to get a target for the query
 	target := reflect.New(reflect.SliceOf(field.Type().Elem().Elem())).Interface()
-
-	indexString := indexStringForThisEntity(exampleEntity) + idFieldPostfixSingleForIndex
 
 	for i := range entities {
 		wg.Add(1)
@@ -96,15 +97,6 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 			}
 
 			ids, err := query.queryIDs(txn)
-			if err != nil {
-				ch <- relationsQueryResult{
-					entityID:    entities[ii].GetID(),
-					relationIDs: ids,
-					err:         err,
-				}
-			}
-
-			_, err = db.getIDsWithContext(txn, target, noCTX, ids...)
 			ch <- relationsQueryResult{
 				entityID:    entities[ii].GetID(),
 				relationIDs: ids,
@@ -116,6 +108,7 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 	relatedEntitiesForEachEntity := map[gouuidv6.UUID]idList{}
 	allIDsToGet := idList{}
 	var errorsList []error
+
 	go func() {
 		for relationsQueryResult := range ch {
 			if relationsQueryResult.err != nil {
@@ -130,12 +123,11 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 	}()
 
 	wg.Wait()
+
 	if len(errorsList) > 0 {
 		return errorsList[0]
 	}
 
-	// Now we can go ahead and get results for all the IDs
-	// Note: this function already runs everything parallel
 	db.getIDsWithContext(txn, target, noCTX, allIDsToGet...)
 
 	// Once we have all the results,
@@ -153,8 +145,12 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 	// and then for each of those IDs, get the actual result
 	// from the final results map and append it the target slice on the entity
 	// (as a slice of pointers)
-	for _, entity := range entities {
-		thisEntityRelatedIDs := relatedEntitiesForEachEntity[entity.GetID()]
+	for i := range entities {
+		thisEntityRelatedIDs := relatedEntitiesForEachEntity[entities[i].GetID()]
+
+		// Up until now we have been taking the 'field' from the first entity passed in as an exmple
+		// Now we actually have to operate on that field for each entity
+		field := recordValue(entities[i]).FieldByName(fieldName)
 
 		for _, relatedID := range thisEntityRelatedIDs {
 			field.Set(
@@ -177,7 +173,7 @@ type relationsResult struct {
 }
 
 func LoadByID(db *DB, relationsToLoad []string, entities ...Record) error {
-	txn := db.KV.NewTransaction(true)
+	txn := db.KV.NewTransaction(false)
 	defer txn.Discard()
 	return loadByID(db, txn, relationsToLoad, entities...)
 }

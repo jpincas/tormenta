@@ -202,7 +202,7 @@ func (q *Query) queryIDs(txn *badger.Txn) (idList, error) {
 }
 
 func (q *Query) execute() (int, error) {
-	txn := q.db.KV.NewTransaction(true)
+	txn := q.db.KV.NewTransaction(false)
 	defer txn.Discard()
 
 	finalIDList, err := q.queryIDs(txn)
