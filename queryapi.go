@@ -171,9 +171,9 @@ func (q *Query) Count() (int, error) {
 	return q.execute()
 }
 
-// QuickSum produces a sum aggregation using the index only, which is much faster
+// Sum produces a sum aggregation using the index only, which is much faster
 // than accessing every record
-func (q *Query) QuickSum(a interface{}, indexName string) (int, error) {
+func (q *Query) Sum(a interface{}, indexName string) (int, error) {
 	q.sumTarget = a
 	q.sumIndexName = toIndexName(indexName)
 	return q.execute()

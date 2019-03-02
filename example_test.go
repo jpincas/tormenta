@@ -148,9 +148,9 @@ func Example() {
 	n, _ = db.First(&fullStruct).StartsWith("customer", "customer-").Run()
 	printlinef("Index query, starts with: %v record(s) found", n)
 
-	// Index range, QuickSum (based on index)
+	// Index range, Sum (based on index)
 	var sum float64
-	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).QuickSum(&sum, "shippingfee")
+	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum, "shippingfee")
 	printlinef("Index range, date range, index sum query. Sum: %v", sum)
 
 	// Secondary index on 'customer' - index range and count

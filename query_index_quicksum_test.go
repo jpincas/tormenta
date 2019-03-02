@@ -20,7 +20,7 @@ func getDept(i int) int {
 }
 
 // Test aggregation on an index
-func Test_QuickSum(t *testing.T) {
+func Test_Sum(t *testing.T) {
 	var fullStructs []tormenta.Record
 
 	// Accumulators
@@ -138,7 +138,7 @@ func Test_QuickSum(t *testing.T) {
 		results := []testtypes.FullStruct{}
 
 		// BASIC TEST
-		if _, err := db.Find(&results).QuickSum(test.sumResult, test.fieldName); err != nil {
+		if _, err := db.Find(&results).Sum(test.sumResult, test.fieldName); err != nil {
 			t.Errorf("Testing %s basic quicksum.  Got error: %s", test.name, err)
 		}
 
@@ -150,7 +150,7 @@ func Test_QuickSum(t *testing.T) {
 
 		// SAME ORDERBY FIELD SPECIFIED
 		resetResults()
-		if _, err := db.Find(&results).OrderBy(test.fieldName).QuickSum(test.sumResult, test.fieldName); err != nil {
+		if _, err := db.Find(&results).OrderBy(test.fieldName).Sum(test.sumResult, test.fieldName); err != nil {
 			t.Errorf("Testing %s quicksum with same orderbyfield specified.  Got error: %s", test.name, err)
 		}
 
@@ -162,7 +162,7 @@ func Test_QuickSum(t *testing.T) {
 
 		// REVERSE SPECIFIED
 		resetResults()
-		if _, err := db.Find(&results).Reverse().QuickSum(test.sumResult, test.fieldName); err != nil {
+		if _, err := db.Find(&results).Reverse().Sum(test.sumResult, test.fieldName); err != nil {
 			t.Errorf("Testing %s quicksum with reverse specified.  Got error: %s", test.name, err)
 		}
 
@@ -174,7 +174,7 @@ func Test_QuickSum(t *testing.T) {
 
 		// REVERSE AND ORDER BY SPECIFIED
 		resetResults()
-		if _, err := db.Find(&results).OrderBy(test.fieldName).Reverse().QuickSum(test.sumResult, test.fieldName); err != nil {
+		if _, err := db.Find(&results).OrderBy(test.fieldName).Reverse().Sum(test.sumResult, test.fieldName); err != nil {
 			t.Errorf("Testing %s quicksum with reverse and orderbyfield specified.  Got error: %s", test.name, err)
 		}
 
@@ -186,7 +186,7 @@ func Test_QuickSum(t *testing.T) {
 
 		// DIFFERENT ORDER BY SPECIFIED
 		resetResults()
-		if _, err := db.Find(&results).OrderBy("stringfield").QuickSum(test.sumResult, test.fieldName); err != nil {
+		if _, err := db.Find(&results).OrderBy("stringfield").Sum(test.sumResult, test.fieldName); err != nil {
 			t.Errorf("Testing %s quicksum with different orderbyfield specified.  Got error: %s", test.name, err)
 		}
 
