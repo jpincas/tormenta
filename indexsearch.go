@@ -7,7 +7,7 @@ import (
 
 type indexSearch struct {
 	// Ranges and comparision key
-	seekFrom, validTo, compareTo []byte
+	seekFrom, validTo []byte
 
 	// Reverse fullStruct of searching and returned results
 	reverse bool
@@ -32,31 +32,13 @@ type indexSearch struct {
 	sumTarget    interface{}
 }
 
-func (i indexSearch) isEndOfRange(it *badger.Iterator) bool {
-	key := it.Item().Key()
-	return compareKeyBytes(i.compareTo, key, i.reverse, true)
-}
-
 func (i indexSearch) isLimitMet(noIDsSoFar int) bool {
 	return i.limit > 0 && noIDsSoFar >= i.limit
-}
-
-func (i indexSearch) endIteration(it *badger.Iterator, noIDsSoFar int) bool {
-	if it.ValidForPrefix(i.validTo) {
-		if i.isLimitMet(noIDsSoFar) || i.isEndOfRange(it) {
-			return false
-		}
-
-		return true
-	}
-
-	return false
 }
 
 func (i *indexSearch) setRanges() {
 	i.seekFrom = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
 	i.validTo = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
-	i.compareTo = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
 
 	// For reverse queries, append the byte 0xFF to get inclusive results
 	// See Badger issue: https://github.com/dgraph-io/badger/issues/347
@@ -87,7 +69,7 @@ func (i indexSearch) execute(txn *badger.Txn) (ids idList) {
 	it := txn.NewIterator(i.getIteratorOptions())
 	defer it.Close()
 
-	for it.Seek(i.seekFrom); i.endIteration(it, len(ids)); it.Next() {
+	for it.Seek(i.seekFrom); it.ValidForPrefix(i.validTo) && !i.isLimitMet(len(ids)); it.Next() {
 		item := it.Item()
 		thisID := extractID(item.Key())
 

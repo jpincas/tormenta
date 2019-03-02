@@ -27,7 +27,7 @@ func Test_OrderBy(t *testing.T) {
 	defer db.Close()
 	db.Save(fullStructs...)
 
-	// First try ordering by intField
+	// INTFIELD
 
 	intFieldResults := []testtypes.FullStruct{}
 	n, err := db.Find(&intFieldResults).OrderBy("intfield").Run()
@@ -37,7 +37,7 @@ func Test_OrderBy(t *testing.T) {
 	}
 
 	if n != len(fullStructs) {
-		t.Errorf("Testing ORDER BY intfield, n (%v) does not equal actual number of records saved (%v)", n, len(fullStructs))
+		t.Fatalf("Testing ORDER BY intfield, n (%v) does not equal actual number of records saved (%v)", n, len(fullStructs))
 	}
 
 	if n != len(intFieldResults) {
@@ -52,7 +52,7 @@ func Test_OrderBy(t *testing.T) {
 		t.Errorf("Testing ORDER BY intfield, last member should be 10 but is %v", intFieldResults[len(intFieldResults)-1].IntField)
 	}
 
-	// First try ordering by stringField
+	// STRING FIELD
 
 	stringFieldResults := []testtypes.FullStruct{}
 	n, err = db.Find(&stringFieldResults).OrderBy("stringfield").Run()
@@ -90,5 +90,70 @@ func Test_OrderBy(t *testing.T) {
 	//Now compare first and last members and make sure they are the same
 	if intFieldResults[0].ID != stringFieldResults[len(stringFieldResults)-1].ID {
 		t.Errorf("Testing ORDER BY.  First member of array A should be the same as last member of Array B but got %v vs %v", intFieldResults[0].IntField, stringFieldResults[len(stringFieldResults)-1].IntField)
+	}
+
+	// INTFIELD REVERSE
+
+	intFieldResults = []testtypes.FullStruct{}
+	n, err = db.Find(&intFieldResults).OrderBy("intfield").Reverse().Run()
+
+	if err != nil {
+		t.Errorf("Testing ORDER BY, REVERSE intfield, got error %s", err)
+	}
+
+	if n != len(fullStructs) {
+		t.Fatalf("Testing ORDER BY, REVERSE intfield, n (%v) does not equal actual number of records saved (%v)", n, len(fullStructs))
+	}
+
+	if n != len(intFieldResults) {
+		t.Errorf("Testing ORDER BY, REVERSE intfield, n (%v) does not equal actual number of results (%v)", n, len(intFieldResults))
+	}
+
+	if intFieldResults[0].IntField != 10 {
+		t.Errorf("Testing ORDER BY, REVERSE intfield, first member should be 10 but is %v", intFieldResults[0].IntField)
+	}
+
+	if intFieldResults[len(intFieldResults)-1].IntField != 1 {
+		t.Errorf("Testing ORDER BY, REVERSE intfield, last member should be 1 but is %v", intFieldResults[len(intFieldResults)-1].IntField)
+	}
+
+	// STRING FIELD REVERSE
+
+	stringFieldResults = []testtypes.FullStruct{}
+	n, err = db.Find(&stringFieldResults).OrderBy("stringfield").Reverse().Run()
+
+	if err != nil {
+		t.Errorf("Testing ORDER BY, REVERSE stringfield, got error %s", err)
+	}
+
+	if n != len(fullStructs) {
+		t.Errorf("Testing ORDER BY, REVERSE stringfield, n (%v) does not equal actual number of records saved (%v)", n, len(fullStructs))
+	}
+
+	if n != len(stringFieldResults) {
+		t.Errorf("Testing ORDER BY, REVERSE stringfield, n (%v) does not equal actual number of results (%v)", n, len(stringFieldResults))
+	}
+
+	if stringFieldResults[0].StringField != "int-9" {
+		t.Errorf("Testing ORDER BY, REVERSE stringfield, first member should be int-9 but is %s", stringFieldResults[0].StringField)
+	}
+
+	if stringFieldResults[len(stringFieldResults)-1].StringField != "int-0" {
+		t.Errorf("Testing ORDER BY, REVERSE stringfield, last member should be int-0 but is %s", stringFieldResults[len(intFieldResults)-1].StringField)
+	}
+
+	// Now compare first members and make sure they are different
+	if intFieldResults[0].ID == stringFieldResults[0].ID {
+		t.Errorf("Testing ORDER BY, REVERSE. ID's of first member of both results arrays are the same")
+	}
+
+	// Now compare last members and make sure they are different
+	if intFieldResults[len(intFieldResults)-1].ID == stringFieldResults[len(stringFieldResults)-1].ID {
+		t.Errorf("Testing ORDER BY, REVERSE. ID's of first member of both results arrays are the same")
+	}
+
+	//Now compare first and last members and make sure they are the same
+	if intFieldResults[0].ID != stringFieldResults[len(stringFieldResults)-1].ID {
+		t.Errorf("Testing ORDER BY, REVERSE.  First member of array A should be the same as last member of Array B but got %v vs %v", intFieldResults[0].IntField, stringFieldResults[len(stringFieldResults)-1].IntField)
 	}
 }

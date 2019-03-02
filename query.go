@@ -210,14 +210,15 @@ func (q *Query) execute() (int, error) {
 		return 0, err
 	}
 
-	// TODO: more conditions
+	// TODO: more conditions to restrict when this is necessary
 	if len(q.orderByIndexName) > 0 {
 		is := indexSearch{
-			reverse:   q.reverse,
-			limit:     q.limit,
-			keyRoot:   q.keyRoot,
-			indexName: q.orderByIndexName,
-			offset:    q.offset,
+			idsToSearchFor: finalIDList,
+			reverse:        q.reverse,
+			limit:          q.limit,
+			keyRoot:        q.keyRoot,
+			indexName:      q.orderByIndexName,
+			offset:         q.offset,
 		}
 
 		// If we are doing a quicksum and the sum index is the same
@@ -247,13 +248,14 @@ func (q *Query) execute() (int, error) {
 	if len(q.sumIndexName) > 0 && q.sumTarget != nil {
 		if string(q.sumIndexName) != string(q.orderByIndexName) {
 			is := indexSearch{
-				reverse:      q.reverse,
-				limit:        q.limit,
-				keyRoot:      q.keyRoot,
-				indexName:    q.orderByIndexName,
-				offset:       q.offset,
-				sumIndexName: q.sumIndexName,
-				sumTarget:    q.sumTarget,
+				idsToSearchFor: finalIDList,
+				reverse:        q.reverse,
+				limit:          q.limit,
+				keyRoot:        q.keyRoot,
+				indexName:      q.sumIndexName,
+				offset:         q.offset,
+				sumIndexName:   q.sumIndexName,
+				sumTarget:      q.sumTarget,
 			}
 
 			is.execute(txn)
