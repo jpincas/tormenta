@@ -62,34 +62,8 @@ type Query struct {
 	prepared bool
 }
 
-func (q Query) String() string {
-	return ToJSON(
-		map[string]interface{}{
-			"keyRoot":   q.keyRoot,
-			"reverse":   q.reverse,
-			"from":      q.from,
-			"to":        q.to,
-			"countOnly": q.countOnly,
-			"ctx":       q.ctx,
-		},
-	)
-}
-
 func (q Query) Compare(cq Query) bool {
-	for i := range q.filters {
-		if !q.filters[i].compare(cq.filters[i]) {
-			return false
-		}
-	}
-
-	return string(q.keyRoot) == string(cq.keyRoot) &&
-		q.offset == cq.offset &&
-		q.limit == cq.limit &&
-		q.reverse == cq.reverse &&
-		q.from == cq.from &&
-		q.to == cq.to &&
-		q.countOnly == cq.countOnly &&
-		ToJSON(q.ctx) == ToJSON(q.ctx)
+	return fmt.Sprint(q) == fmt.Sprint(cq)
 }
 
 func fromUUID(t time.Time) gouuidv6.UUID {

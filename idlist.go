@@ -83,3 +83,20 @@ func intersection(listsOfIDs ...idList) (result idList) {
 
 	return
 }
+
+var (
+	fixedID1 = gouuidv6.New()
+	fixedID2 = gouuidv6.New()
+)
+
+// isOr is a simple function to tell you wether a given combinator function is a union (or) or not
+func isOr(combinator func(...idList) idList) bool {
+	n := combinator([]idList{
+		idList{fixedID1},
+		idList{fixedID2},
+	}...)
+
+	// If the combinator is AND, then it will want the ID to appear in both
+	// lists, thus giving a length of 0
+	return len(n) != 0
+}

@@ -99,9 +99,20 @@ func (q *Query) StartsWith(indexName string, s string) *Query {
 
 // GLOBAL QUERY MODIFIERS
 
-// Sets the query to return filter results combined in a logical OR way instead of AND
+// Sets the query to return filter results combined in a logical OR way instead of AND.
+// It doesn't matter where in the chain, you put it - all filters will be combined in an OR
+// fashion if it appears just once.  Having said that, if you are combining two filters, it
+// reads nicely to put the Or() in the middle, e.g.
+// .Range("myint", 1, 10).Or().StartsWith("mystring", "test"),
 func (q *Query) Or() *Query {
 	q.idsCombinator = union
+	return q
+}
+
+// Sets the query to return filter results combined in a logical AND way.  This is the default,
+// so this should rarely be necessary.  Mainly useful for the query parser.
+func (q *Query) And() *Query {
+	q.idsCombinator = intersection
 	return q
 }
 
@@ -129,6 +140,12 @@ func (q *Query) Offset(n int) *Query {
 // Reverse reverses the order of date range scanning and returned results (i.e. scans from 'new' to 'old', instead of the default 'old' to 'new' )
 func (q *Query) Reverse() *Query {
 	q.reverse = true
+	return q
+}
+
+// UnReverse unsets reverse on a query. Not expected to be particularly useful but needed by the string to query builder
+func (q *Query) UnReverse() *Query {
+	q.reverse = false
 	return q
 }
 

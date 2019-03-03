@@ -51,34 +51,6 @@ type filter struct {
 	prepared bool
 }
 
-func (f filter) String() string {
-	return ToJSON(
-		map[string]interface{}{
-			"start":             f.start,
-			"end":               f.end,
-			"from":              f.from,
-			"to":                f.to,
-			"indexName":         f.indexName,
-			"isStartsWithQuery": f.isStartsWithQuery,
-			"keyRoot":           f.keyRoot,
-			"reverse":           f.reverse,
-		},
-	)
-}
-
-func (f filter) compare(cf filter) bool {
-	return string(f.keyRoot) == string(cf.keyRoot) &&
-		f.offset == cf.offset &&
-		f.limit == cf.limit &&
-		f.reverse == cf.reverse &&
-		f.start == cf.start &&
-		f.end == cf.end &&
-		f.from == cf.from &&
-		f.to == cf.to &&
-		string(f.indexName) == string(cf.indexName) &&
-		f.isStartsWithQuery == cf.isStartsWithQuery
-}
-
 func (f filter) isIndexRangeSearch() bool {
 	return f.start != f.end && !f.isStartsWithQuery
 }
