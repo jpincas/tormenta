@@ -10,20 +10,22 @@ import (
 
 // DB is the wrapper of the BadgerDB connection
 type DB struct {
-	KV              *badger.DB
-	Options         Options
-	serialiseFunc   func(interface{}) ([]byte, error)
-	unserialiseFunc func([]byte, interface{}) error
+	KV      *badger.DB
+	Options Options
 }
 
 type Options struct {
 	SerialiseFunc   func(interface{}) ([]byte, error)
 	UnserialiseFunc func([]byte, interface{}) error
+	BadgerOptions   badger.Options
+	DebugMode       bool
 }
 
 var DefaultOptions = Options{
 	SerialiseFunc:   json.Marshal,
 	UnserialiseFunc: json.Unmarshal,
+	BadgerOptions:   badger.DefaultOptions,
+	DebugMode:       false,
 }
 
 // testDirectory alters a specified data directory to mark it as for tests
@@ -49,7 +51,7 @@ func OpenWithOptions(dir string, options Options) (*DB, error) {
 		}
 	}
 
-	opts := badger.DefaultOptions
+	opts := options.BadgerOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
 	badgerDB, err := badger.Open(opts)

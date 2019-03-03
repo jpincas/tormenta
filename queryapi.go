@@ -23,6 +23,12 @@ func (db DB) First(entity interface{}) *Query {
 	return q
 }
 
+// Debug turns on helpful debugging information for the query
+func (q *Query) Debug() *Query {
+	q.debug = true
+	return q
+}
+
 // CONTEXT SETTING
 
 // SetContext allows a context to be passed through the query

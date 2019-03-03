@@ -3,6 +3,8 @@ package benchmarks
 import (
 	"encoding/json"
 
+	"github.com/dgraph-io/badger"
+
 	"github.com/jpincas/tormenta"
 	"github.com/jpincas/tormenta/testtypes"
 	jsoniter "github.com/json-iterator/go"
@@ -41,27 +43,32 @@ var testDBOptions = testOptionsStdLib
 var testOptionsStdLib = tormenta.Options{
 	SerialiseFunc:   json.Marshal,
 	UnserialiseFunc: json.Unmarshal,
+	BadgerOptions:   badger.DefaultOptions,
 }
 
 var testOptionsFFJson = tormenta.Options{
 	SerialiseFunc:   ffjson.Marshal,
 	UnserialiseFunc: ffjson.Unmarshal,
+	BadgerOptions:   badger.DefaultOptions,
 }
 
 var testOptionsJSONIterFastest = tormenta.Options{
 	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
 	SerialiseFunc:   jsoniter.ConfigFastest.Marshal,
 	UnserialiseFunc: jsoniter.ConfigFastest.Unmarshal,
+	BadgerOptions:   badger.DefaultOptions,
 }
 
 var testOptionsJSONIterDefault = tormenta.Options{
 	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
 	SerialiseFunc:   jsoniter.ConfigDefault.Marshal,
 	UnserialiseFunc: jsoniter.ConfigDefault.Unmarshal,
+	BadgerOptions:   badger.DefaultOptions,
 }
 
 var testOptionsJSONIterCompatible = tormenta.Options{
 	// Main difference is precision of floats - see https://godoc.org/github.com/json-iterator/go
 	SerialiseFunc:   jsoniter.ConfigCompatibleWithStandardLibrary.Marshal,
 	UnserialiseFunc: jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal,
+	BadgerOptions:   badger.DefaultOptions,
 }
