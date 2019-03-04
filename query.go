@@ -163,7 +163,12 @@ func (q *Query) queryIDs(txn *badger.Txn) (idList, error) {
 		// We process them serially at the moment, becuase Badger can only support 1 iterator
 		// per transaction.  If that limitation is ever removed, we could do this in parallel
 		for _, filter := range q.filters {
-			thisFilterResults := filter.queryIDs(txn)
+			thisFilterResults, err := filter.queryIDs(txn)
+			// If preparing any of the filters results in an error,
+			// rerturn it now
+			if err != nil {
+				return idList{}, err
+			}
 			allResults = append(allResults, thisFilterResults)
 		}
 	} else {

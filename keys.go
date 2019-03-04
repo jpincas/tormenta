@@ -3,7 +3,6 @@ package tormenta
 import (
 	"bytes"
 	"encoding/binary"
-	"reflect"
 	"strings"
 
 	"github.com/jpincas/gouuidv6"
@@ -21,8 +20,7 @@ type key struct {
 	entityType   []byte
 	id           gouuidv6.UUID
 	indexName    []byte
-	indexContent interface{}
-	indexKind    reflect.Kind
+	indexContent []byte
 	exactMatch   bool
 }
 
@@ -34,13 +32,12 @@ func newContentKey(root []byte, id ...gouuidv6.UUID) key {
 	}, id)
 }
 
-func newIndexKey(root, indexName []byte, indexKind reflect.Kind, indexContent interface{}, id ...gouuidv6.UUID) key {
+func newIndexKey(root, indexName, indexContent []byte, id ...gouuidv6.UUID) key {
 	return withID(key{
 		isIndex:      true,
 		entityType:   root,
 		indexName:    indexName,
 		indexContent: indexContent,
-		indexKind:    indexKind,
 	}, id)
 }
 
@@ -48,14 +45,13 @@ func nestedIndexKeyRoot(base, next []byte) []byte {
 	return bytes.Join([][]byte{base, next}, []byte(indexKeySeparator))
 }
 
-func newIndexMatchKey(root, indexName []byte, indexKind reflect.Kind, indexContent interface{}, id ...gouuidv6.UUID) key {
+func newIndexMatchKey(root, indexName, indexContent []byte, id ...gouuidv6.UUID) key {
 	return withID(key{
 		isIndex:      true,
 		exactMatch:   true,
 		entityType:   root,
 		indexName:    indexName,
 		indexContent: indexContent,
-		indexKind:    indexKind,
 	}, id)
 }
 
@@ -103,7 +99,7 @@ func (k key) bytes() []byte {
 
 	// For index keys, now append index name and content
 	if k.isIndex {
-		toJoin = append(toJoin, k.indexName, interfaceToBytes(k.indexContent, k.indexKind))
+		toJoin = append(toJoin, k.indexName, k.indexContent)
 	}
 
 	if k.shouldAppendID() {

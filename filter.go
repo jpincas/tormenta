@@ -60,7 +60,7 @@ func (f filter) isExactIndexMatchSearch() bool {
 	return f.start == f.end && f.start != nil && f.end != nil
 }
 
-func (f *filter) prepare() {
+func (f *filter) prepare() error {
 	// 'starts with' type query doesn't work with reverse
 	// so switch it back to a regular search
 	if f.isStartsWithQuery && f.reverse {
@@ -68,10 +68,15 @@ func (f *filter) prepare() {
 	}
 
 	f.setFromToIfEmpty()
-	f.setRanges()
+	err := f.setRanges()
+	if err != nil {
+		return err
+	}
 
 	// Mark as prepared
 	f.prepared = true
+
+	return nil
 }
 
 func (f *filter) setFromToIfEmpty() {
@@ -109,7 +114,7 @@ func (f *filter) setFromToIfEmpty() {
 	}
 }
 
-func (f *filter) setRanges() {
+func (f *filter) setRanges() error {
 	var seekFrom, validTo, compareTo []byte
 
 	// For reverse queries, flick-flack start/end and from/to
@@ -124,16 +129,26 @@ func (f *filter) setRanges() {
 		f.from = tempTo
 	}
 
+	startBytes, err := interfaceToBytesWithOverride(f.start, f.indexKind)
+	if err != nil {
+		return err
+	}
+
+	endBytes, err := interfaceToBytesWithOverride(f.end, f.indexKind)
+	if err != nil {
+		return err
+	}
+
 	if f.isExactIndexMatchSearch() {
 		// For index searches with exact match
-		seekFrom = newIndexMatchKey(f.keyRoot, f.indexName, f.indexKind, f.start, f.from).bytes()
-		validTo = newIndexMatchKey(f.keyRoot, f.indexName, f.indexKind, f.end).bytes()
-		compareTo = newIndexMatchKey(f.keyRoot, f.indexName, f.indexKind, f.end, f.to).bytes()
+		seekFrom = newIndexMatchKey(f.keyRoot, f.indexName, startBytes, f.from).bytes()
+		validTo = newIndexMatchKey(f.keyRoot, f.indexName, endBytes).bytes()
+		compareTo = newIndexMatchKey(f.keyRoot, f.indexName, endBytes, f.to).bytes()
 	} else {
 		// For regular index searches
-		seekFrom = newIndexKey(f.keyRoot, f.indexName, f.indexKind, f.start).bytes()
-		validTo = newIndexKey(f.keyRoot, f.indexName, f.indexKind, nil).bytes()
-		compareTo = newIndexKey(f.keyRoot, f.indexName, f.indexKind, f.end).bytes()
+		seekFrom = newIndexKey(f.keyRoot, f.indexName, startBytes).bytes()
+		validTo = newIndexKey(f.keyRoot, f.indexName, nil).bytes()
+		compareTo = newIndexKey(f.keyRoot, f.indexName, endBytes).bytes()
 	}
 
 	// For reverse queries, append the byte 0xFF to get inclusive results
@@ -145,6 +160,8 @@ func (f *filter) setRanges() {
 	f.seekFrom = seekFrom
 	f.validTo = validTo
 	f.compareTo = compareTo
+
+	return nil
 }
 
 func (f filter) endIteration(it *badger.Iterator, noIDsSoFar int) bool {
@@ -189,9 +206,12 @@ func (f filter) getIteratorOptions() badger.IteratorOptions {
 	return options
 }
 
-func (f *filter) queryIDs(txn *badger.Txn) (ids idList) {
+func (f *filter) queryIDs(txn *badger.Txn) (ids idList, err error) {
 	if !f.prepared {
-		f.prepare()
+		err = f.prepare()
+		if err != nil {
+			return ids, err
+		}
 	}
 
 	f.reset()

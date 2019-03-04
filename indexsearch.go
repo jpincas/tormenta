@@ -41,8 +41,8 @@ func (i indexSearch) isLimitMet(noIDsSoFar int) bool {
 }
 
 func (i *indexSearch) setRanges() {
-	i.seekFrom = newIndexKey(i.keyRoot, i.indexName, i.indexKind, nil).bytes()
-	i.validTo = newIndexKey(i.keyRoot, i.indexName, i.indexKind, nil).bytes()
+	i.seekFrom = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
+	i.validTo = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
 
 	// For reverse queries, append the byte 0xFF to get inclusive results
 	// See Badger issue: https://github.com/dgraph-io/badger/issues/347

@@ -94,6 +94,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"non existent index", "notanindex", 1, 2, 0, fmt.Errorf(tormenta.ErrFieldCouldNotBeFound, "notandindex")},
 
 		// Int
+		{"integer - string input - parse error", "IntField", 1, "not an int", 0, errors.New("parse error")},
 		{"integer - no range", "IntField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"integer - from 1", "IntField", 1, nil, 100, nil},
 		{"integer - from 2", "IntField", 2, nil, 99, nil},

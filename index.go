@@ -122,13 +122,13 @@ func MakeIndexKey(root []byte, id gouuidv6.UUID, indexName []byte, indexContent 
 	return makeIndexKey(root, id, indexName, indexContent)
 }
 
-func makeIndexKey(root []byte, id gouuidv6.UUID, indexName []byte, indexContent interface{}, typeOverride ...reflect.Kind) []byte {
+func makeIndexKey(root []byte, id gouuidv6.UUID, indexName []byte, indexContent interface{}) []byte {
 	return bytes.Join(
 		[][]byte{
 			[]byte(indexKeyPrefix),
 			root,
 			indexName,
-			interfaceToBytes(indexContent, typeOverride...),
+			interfaceToBytes(indexContent),
 			id.Bytes(),
 		},
 		[]byte(keySeparator),
@@ -158,132 +158,143 @@ func getSplitStringIndexes(v reflect.Value, root []byte, id gouuidv6.UUID, index
 	return
 }
 
-// interfaceToBytes encodes values to bytes
-func interfaceToBytes(value interface{}, typeOverride ...reflect.Kind) []byte {
-	// Note: must use BigEndian for correct sorting
-
-	// Empty interface -> empty byte slice
+// interfaceToBytes encodes values to bytes where the underlying interface is the same as the one we want to encode to.  This is used for indexing struct field values where the interface is taken straight from the field value.  The only 'manipulation' required is to cast variable length ints and uints to 32bit length.
+func interfaceToBytes(value interface{}) []byte {
 	if value == nil {
 		return []byte{}
 	}
 
-	// Set up buffer for writing binary values
 	buf := new(bytes.Buffer)
 
-	// Rather than doing a simple type switch .(type),
-	// we switch on the Kind
-	// This provides a neat solution to 'defined' or 'named' types
-	// e.g. the kind of 'string' is 'string'
-	// AND the kind of NamedString (with underlying type string) is ALSO just string
-	if len(typeOverride) == 0 {
-		// If a type override has not been specified, then this request is coming from
-		// the index construction precedure, where the value for the index is being taken
-		// straight of the struct field, therefore it will always be the 'right' type
-		switch reflect.ValueOf(value).Type().Kind() {
-		case reflect.Int:
-			binary.Write(buf, binary.BigEndian, int32(interfaceToInt64(value)))
+	switch reflect.ValueOf(value).Type().Kind() {
+	case reflect.Int:
+		b, _ := interfaceToInt64(value)
+		binary.Write(buf, binary.BigEndian, int32(b))
+		return flipInt(buf.Bytes())
+
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		binary.Write(buf, binary.BigEndian, value)
+		return flipInt(buf.Bytes())
+
+	case reflect.Float64, reflect.Float32:
+		binary.Write(buf, binary.BigEndian, value)
+		return flipFloat(buf.Bytes())
+
+	case reflect.Uint:
+		b, _ := interfaceToUint64(value)
+		binary.Write(buf, binary.BigEndian, uint32(b))
+		return buf.Bytes()
+
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		binary.Write(buf, binary.BigEndian, value)
+		return buf.Bytes()
+
+	case reflect.Bool:
+		binary.Write(buf, binary.BigEndian, value)
+		return buf.Bytes()
+
+	case reflect.Struct:
+		// time.Time is a struct, so we encode/decode as int64 (unix seconds)
+		if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
+			binary.Write(buf, binary.BigEndian, t.Unix())
 			return flipInt(buf.Bytes())
-
-		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			binary.Write(buf, binary.BigEndian, value)
-			return flipInt(buf.Bytes())
-
-		case reflect.Float64, reflect.Float32:
-			binary.Write(buf, binary.BigEndian, value)
-			return flipFloat(buf.Bytes())
-
-		case reflect.Uint:
-			binary.Write(buf, binary.BigEndian, int32(interfaceToUint64(value)))
-			return buf.Bytes()
-
-		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			binary.Write(buf, binary.BigEndian, value)
-			return buf.Bytes()
-
-		case reflect.Bool:
-			binary.Write(buf, binary.BigEndian, value)
-			return buf.Bytes()
-
-		case reflect.Struct:
-			// time.Time is a struct, so we encode/decode as int64 (unix seconds)
-			if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
-				binary.Write(buf, binary.BigEndian, t.Unix())
-				return flipInt(buf.Bytes())
-			}
-		}
-	} else {
-		// If a type override has been specified then this request is coming from
-		// a query builder, where the supplied index value could potentially be anything.
-		// We therefore first have to attempt to cajole the supplied index value into the
-		// original type of that field on the struct
-		switch typeOverride[0] {
-		// Int
-		case reflect.Int:
-			binary.Write(buf, binary.BigEndian, int32(interfaceToInt64(value)))
-			return flipInt(buf.Bytes())
-
-		case reflect.Int8:
-			binary.Write(buf, binary.BigEndian, int8(interfaceToInt64(value)))
-			return flipInt(buf.Bytes())
-
-		case reflect.Int16:
-			binary.Write(buf, binary.BigEndian, int16(interfaceToInt64(value)))
-			return flipInt(buf.Bytes())
-
-		case reflect.Int32:
-			binary.Write(buf, binary.BigEndian, int32(interfaceToInt64(value)))
-			return flipInt(buf.Bytes())
-
-		case reflect.Int64:
-			binary.Write(buf, binary.BigEndian, interfaceToInt64(value))
-			return flipInt(buf.Bytes())
-
-		// Uint
-		case reflect.Uint:
-			binary.Write(buf, binary.BigEndian, uint32(interfaceToUint64(value)))
-			return buf.Bytes()
-
-		case reflect.Uint8:
-			binary.Write(buf, binary.BigEndian, uint8(interfaceToUint64(value)))
-			return buf.Bytes()
-
-		case reflect.Uint16:
-			binary.Write(buf, binary.BigEndian, uint16(interfaceToUint64(value)))
-			return buf.Bytes()
-
-		case reflect.Uint32:
-			binary.Write(buf, binary.BigEndian, uint32(interfaceToUint64(value)))
-			return buf.Bytes()
-
-		case reflect.Uint64:
-			binary.Write(buf, binary.BigEndian, interfaceToUint64(value))
-			return buf.Bytes()
-
-		// Float
-		case reflect.Float32:
-			binary.Write(buf, binary.BigEndian, float32(interfaceToFloat64(value)))
-			return flipFloat(buf.Bytes())
-
-		case reflect.Float64:
-			binary.Write(buf, binary.BigEndian, interfaceToFloat64(value))
-			return flipFloat(buf.Bytes())
-
-		case reflect.Bool:
-			binary.Write(buf, binary.BigEndian, interfaceToBool(value))
-			return buf.Bytes()
-
-		case reflect.Struct:
-			// time.Time is a struct, so we encode/decode as int64 (unix seconds)
-			if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
-				binary.Write(buf, binary.BigEndian, t.Unix())
-				return flipInt(buf.Bytes())
-			}
 		}
 	}
 
 	// Everything else as a string (lower case)
 	return []byte(strings.ToLower(fmt.Sprintf("%v", value)))
 }
+
+// interfaceToBytes encodes values to bytes where the input interface could potentially be anything.  This is used when consulting indices, rather than building them, and thus the input value is provided by the user.  The technique we use is to work out the target type from the original struct field and provide it as an argument to this function.  We then do our best to cast the provided value into the target type.  The best way I've found to do this is for the number types is to output a string and then parse it as a 64bit int, uint or float and then cast to the target numerical type as required.  For bools, if the provided interface is not a bool, we try decoding it as a string (e.g. "false", "f") and then just defualt to False.
+func interfaceToBytesWithOverride(value interface{}, typeOverride reflect.Kind) ([]byte, error) {
+	if value == nil {
+		return []byte{}, nil
+	}
+
+	buf := new(bytes.Buffer)
+
+	switch typeOverride {
+	// Int
+	case reflect.Int:
+		b, err := interfaceToInt64(value)
+		binary.Write(buf, binary.BigEndian, int32(b))
+		return flipInt(buf.Bytes()), err
+
+	case reflect.Int8:
+		b, err := interfaceToInt64(value)
+		binary.Write(buf, binary.BigEndian, int8(b))
+		return flipInt(buf.Bytes()), err
+
+	case reflect.Int16:
+		b, err := interfaceToInt64(value)
+		binary.Write(buf, binary.BigEndian, int16(b))
+		return flipInt(buf.Bytes()), err
+
+	case reflect.Int32:
+		b, err := interfaceToInt64(value)
+		binary.Write(buf, binary.BigEndian, int32(b))
+		return flipInt(buf.Bytes()), err
+
+	case reflect.Int64:
+		b, err := interfaceToInt64(value)
+		binary.Write(buf, binary.BigEndian, b)
+		return flipInt(buf.Bytes()), err
+
+	// Uint
+	case reflect.Uint:
+		b, err := interfaceToUint64(value)
+		binary.Write(buf, binary.BigEndian, uint32(b))
+		return buf.Bytes(), err
+
+	case reflect.Uint8:
+		b, err := interfaceToUint64(value)
+		binary.Write(buf, binary.BigEndian, uint8(b))
+		return buf.Bytes(), err
+
+	case reflect.Uint16:
+		b, err := interfaceToUint64(value)
+		binary.Write(buf, binary.BigEndian, uint16(b))
+		return buf.Bytes(), err
+
+	case reflect.Uint32:
+		b, err := interfaceToUint64(value)
+		binary.Write(buf, binary.BigEndian, uint32(b))
+		return buf.Bytes(), err
+
+	case reflect.Uint64:
+		b, err := interfaceToUint64(value)
+		binary.Write(buf, binary.BigEndian, b)
+		return buf.Bytes(), err
+
+	// Float
+	case reflect.Float32:
+		b, err := interfaceToFloat64(value)
+		binary.Write(buf, binary.BigEndian, float32(b))
+		return flipFloat(buf.Bytes()), err
+
+	case reflect.Float64:
+		b, err := interfaceToFloat64(value)
+		binary.Write(buf, binary.BigEndian, b)
+		return flipFloat(buf.Bytes()), err
+
+	case reflect.Bool:
+		b, err := interfaceToBool(value)
+		binary.Write(buf, binary.BigEndian, b)
+		return buf.Bytes(), err
+
+	case reflect.Struct:
+		// time.Time is a struct, so we encode/decode as int64 (unix seconds)
+		if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
+			binary.Write(buf, binary.BigEndian, t.Unix())
+			return flipInt(buf.Bytes()), nil
+		}
+	}
+
+	// Everything else as a string (lower case)
+	return []byte(strings.ToLower(fmt.Sprintf("%v", value))), nil
+}
+
+// BIT ORDERING HELPERS
 
 func flipInt(b []byte) []byte {
 	// Deal with 0
@@ -329,52 +340,37 @@ func revertFloat(b []byte) []byte {
 	return b
 }
 
-// Conversion Functions
+// CONVERSIONS
 
-func interfaceToInt64(i interface{}) int64 {
-	r, _ := strconv.ParseInt(fmt.Sprint(i), 10, 64)
-	return r
+func interfaceToInt64(i interface{}) (int64, error) {
+	return strconv.ParseInt(fmt.Sprint(i), 10, 64)
 }
 
-func interfaceToUint64(i interface{}) uint64 {
-	r, _ := strconv.ParseUint(fmt.Sprint(i), 10, 64)
-	return r
+func interfaceToUint64(i interface{}) (uint64, error) {
+	return strconv.ParseUint(fmt.Sprint(i), 10, 64)
 }
 
-func interfaceToFloat64(i interface{}) float64 {
-	r, _ := strconv.ParseFloat(fmt.Sprint(i), 10)
-	return r
+func interfaceToFloat64(i interface{}) (float64, error) {
+	return strconv.ParseFloat(fmt.Sprint(i), 10)
 }
 
-func interfaceToBool(i interface{}) bool {
+func interfaceToBool(i interface{}) (bool, error) {
 	switch i.(type) {
 	case bool:
-		return i.(bool)
+		return i.(bool), nil
 
 	case string:
 		s := strings.ToLower(i.(string))
 		if s == "true" || s == "t" {
-			return true
+			return true, nil
+		} else if s == "false" || s == "f" {
+			return false, nil
 		}
 
-		return false
-
-	case int:
-		if i.(int) > 0 {
-			return true
-		}
-
-		return false
-
-	case float64:
-		if i.(float64) > 0 {
-			return true
-		}
-
-		return false
+		return false, fmt.Errorf(ErrIndexTypeBool, s)
 	}
 
-	return false
+	return false, fmt.Errorf(ErrIndexTypeBool, i)
 }
 
 // isNegative uses the bitwise &operator to determine if the first bit of a bit slice is 1.
