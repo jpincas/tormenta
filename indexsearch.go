@@ -1,6 +1,8 @@
 package tormenta
 
 import (
+	"reflect"
+
 	"github.com/dgraph-io/badger"
 	"github.com/jpincas/gouuidv6"
 )
@@ -21,6 +23,8 @@ type indexSearch struct {
 	// index name
 	indexName []byte
 
+	indexKind reflect.Kind
+
 	// Offet - start returning results N entities from the beginning
 	// offsetCounter used to track the offset
 	offset, offsetCounter int
@@ -37,8 +41,8 @@ func (i indexSearch) isLimitMet(noIDsSoFar int) bool {
 }
 
 func (i *indexSearch) setRanges() {
-	i.seekFrom = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
-	i.validTo = newIndexKey(i.keyRoot, i.indexName, nil).bytes()
+	i.seekFrom = newIndexKey(i.keyRoot, i.indexName, i.indexKind, nil).bytes()
+	i.validTo = newIndexKey(i.keyRoot, i.indexName, i.indexKind, nil).bytes()
 
 	// For reverse queries, append the byte 0xFF to get inclusive results
 	// See Badger issue: https://github.com/dgraph-io/badger/issues/347

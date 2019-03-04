@@ -91,7 +91,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Non existent index
 		{"non existent index - no range", "notanindex", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"non existent index", "notanindex", 1, 2, 0, nil},
+		{"non existent index", "notanindex", 1, 2, 0, fmt.Errorf(tormenta.ErrFieldCouldNotBeFound, "notandindex")},
 
 		// Int
 		{"integer - no range", "IntField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
@@ -137,36 +137,34 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Defined Int16
 		{"defined integer 16 - no range", "DefinedInt16Field", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"defined integer 16 - from 1", "DefinedInt16Field", int16(1), nil, 49, nil},
-		{"defined integer 16 - from 2", "DefinedInt16Field", int16(2), nil, 48, nil},
-		{"defined integer 16 - from 50", "DefinedInt16Field", int16(50), nil, 0, nil},
-		{"defined integer 16 - 1 to 2", "DefinedInt16Field", int16(1), int16(2), 2, nil},
-		{"defined integer 16 - 50 to 59", "DefinedInt16Field", int16(50), int16(59), 0, nil},
-		{"defined integer 16 - start at 0", "DefinedInt16Field", int16(0), int16(100), 50, nil},
-		{"defined integer 16 - 1 to 100", "DefinedInt16Field", int16(1), int16(100), 49, nil},
-		{"defined integer 16 - to 50", "DefinedInt16Field", nil, int16(50), 100, nil},
-		{"defined integer 16 - start at -1, full range", "DefinedInt16Field", int16(-1), int16(100), 51, nil},
-		{"defined integer 16 - start at -100, full range", "DefinedInt16Field", int16(-100), int16(100), 100, nil},
-		{"defined integer 16 - start at -100, limited range ", "DefinedInt16Field", int16(-100), int16(-20), 31, nil},
-		{"defined integer 16 - negatives - out of range", "DefinedInt16Field", int16(-100), int16(-51), 0, nil},
-		{"defined integer 16 - negatives - just in range", "DefinedInt16Field", int16(-100), int16(-50), 1, nil},
-		{"defined integer 16 - negatives - first half of range", "DefinedInt16Field", int16(-50), int16(-1), 50, nil},
-		{"defined integer 16 - negatives - span neg and pos - all", "DefinedInt16Field", int16(-50), int16(50), 100, nil},
-		{"defined integer 16 - negatives - span neg and pos", "DefinedInt16Field", int16(-25), int16(25), 51, nil},
-		{"defined integer 16 - negatives - span neg and pos 2", "DefinedInt16Field", int16(-10), int16(5), 16, nil},
+		{"defined integer 16 - from 1", "DefinedInt16Field", 1, nil, 49, nil},
+		{"defined integer 16 - from 2", "DefinedInt16Field", 2, nil, 48, nil},
+		{"defined integer 16 - from 50", "DefinedInt16Field", 50, nil, 0, nil},
+		{"defined integer 16 - 1 to 2", "DefinedInt16Field", 1, 2, 2, nil},
+		{"defined integer 16 - 50 to 59", "DefinedInt16Field", 50, 59, 0, nil},
+		{"defined integer 16 - start at 0", "DefinedInt16Field", 0, 100, 50, nil},
+		{"defined integer 16 - 1 to 100", "DefinedInt16Field", 1, 100, 49, nil},
+		{"defined integer 16 - to 50", "DefinedInt16Field", nil, 50, 100, nil},
+		{"defined integer 16 - start at -1, full range", "DefinedInt16Field", -1, 100, 51, nil},
+		{"defined integer 16 - start at -100, full range", "DefinedInt16Field", -100, 100, 100, nil},
+		{"defined integer 16 - start at -100, limited range ", "DefinedInt16Field", -100, -20, 31, nil},
+		{"defined integer 16 - negatives - out of range", "DefinedInt16Field", -100, -51, 0, nil},
+		{"defined integer 16 - negatives - just in range", "DefinedInt16Field", -100, -50, 1, nil},
+		{"defined integer 16 - negatives - first half of range", "DefinedInt16Field", -50, -1, 50, nil},
+		{"defined integer 16 - negatives - span neg and pos - all", "DefinedInt16Field", -50, 50, 100, nil},
+		{"defined integer 16 - negatives - span neg and pos", "DefinedInt16Field", -25, 25, 51, nil},
+		{"defined integer 16 - negatives - span neg and pos 2", "DefinedInt16Field", -10, 5, 16, nil},
 
 		// Uint
-		// Note how the types have to be explcitly stated, otherwise they will
-		// be interpreted as ints and the sign bit will be flipped
 		{"unsigned integer - no range", "UintField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"unsigned integer - from 1", "UintField", uint(1), nil, 100, nil},
-		{"unsigned integer - from 2", "UintField", uint(2), nil, 99, nil},
-		{"unsigned integer - from 50", "UintField", uint(50), nil, 51, nil},
-		{"unsigned integer - 1 to 2", "UintField", uint(1), uint(2), 2, nil},
-		{"unsigned integer - 50 to 59", "UintField", uint(50), uint(59), 10, nil},
-		{"unsigned integer - start at 0", "UintField", uint(0), uint(100), 100, nil},
-		{"unsigned integer - 1 to 100", "UintField", uint(1), uint(100), 100, nil},
-		{"unsigned integer - to 50", "UintField", nil, uint(50), 50, nil},
+		{"unsigned integer - from 1", "UintField", 1, nil, 100, nil},
+		{"unsigned integer - from 2", "UintField", 2, nil, 99, nil},
+		{"unsigned integer - from 50", "UintField", 50, nil, 51, nil},
+		{"unsigned integer - 1 to 2", "UintField", 1, 2, 2, nil},
+		{"unsigned integer - 50 to 59", "UintField", 50, 59, 10, nil},
+		{"unsigned integer - start at 0", "UintField", 0, 100, 100, nil},
+		{"unsigned integer - 1 to 100", "UintField", 1, 100, 100, nil},
+		{"unsigned integer - to 50", "UintField", nil, 50, 50, nil},
 
 		// Date - just encoded as an int64 so should be no problem
 		{"date - no range", "DateField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
@@ -187,7 +185,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		// Note that we've always used the decimal point, so
 		// the range values will be interpreted as floats not ints
 		{"float - no range", "FloatField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
-		{"float - 0 to nil", "FloatField", 0.00, nil, 100, nil},
+		{"float - 0 to nil", "FloatField", 0, nil, 100, nil},
 		{"float - 0.99 to nil", "FloatField", 0.99, nil, 100, nil},
 		{"float - from 1.99", "FloatField", 1.99, nil, 99, nil},
 		{"float - from 50.99", "FloatField", 50.99, nil, 50, nil},
@@ -196,11 +194,18 @@ func Test_IndexQuery_Range(t *testing.T) {
 
 		// Negative floats
 		// using regular floatField which has no negatives
-		{"float - start at -1, full range", "FloatField", -1.00, 99.99, 100, nil},
-		{"float - start at -100, full range", "FloatField", -100.00, 99.99, 100, nil},
-		{"float - start at -100, limited range ", "FloatField", -100.00, -20.00, 0, nil},
+		{"float - start at -1, full range", "FloatField", -1, 99.99, 100, nil},
+		{"float - start at -100, full range", "FloatField", -100, 99.99, 100, nil},
+		{"float - start at -100, limited range ", "FloatField", -100, -20, 0, nil},
 
 		// now using anotherFloatField which does have negatives starting at -50
+		{"float - negatives - just out of range", "AnotherFloatField", -100, -51, 0, nil},
+		{"float - negatives - just in range", "AnotherFloatField", -100, -50, 1, nil},
+		{"float - negatives - first half of range", "AnotherFloatField", -50, -1, 50, nil},
+		{"float- negatives - span neg and pos", "AnotherFloatField", -50, 50, 100, nil},
+		{"float- negatives - span neg and pos 2", "AnotherFloatField", -20, 30, 51, nil},
+
+		// and repeat with decimal points
 		{"float - negatives - just out of range", "AnotherFloatField", -100.00, -51.00, 0, nil},
 		{"float - negatives - just in range", "AnotherFloatField", -100.00, -50.00, 1, nil},
 		{"float - negatives - first half of range", "AnotherFloatField", -50.00, -1.00, 50, nil},

@@ -192,12 +192,19 @@ func (q *Query) execute() (int, error) {
 
 	// TODO: more conditions to restrict when this is necessary
 	if len(q.orderByIndexName) > 0 {
+		indexKind, err := fieldKind(q.target, string(q.orderByIndexName))
+		if err != nil {
+			q.DebugLog(t, 0, err)
+			return 0, err
+		}
+
 		is := indexSearch{
 			idsToSearchFor: finalIDList,
 			reverse:        q.reverse,
 			limit:          q.limit,
 			keyRoot:        q.keyRoot,
 			indexName:      q.orderByIndexName,
+			indexKind:      indexKind,
 			offset:         q.offset,
 		}
 
@@ -228,12 +235,20 @@ func (q *Query) execute() (int, error) {
 	// no need to do it again
 	if len(q.sumIndexName) > 0 && q.sumTarget != nil {
 		if string(q.sumIndexName) != string(q.orderByIndexName) {
+
+			indexKind, err := fieldKind(q.target, string(q.sumIndexName))
+			if err != nil {
+				q.DebugLog(t, 0, err)
+				return 0, err
+			}
+
 			is := indexSearch{
 				idsToSearchFor: finalIDList,
 				reverse:        q.reverse,
 				limit:          q.limit,
 				keyRoot:        q.keyRoot,
 				indexName:      q.sumIndexName,
+				indexKind:      indexKind,
 				offset:         q.offset,
 				sumIndexName:   q.sumIndexName,
 				sumTarget:      q.sumTarget,

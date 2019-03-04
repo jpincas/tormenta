@@ -54,11 +54,18 @@ func (q *Query) Match(indexName string, param interface{}) *Query {
 		param = strings.ToLower(param.(string))
 	}
 
+	indexKind, err := fieldKind(q.target, indexName)
+	if err != nil {
+		q.err = err
+		return q
+	}
+
 	// Create the filter and add it on
 	q.addFilter(filter{
 		start:     param,
 		end:       param,
 		indexName: toIndexName(indexName),
+		indexKind: indexKind,
 	})
 
 	return q
@@ -74,11 +81,18 @@ func (q *Query) Range(indexName string, start, end interface{}) *Query {
 		return q
 	}
 
+	indexKind, err := fieldKind(q.target, indexName)
+	if err != nil {
+		q.err = err
+		return q
+	}
+
 	// Create the filter and add it on
 	q.addFilter(filter{
 		start:     start,
 		end:       end,
 		indexName: toIndexName(indexName),
+		indexKind: indexKind,
 	})
 
 	return q
@@ -92,12 +106,19 @@ func (q *Query) StartsWith(indexName string, s string) *Query {
 		return q
 	}
 
+	indexKind, err := fieldKind(q.target, indexName)
+	if err != nil {
+		q.err = err
+		return q
+	}
+
 	// Create the filter and add it on
 	q.addFilter(filter{
 		start:             s,
 		end:               s,
 		isStartsWithQuery: true,
 		indexName:         toIndexName(indexName),
+		indexKind:         indexKind,
 	})
 
 	return q

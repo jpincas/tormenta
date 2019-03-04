@@ -1,6 +1,7 @@
 package tormenta
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -56,6 +57,28 @@ func fieldValue(entity Record, fieldName string) reflect.Value {
 	return recordValue(entity).FieldByName(fieldName)
 }
 
+func fieldKind(target interface{}, fieldName string) (reflect.Kind, error) {
+	// The target will either be a pointer to slice or struct
+	// Start of assuming its a pointer to a struct
+	ss := reflect.ValueOf(target).Elem()
+
+	// Check if its a slice, and if so,
+	// get the underlying type, create a new struct value pointer,
+	// and dereference it
+	if ss.Type().Kind() == reflect.Slice {
+		ss = reflect.New(ss.Type().Elem()).Elem()
+	}
+
+	// At this point, independently of whether the input was a struct or slice,
+	// we can get the required field by name and get its kind
+	v := ss.FieldByName(fieldName)
+	if !v.IsValid() {
+		return 0, fmt.Errorf(ErrFieldCouldNotBeFound, fieldName)
+	}
+
+	return v.Type().Kind(), nil
+}
+
 // newSlice sets up a new target slice for results
 // this was arrived at after a lot of experimentation
 // so might not be the most efficient way!! TODO
@@ -64,19 +87,4 @@ func newSlice(t reflect.Type, l int) interface{} {
 	new := reflect.New(asSlice.Type())
 	new.Elem().Set(asSlice)
 	return new.Interface()
-}
-
-// convertUnderlying takes an interface and converts its underlying type
-// to the target type.  Obviously the underlying types must be convertible
-// E.g. NamedInt -> Int
-func convertUnderlying(src interface{}, targetType reflect.Type) interface{} {
-	return reflect.ValueOf(src).Convert(targetType).Interface()
-}
-
-func intInterfaceToInt32(i interface{}) int32 {
-	return int32(convertUnderlying(i, typeInt).(int))
-}
-
-func intInterfaceToUInt32(i interface{}) uint32 {
-	return uint32(convertUnderlying(i, typeUint).(uint))
 }

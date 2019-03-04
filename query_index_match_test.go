@@ -39,6 +39,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 	if c != 1 {
 		t.Errorf("Testing bool index.  Expected 1 result, got %v", c)
 	}
+
 }
 
 // Test exact matching on strings
@@ -154,7 +155,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 		}
 
 		// Reverse
-		q = db.Find(&results).Match("Customer", testCase.match).Reverse()
+		q = db.Find(&results).Match("IntField", testCase.match).Reverse()
 		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -217,7 +218,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 		}
 
 		// Reverse
-		q = db.Find(&results).Match("Customer", testCase.match).Reverse()
+		q = db.Find(&results).Match("FloatField", testCase.match).Reverse()
 		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {

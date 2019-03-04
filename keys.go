@@ -3,6 +3,7 @@ package tormenta
 import (
 	"bytes"
 	"encoding/binary"
+	"reflect"
 	"strings"
 
 	"github.com/jpincas/gouuidv6"
@@ -21,6 +22,7 @@ type key struct {
 	id           gouuidv6.UUID
 	indexName    []byte
 	indexContent interface{}
+	indexKind    reflect.Kind
 	exactMatch   bool
 }
 
@@ -32,12 +34,13 @@ func newContentKey(root []byte, id ...gouuidv6.UUID) key {
 	}, id)
 }
 
-func newIndexKey(root, indexName []byte, indexContent interface{}, id ...gouuidv6.UUID) key {
+func newIndexKey(root, indexName []byte, indexKind reflect.Kind, indexContent interface{}, id ...gouuidv6.UUID) key {
 	return withID(key{
 		isIndex:      true,
 		entityType:   root,
 		indexName:    indexName,
 		indexContent: indexContent,
+		indexKind:    indexKind,
 	}, id)
 }
 
@@ -45,13 +48,14 @@ func nestedIndexKeyRoot(base, next []byte) []byte {
 	return bytes.Join([][]byte{base, next}, []byte(indexKeySeparator))
 }
 
-func newIndexMatchKey(root, indexName []byte, indexContent interface{}, id ...gouuidv6.UUID) key {
+func newIndexMatchKey(root, indexName []byte, indexKind reflect.Kind, indexContent interface{}, id ...gouuidv6.UUID) key {
 	return withID(key{
 		isIndex:      true,
 		exactMatch:   true,
 		entityType:   root,
 		indexName:    indexName,
 		indexContent: indexContent,
+		indexKind:    indexKind,
 	}, id)
 }
 
@@ -84,8 +88,8 @@ func (k key) shouldAppendID() bool {
 }
 
 // c:fullStructs:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
-// i:fullStructs:department:3
-// i:fullStructs:department:3:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
+// i:fullStructs:Department:3
+// i:fullStructs:Department:3:sdfdsf-9sdfsdf-8dsf-sdf-9sdfsdf
 
 func (k key) bytes() []byte {
 	// Use either content/index key prefix
@@ -99,7 +103,7 @@ func (k key) bytes() []byte {
 
 	// For index keys, now append index name and content
 	if k.isIndex {
-		toJoin = append(toJoin, k.indexName, interfaceToBytes(k.indexContent))
+		toJoin = append(toJoin, k.indexName, interfaceToBytes(k.indexContent, k.indexKind))
 	}
 
 	if k.shouldAppendID() {

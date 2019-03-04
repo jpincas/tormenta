@@ -1,6 +1,7 @@
 package tormenta
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -38,6 +39,8 @@ type filter struct {
 
 	// Name of the index on which to apply filter
 	indexName []byte
+
+	indexKind reflect.Kind
 
 	// Is this a 'starts with' index query
 	isStartsWithQuery bool
@@ -123,14 +126,14 @@ func (f *filter) setRanges() {
 
 	if f.isExactIndexMatchSearch() {
 		// For index searches with exact match
-		seekFrom = newIndexMatchKey(f.keyRoot, f.indexName, f.start, f.from).bytes()
-		validTo = newIndexMatchKey(f.keyRoot, f.indexName, f.end).bytes()
-		compareTo = newIndexMatchKey(f.keyRoot, f.indexName, f.end, f.to).bytes()
+		seekFrom = newIndexMatchKey(f.keyRoot, f.indexName, f.indexKind, f.start, f.from).bytes()
+		validTo = newIndexMatchKey(f.keyRoot, f.indexName, f.indexKind, f.end).bytes()
+		compareTo = newIndexMatchKey(f.keyRoot, f.indexName, f.indexKind, f.end, f.to).bytes()
 	} else {
 		// For regular index searches
-		seekFrom = newIndexKey(f.keyRoot, f.indexName, f.start).bytes()
-		validTo = newIndexKey(f.keyRoot, f.indexName, nil).bytes()
-		compareTo = newIndexKey(f.keyRoot, f.indexName, f.end).bytes()
+		seekFrom = newIndexKey(f.keyRoot, f.indexName, f.indexKind, f.start).bytes()
+		validTo = newIndexKey(f.keyRoot, f.indexName, f.indexKind, nil).bytes()
+		compareTo = newIndexKey(f.keyRoot, f.indexName, f.indexKind, f.end).bytes()
 	}
 
 	// For reverse queries, append the byte 0xFF to get inclusive results
