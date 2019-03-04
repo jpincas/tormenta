@@ -20,7 +20,7 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - Combine many index queries with AND/OR logic (but no complex nesting/bracketing of ANDs/ORs)
 - Fast counts and sums using Badger's 'key only' iteration
 - Business logic using 'triggers' on save and get, including the ability to pass a 'context' through a query
-- URL parameter -> query builder in package `urltoquery`, for quick construction of queries from URL strings
+- String / URL parameter -> query builder, for quick construction of queries from URL strings
 - Helpers for loading relations
 
 ## Quick How To (in place of better docs to come)
@@ -58,37 +58,16 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 - I could really do with some help setting up some proper benchmarks
 - Load testing or anything similar
 - A performant command-line backup utility that could read raw JSON from keys and write to files in a folder structure, without even going through Tormenta (i.e. just hitting the Badger KV store and writing each key to a json file)
-- Related to the above, it would be nice to "auto" omit empty fields from serialisation rather than add a json tag to each and every field.
 
 ## To Do
 
-- [x] Correct indexing and aggregation on defined fields
-- [x] Byte-ordered floats (UREGENT)
-- [x] Index deletion on reecord deletion
-- [x] Index update on record edit
-- [x] Date field indexing (URGENT)
+
 - [ ] More tests for indexes: more fields, post deletion, interrupted save transactions
 - [ ] Nuke/rebuild indices command
 - [ ] Documentation / Examples
-- [x] Delete
-- [x] Logic triggers (preSave, postSave, postGet)
-- [x] Relation loading helpers: load single relation by ID
-- [x] Relation loading helpers: load multiple relations by single ID
-- [x] Relation loading helpers: load nested relations
-- [x] Relation loading helpers: load multiple relations by slice of IDs
-- [?] Relation loading helpers: load relations of embedded structs
-- [x] Relation loading helpers: load relations by query (e.g. all unpaid invoices) - using reference ID stored on relation (WIP)
-- [ ] Document all the relation loading stuff
-- [ ] Better error reporting from query construction
 - [ ] Better protection against unsupported types being passed around as interfaces
 - [ ] Fully benchmarked simulation of a real-world use case
-- [x] Slices as indexes -> multiple index entries
-- [x] Stack multiple queries, execute as AND/OR, execute in parallel
-- [x] Split-string indexing with 'split' tag
-- [x] 'Starts with' index match
-- [x] Indexes on by default
-- [x] Multiple entity `Get()`
-- [x] Bulk unmarshall rather than 1 at a time? Concurrent?
+
 
 ## Maybe
 
