@@ -126,7 +126,7 @@ func makeIndexKey(root []byte, id gouuidv6.UUID, indexName []byte, indexContent 
 		[][]byte{
 			[]byte(indexKeyPrefix),
 			root,
-			bytes.ToLower(indexName),
+			indexName,
 			interfaceToBytes(indexContent),
 			id.Bytes(),
 		},

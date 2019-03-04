@@ -40,7 +40,7 @@ const (
 	ErrBadFromFormat                  = "Invalid input for FROM. Expecting somthing like '2006-01-02'"
 	ErrBadToFormat                    = "Invalid input for TO. Expecting somthing like '2006-01-02'"
 	ErrFromIsAfterTo                  = "FROM date is after TO date, making the date range impossible"
-	ErrIndexWithNoParams              = "An index search has been specified, but no MATCH or START/END (for range) has been specified"
+	ErrIndexWithNoParams              = "An index search has been specified, but index search operator has been specified"
 	ErrTooManyIndexOperatorsSpecified = "An index search can be MATCH, RANGE or STARTSWITH, but not multiple matching operators"
 	ErrWhereClauseNoIndex             = "A WHERE clause requires an index to be specified"
 	ErrRangeTypeMismatch              = "For a range index search, START and END should be of the same type (bool, int, float, string)"

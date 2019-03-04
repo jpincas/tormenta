@@ -1,8 +1,6 @@
 package tormenta
 
 import (
-	"bytes"
-	"strings"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -65,9 +63,6 @@ func (f *filter) prepare() {
 	if f.isStartsWithQuery && f.reverse {
 		f.reverse = false
 	}
-
-	// Lowercase index name
-	f.indexName = bytes.ToLower(f.indexName)
 
 	f.setFromToIfEmpty()
 	f.setRanges()
@@ -230,5 +225,5 @@ func (f *filter) queryIDs(txn *badger.Txn) (ids idList) {
 // Helpers
 
 func toIndexName(s string) []byte {
-	return []byte(strings.ToLower(s))
+	return []byte(s)
 }

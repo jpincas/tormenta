@@ -21,7 +21,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 
 	results := []testtypes.FullStruct{}
 	// Test true
-	n, err := db.Find(&results).Match("boolfield", true).Run()
+	n, err := db.Find(&results).Match("BoolField", true).Run()
 	if err != nil {
 		t.Error("Testing basic querying - got error")
 	}
@@ -31,7 +31,7 @@ func Test_IndexQuery_Match_Bool(t *testing.T) {
 	}
 
 	// Test false + count
-	c, err := db.Find(&results).Match("boolfield", false).Count()
+	c, err := db.Find(&results).Match("BoolField", false).Count()
 	if err != nil {
 		t.Error("Testing basic querying - got error")
 	}
@@ -77,7 +77,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 		results := []testtypes.FullStruct{}
 
 		// Forwards
-		q := db.Find(&results).Match("stringfield", testCase.match)
+		q := db.Find(&results).Match("StringField", testCase.match)
 		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -93,7 +93,7 @@ func Test_IndexQuery_Match_String(t *testing.T) {
 		}
 
 		// Reverse
-		q = db.Find(&results).Match("stringfield", testCase.match).Reverse()
+		q = db.Find(&results).Match("StringField", testCase.match).Reverse()
 		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -138,7 +138,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 		results := []testtypes.FullStruct{}
 
 		// Forwards
-		q := db.Find(&results).Match("intfield", testCase.match)
+		q := db.Find(&results).Match("IntField", testCase.match)
 		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -154,7 +154,7 @@ func Test_IndexQuery_Match_Int(t *testing.T) {
 		}
 
 		// Reverse
-		q = db.Find(&results).Match("customer", testCase.match).Reverse()
+		q = db.Find(&results).Match("Customer", testCase.match).Reverse()
 		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -201,7 +201,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 		results := []testtypes.FullStruct{}
 
 		// Forwards
-		q := db.Find(&results).Match("floatfield", testCase.match)
+		q := db.Find(&results).Match("FloatField", testCase.match)
 		n, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -217,7 +217,7 @@ func Test_IndexQuery_Match_Float(t *testing.T) {
 		}
 
 		// Reverse
-		q = db.Find(&results).Match("customer", testCase.match).Reverse()
+		q = db.Find(&results).Match("Customer", testCase.match).Reverse()
 		rn, err := q.Run()
 
 		if testCase.expectedError != nil && err == nil {
@@ -273,7 +273,7 @@ func Test_IndexQuery_Match_DateRange(t *testing.T) {
 
 	for _, testCase := range testCases {
 		rangequeryResults := []testtypes.FullStruct{}
-		query := db.Find(&rangequeryResults).Match("intfield", testCase.indexRangeStart)
+		query := db.Find(&rangequeryResults).Match("IntField", testCase.indexRangeStart)
 
 		if testCase.addFrom {
 			query = query.From(testCase.from)

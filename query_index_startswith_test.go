@@ -52,7 +52,7 @@ func Test_IndexQuery_StartsWith(t *testing.T) {
 	for _, testCase := range testCases {
 		results := []testtypes.FullStruct{}
 
-		q := db.Find(&results).StartsWith("stringfield", testCase.startsWith)
+		q := db.Find(&results).StartsWith("StringField", testCase.startsWith)
 		if testCase.reverse {
 			q.Reverse()
 		}

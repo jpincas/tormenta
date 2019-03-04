@@ -438,7 +438,7 @@ func Test_Relations_LoadByQuery_Additional_Clauses(t *testing.T) {
 	}
 
 	conditions := func(q *tormenta.Query) *tormenta.Query {
-		q.Match("structboolfield", true)
+		q.Match("StructBoolField", true)
 		return q
 	}
 

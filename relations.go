@@ -21,10 +21,9 @@ const (
 	ErrNoRecords                   = "at least 1 record is needed in order to load relations"
 	ErrRelationMustBeStructPointer = "relation must be a pointer to a struct"
 
-	idFieldPostfixSingle         = "ID"
-	idFieldPostfixSingleForIndex = "id"
-	idFieldPostfixMultiple       = "IDs"
-	fieldPathSep                 = "."
+	idFieldPostfixSingle   = "ID"
+	idFieldPostfixMultiple = "IDs"
+	fieldPathSep           = "."
 )
 
 // TODO: this code is currently horribly complex in terms of
@@ -78,7 +77,7 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 		return fmt.Errorf(ErrFieldNotExist, fieldName)
 	}
 
-	indexString := indexStringForThisEntity(exampleEntity) + idFieldPostfixSingleForIndex
+	indexString := indexStringForThisEntity(exampleEntity) + idFieldPostfixSingle
 
 	// Now we can go ahead and get results for all the IDs
 	// The related field on the entity is a slice of pointers,

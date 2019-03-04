@@ -30,7 +30,7 @@ func Test_OrderBy(t *testing.T) {
 	// INTFIELD
 
 	intFieldResults := []testtypes.FullStruct{}
-	n, err := db.Find(&intFieldResults).OrderBy("intfield").Run()
+	n, err := db.Find(&intFieldResults).OrderBy("IntField").Run()
 
 	if err != nil {
 		t.Errorf("Testing ORDER BY intfield, got error %s", err)
@@ -55,7 +55,7 @@ func Test_OrderBy(t *testing.T) {
 	// STRING FIELD
 
 	stringFieldResults := []testtypes.FullStruct{}
-	n, err = db.Find(&stringFieldResults).OrderBy("stringfield").Run()
+	n, err = db.Find(&stringFieldResults).OrderBy("StringField").Run()
 
 	if err != nil {
 		t.Errorf("Testing ORDER BY stringfield, got error %s", err)
@@ -95,7 +95,7 @@ func Test_OrderBy(t *testing.T) {
 	// INTFIELD REVERSE
 
 	intFieldResults = []testtypes.FullStruct{}
-	n, err = db.Find(&intFieldResults).OrderBy("intfield").Reverse().Run()
+	n, err = db.Find(&intFieldResults).OrderBy("IntField").Reverse().Run()
 
 	if err != nil {
 		t.Errorf("Testing ORDER BY, REVERSE intfield, got error %s", err)
@@ -120,7 +120,7 @@ func Test_OrderBy(t *testing.T) {
 	// STRING FIELD REVERSE
 
 	stringFieldResults = []testtypes.FullStruct{}
-	n, err = db.Find(&stringFieldResults).OrderBy("stringfield").Reverse().Run()
+	n, err = db.Find(&stringFieldResults).OrderBy("StringField").Reverse().Run()
 
 	if err != nil {
 		t.Errorf("Testing ORDER BY, REVERSE stringfield, got error %s", err)

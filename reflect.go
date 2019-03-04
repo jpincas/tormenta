@@ -16,7 +16,7 @@ var (
 // which might help to spot potential optimisations / refactors
 
 func indexStringForThisEntity(record Record) string {
-	return string(typeToKeyRoot(reflect.TypeOf(record).String()))
+	return string(typeToIndexString(reflect.TypeOf(record).String()))
 }
 
 func entityTypeAndValue(t interface{}) ([]byte, reflect.Value) {

@@ -118,20 +118,20 @@ func Test_Sum(t *testing.T) {
 		convertBack func(interface{}) interface{}
 	}{
 		// Ints
-		{"int", "intfield", &resultInt, accInt, func(n interface{}) interface{} { return *n.(*int) }},
-		{"int16", "int16field", &resultInt16, accInt16, func(n interface{}) interface{} { return *n.(*int16) }},
-		{"int32", "int32field", &resultInt32, accInt32, func(n interface{}) interface{} { return *n.(*int32) }},
-		{"int64", "int64field", &resultInt64, accInt64, func(n interface{}) interface{} { return *n.(*int64) }},
+		{"int", "IntField", &resultInt, accInt, func(n interface{}) interface{} { return *n.(*int) }},
+		{"int16", "Int16Field", &resultInt16, accInt16, func(n interface{}) interface{} { return *n.(*int16) }},
+		{"int32", "Int32Field", &resultInt32, accInt32, func(n interface{}) interface{} { return *n.(*int32) }},
+		{"int64", "Int64Field", &resultInt64, accInt64, func(n interface{}) interface{} { return *n.(*int64) }},
 
 		// Uints
-		{"uint", "uintfield", &resultUint, accUint, func(n interface{}) interface{} { return *n.(*uint) }},
-		{"uint16", "uint16field", &resultUint16, accUint16, func(n interface{}) interface{} { return *n.(*uint16) }},
-		{"uint32", "uint32field", &resultUint32, accUint32, func(n interface{}) interface{} { return *n.(*uint32) }},
-		{"uint64", "uint64field", &resultUint64, accUint64, func(n interface{}) interface{} { return *n.(*uint64) }},
+		{"uint", "UintField", &resultUint, accUint, func(n interface{}) interface{} { return *n.(*uint) }},
+		{"uint16", "Uint16Field", &resultUint16, accUint16, func(n interface{}) interface{} { return *n.(*uint16) }},
+		{"uint32", "Uint32Field", &resultUint32, accUint32, func(n interface{}) interface{} { return *n.(*uint32) }},
+		{"uint64", "Uint64Field", &resultUint64, accUint64, func(n interface{}) interface{} { return *n.(*uint64) }},
 
 		// Floats
-		{"float32", "float32field", &resultFloat32, accFloat32, func(n interface{}) interface{} { return *n.(*float32) }},
-		{"float64", "floatfield", &resultFloat64, accFloat64, func(n interface{}) interface{} { return *n.(*float64) }},
+		{"float32", "Float32Field", &resultFloat32, accFloat32, func(n interface{}) interface{} { return *n.(*float32) }},
+		{"float64", "FloatField", &resultFloat64, accFloat64, func(n interface{}) interface{} { return *n.(*float64) }},
 	}
 
 	for _, test := range testCases {
@@ -186,7 +186,7 @@ func Test_Sum(t *testing.T) {
 
 		// DIFFERENT ORDER BY SPECIFIED
 		resetResults()
-		if _, err := db.Find(&results).OrderBy("stringfield").Sum(test.sumResult, test.fieldName); err != nil {
+		if _, err := db.Find(&results).OrderBy("StringField").Sum(test.sumResult, test.fieldName); err != nil {
 			t.Errorf("Testing %s quicksum with different orderbyfield specified.  Got error: %s", test.name, err)
 		}
 

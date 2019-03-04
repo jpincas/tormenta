@@ -141,28 +141,28 @@ func Example() {
 	printlinef("Basic date range query, reverse, count: %v record(s) counted", c)
 
 	// Secondary index on 'customer' - exact index match
-	n, _ = db.First(&fullStruct).Match("customer", "customer-2").Run()
+	n, _ = db.First(&fullStruct).Match("Customer", "customer-2").Run()
 	printlinef("Index query, exact match: %v record(s) found", n)
 
 	// Secondary index on 'customer' - prefix match
-	n, _ = db.First(&fullStruct).StartsWith("customer", "customer-").Run()
+	n, _ = db.First(&fullStruct).StartsWith("Customer", "customer-").Run()
 	printlinef("Index query, starts with: %v record(s) found", n)
 
 	// Index range, Sum (based on index)
 	var sum float64
-	db.Find(&fullStructs).Range("shippingfee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum, "shippingfee")
+	db.Find(&fullStructs).Range("ShippingFee", 0.00, 10.00).From(mid2009).To(mid2012).Sum(&sum, "ShippingFee")
 	printlinef("Index range, date range, index sum query. Sum: %v", sum)
 
 	// Secondary index on 'customer' - index range and count
-	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").Count()
+	c, _ = db.Find(&fullStructs).Range("Customer", "customer-1", "customer-3").Count()
 	printlinef("Index range, count: %v record(s) counted", c)
 
 	// Secondary index on 'customer' - exact index match, count and date range
-	c, _ = db.Find(&fullStructs).Match("customer", "customer-3").From(mid2009).To(time.Now()).Count()
+	c, _ = db.Find(&fullStructs).Match("Customer", "customer-3").From(mid2009).To(time.Now()).Count()
 	printlinef("Index exact match, date range, count: %v record(s) counted", c)
 
 	// Secondary index on 'customer' - index range AND date range
-	c, _ = db.Find(&fullStructs).Range("customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
+	c, _ = db.Find(&fullStructs).Range("Customer", "customer-1", "customer-3").From(mid2009).To(mid2010).Count()
 	printlinef("Index range, date range, count: %v record(s) counted", c)
 
 	// Output:

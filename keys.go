@@ -188,6 +188,10 @@ func typeToKeyRoot(typeSig string) []byte {
 	return []byte(strings.ToLower(cleanType(typeSig)))
 }
 
+func typeToIndexString(typeSig string) []byte {
+	return []byte(cleanType(typeSig))
+}
+
 func cleanType(typeSig string) string {
 	sp := strings.Split(typeSig, ".")
 	s := sp[len(sp)-1]

@@ -58,43 +58,43 @@ func Test_MakeIndexKeys(t *testing.T) {
 		shouldIndex bool
 	}{
 		// Basic testtypes
-		{"int field", "intfield", 1, true},
-		{"id field", "idfield", id, true},
-		{"string field", "stringfield", "test", true},
-		{"float field", "floatfield", 0.99, true},
-		{"bool field", "boolfield", true, true},
-		{"date field", "datefield", time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC).Unix(), true},
+		{"int field", "IntField", 1, true},
+		{"id field", "IDField", id, true},
+		{"string field", "StringField", "test", true},
+		{"float field", "FloatField", 0.99, true},
+		{"bool field", "BoolField", true, true},
+		{"date field", "DateField", time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC).Unix(), true},
 
 		// Slice testtypes - check both members
-		{"int slice field", "intslicefield", 1, true},
-		{"int slice field", "intslicefield", 2, true},
-		{"string slice field", "stringslicefield", "test1", true},
-		{"string slice field", "stringslicefield", "test2", true},
-		{"float slice field", "floatslicefield", 0.99, true},
-		{"float slice field", "floatslicefield", 1.99, true},
-		{"bool slice field", "boolslicefield", true, true},
-		{"bool slice field", "boolslicefield", false, true},
+		{"int slice field", "IntSliceField", 1, true},
+		{"int slice field", "IntSliceField", 2, true},
+		{"string slice field", "StringSliceField", "test1", true},
+		{"string slice field", "StringSliceField", "test2", true},
+		{"float slice field", "FloatSliceField", 0.99, true},
+		{"float slice field", "FloatSliceField", 1.99, true},
+		{"bool slice field", "BoolSliceField", true, true},
+		{"bool slice field", "BoolSliceField", false, true},
 
 		// Defined testtypes
-		{"defined int field", "definedintfield", 1, true},
-		{"defined string field", "definedstringfield", "test", true},
-		{"defined float field", "definedfloatfield", 0.99, true},
-		{"defined bool field", "definedboolfield", true, true},
+		{"defined int field", "DefinedIntField", 1, true},
+		{"defined string field", "DefinedStringField", "test", true},
+		{"defined float field", "DefinedFloatField", 0.99, true},
+		{"defined bool field", "DefinedBoolField", true, true},
 
 		// Anonymous structs
-		{"embedded struct - int field", "structintfield", 1, true},
-		{"embedded struct - string field", "structstringfield", "test", true},
-		{"embedded struct - float field", "structfloatfield", 0.99, true},
-		{"embedded struct - bool field", "structboolfield", true, true},
+		{"embedded struct - int field", "StructIntField", 1, true},
+		{"embedded struct - string field", "StructStringField", "test", true},
+		{"embedded struct - float field", "StructFloatField", 0.99, true},
+		{"embedded struct - bool field", "StructBoolField", true, true},
 
 		// Names structs
-		{"named struct - string field", "structfield.structstringfield", "test", true},
+		{"named struct - string field", "StructField.StructStringField", "test", true},
 
 		// No save / No Index
-		{"no index field simple", "noindexsimple", "dontsaveitsodontindexit", false},
-		{"no index field two tags", "noindextwotags", "dontsaveitsodontindexit", false},
-		{"no index field, two tags, different order", "noindextwotagsdifferentorder", "dontsaveitsodontindexit", false},
-		{"no save field", "nosavesimple", "dontsaveitsodontindexit", false},
+		{"no index field simple", "NoIndexSimple", "dontsaveitsodontindexit", false},
+		{"no index field two tags", "NoIndexTwoTags", "dontsaveitsodontindexit", false},
+		{"no index field, two tags, different order", "NoIndexTwoTagsDifferentOrder", "dontsaveitsodontindexit", false},
+		{"no save field", "NoSaveSimple", "dontsaveitsodontindexit", false},
 	}
 
 	// Step 1 - make sure that the keys that we expect are present after saving
@@ -149,12 +149,12 @@ func Test_ReIndex(t *testing.T) {
 
 	// Step 1 - test that the 2 basic indexes have been created
 	db.KV.View(func(txn *badger.Txn) error {
-		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("intField"), 1)
+		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("IntField"), 1)
 		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
 			t.Errorf("Testing %s. Could not get index key", "int field indexing")
 		}
 
-		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("stringField"), "test")
+		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("StringField"), "test")
 		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
 			t.Errorf("Testing %s. Could not get index key", "string field indexing")
 		}
@@ -169,12 +169,12 @@ func Test_ReIndex(t *testing.T) {
 
 	// Step 3 - test that the 2 previous indices are gone
 	db.KV.View(func(txn *badger.Txn) error {
-		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("intField"), 1)
+		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("IntField"), 1)
 		if _, err := txn.Get(key); err != badger.ErrKeyNotFound {
 			t.Errorf("Testing %s. Found index key when shouldn't have", "int field indexing")
 		}
 
-		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("stringField"), "test")
+		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("StringField"), "test")
 		if _, err := txn.Get(key); err != badger.ErrKeyNotFound {
 			t.Errorf("Testing %s. Found index key when shouldn't have", "string field indexing")
 		}
@@ -184,12 +184,12 @@ func Test_ReIndex(t *testing.T) {
 
 	// Step 4 - test that the 2 new indices are present
 	db.KV.View(func(txn *badger.Txn) error {
-		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("intField"), 2)
+		key := tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("IntField"), 2)
 		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
 			t.Errorf("Testing %s. Could not get index key after update", "int field indexing")
 		}
 
-		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("stringField"), "test_update")
+		key = tormenta.MakeIndexKey([]byte("fullstruct"), entity.ID, []byte("StringField"), "test_update")
 		if _, err := txn.Get(key); err == badger.ErrKeyNotFound {
 			t.Errorf("Testing %s. Could not get index key after update", "string field indexing")
 		}
@@ -211,15 +211,15 @@ func Test_MakeIndexKeys_Split(t *testing.T) {
 
 	// content words
 	expectedKeys := [][]byte{
-		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("multiplewordfield"), "coolest"),
-		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("multiplewordfield"), "fullStruct"),
-		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("multiplewordfield"), "world"),
+		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("MultipleWordField"), "coolest"),
+		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("MultipleWordField"), "fullStruct"),
+		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("MultipleWordField"), "world"),
 	}
 
 	// non content words
 	nonExpectedKeys := [][]byte{
-		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("multiplewordfield"), "the"),
-		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("multiplewordfield"), "in"),
+		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("MultipleWordField"), "the"),
+		tormenta.MakeIndexKey([]byte("fullstruct"), fullStruct.ID, []byte("MultipleWordField"), "in"),
 	}
 
 	db.KV.View(func(txn *badger.Txn) error {
