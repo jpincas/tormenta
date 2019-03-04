@@ -17,12 +17,11 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - Automatic indexing on all fields (can be skipped)
 - Option to index by individual words in strings (split index)
 - More complex querying of indices including exact matches, text prefix, ranges, reverse, limit, offset and order by
-- Combine queries with AND/OR to arbitrary depth
+- Combine many index queries with AND/OR logic (but no complex nesting/bracketing of ANDs/ORs)
 - Fast counts and sums using Badger's 'key only' iteration
-- 'Slow' sums by partial decoding of JSON where the index-based sum is not available
 - Business logic using 'triggers' on save and get, including the ability to pass a 'context' through a query
 - URL parameter -> query builder in package `urltoquery`, for quick construction of queries from URL strings
-- Helpers for loading relations (WIP - currently working but tests and docs needed)
+- Helpers for loading relations
 
 ## Quick How To (in place of better docs to come)
 
@@ -37,8 +36,12 @@ Becuase you want to simplify your data persistence and you don't forsee the need
 - Save a single entity with `db.Save(&MyEntity)` or multiple (possibly different type) entities in a transaction with `db.Save(&MyEntity1, &MyEntity2)`.
 - Get a single entity by ID with `db.Get(&MyEntity, entityID)`.
 - Construct a query to find single or mutliple entities with `db.First(&MyEntity)` or `db.Find(&MyEntities)` respectively. 
-- Build up the query by chaining methods: `From()/.To()` to add a date range, `Match("indexName", value)` to add an exact match index search, `Range("indexname", start, end)` to add a range search, `StartsWith("indexname", "prefix")` for a text prefix search, `.Reverse()` to reverse the fullStruct of searching/results and `.Limit()/.Offset()` to limit the number of results. `Order()` can be used to specify results order, but with caveats (see below).
-- Kick off the query with `.Run()`, or `.Count()` if you just need the count.  `.QuickSum()` is also available for float/int index searches, or `Sum()` for non-index .
+- Build up the query by chaining methods.
+- Add `From()/.To()` to restrict result to a date range (both are optional). 
+- Add index-based filters: `Match("indexName", value)`, `Range("indexname", start, end)` and `StartsWith("indexname", "prefix")` for a text prefix search. 
+- Chain multiple index filters together.  Default combination is AND - switch to OR with `Or()`.
+- Shape results with `.Reverse()`, `.Limit()/.Offset()` and `Order()`.
+- Execute the query with `.Run()`, `.Count()` or `.Sum()`.
 - Add business logic by specifying `.PreSave()`, `.PostSave()` and `.PostGet()` methods on your structs.
 	
 See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.go) to get a better idea of how to use.
@@ -46,12 +49,8 @@ See [the example](https://github.com/jpincas/tormenta/blob/tojson/example_test.g
 ## Gotchas
 
 - Be type-specific when specifying index searches; e.g. `Match("int16field", int(16)")` if you are searching on an `int16` field.  This is due to slight encoding differences between variable/fixed length ints, signed/unsigned ints and floats.  If you let the compiler infer the type and the type you are searching on isn't the default `int` (or `int32`) or `float64`, you'll get odd results.  I understand this is a pain - perhaps we should switch to a fixed indexing scheme in all cases?
-- Querying isn't quite as pain-free as I'd like and requires a little understanding of the indexing system. Due to the way Tormenta returns results by iterating ordered keys, ordering functionality is limited to non-index query searches.  Essentially, adding `Order("myField")` creates an index search on `myField` but without any range (i.e. returns all results).  If you are already using an index, e.g. with `Range("someOtherField", 1, 2)` then that index will take priority and results would be ordered by `someOtherField`.  If you are only filtering by date with `From()/.To()` you CAN independently order as that doesn't use indexes.  If you are doing complex AND/OR query combinations which rely on multiple indexes, then date/ID ordering is the only option - sorry!  In general, best practice would be to limit your results set as much as possible and order results in application code if you require a different order to what you get from Tormenta. `Order("myField")` could also be used to enable `QuickSum` where you otherwise aren't searching by index.
 - 'Defined' `time.Time` fields e.g. `myTime time.Time` won't serialise properly as the fields on the underlying struct are unexported and you lose the marshal/unmarshal methods specified by `time.Time`.  If you must use defined time fields, specify custom marshalling functions.
 
-## Known Issues
-
-- Multiple-query combination does not run over a consistent snapshot of the database.  Because of the limitation in Badger that only one concurrent iterator per transaction is available, queries currently use their own transactions.  Doesn't apply to multiple `Get by ID` or relational loading, which don't use iteration.
 
 ## Help Needed / Contributing
 

@@ -1,6 +1,7 @@
 package tormenta_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/jpincas/tormenta"
@@ -19,7 +20,7 @@ func getDept(i int) int {
 }
 
 // Test aggregation on an index
-func Test_QuickSum(t *testing.T) {
+func Test_Sum(t *testing.T) {
 	var fullStructs []tormenta.Record
 
 	// Accumulators
@@ -40,6 +41,9 @@ func Test_QuickSum(t *testing.T) {
 	for i := -30; i <= 100; i++ {
 
 		fullStruct := &testtypes.FullStruct{
+			// String - just to throw a spanner in the works
+			StringField: fmt.Sprint(i),
+
 			// Signed Ints
 			IntField:   i,
 			Int16Field: int16(i),
@@ -79,18 +83,30 @@ func Test_QuickSum(t *testing.T) {
 	defer db.Close()
 	db.Save(fullStructs...)
 
+	// Result holders
 	var resultInt int
 	var resultInt16 int16
 	var resultInt32 int32
 	var resultInt64 int64
-
 	var resultUint uint
 	var resultUint16 uint16
 	var resultUint32 uint32
 	var resultUint64 uint64
-
 	var resultFloat32 float32
 	var resultFloat64 float64
+
+	resetResults := func() {
+		resultInt = 0
+		resultInt16 = 0
+		resultInt32 = 0
+		resultInt64 = 0
+		resultUint = 0
+		resultUint16 = 0
+		resultUint32 = 0
+		resultUint64 = 0
+		resultFloat32 = 0
+		resultFloat64 = 0
+	}
 
 	// Test cases
 	testCases := []struct {
@@ -121,19 +137,63 @@ func Test_QuickSum(t *testing.T) {
 	for _, test := range testCases {
 		results := []testtypes.FullStruct{}
 
-		// We use OrderBy in order to specify an index without any range -
-		// see notes on OrderBy
-		_, err := db.Find(&results).OrderBy(test.fieldName).QuickSum(test.sumResult)
-
-		// Check for error
-		if err != nil {
-			t.Errorf("Testing %s quicksum.  Got error: %s", test.name, err)
+		// BASIC TEST
+		if _, err := db.Find(&results).Sum(test.sumResult, test.fieldName); err != nil {
+			t.Errorf("Testing %s basic quicksum.  Got error: %s", test.name, err)
 		}
 
 		// Compare result to accumulator
 		result := test.convertBack(test.sumResult)
 		if result != test.acc {
-			t.Errorf("Testing %s quicksum. Expected %v, got %v", test.name, test.acc, result)
+			t.Errorf("Testing %s basic quicksum. Expected %v, got %v", test.name, test.acc, result)
+		}
+
+		// SAME ORDERBY FIELD SPECIFIED
+		resetResults()
+		if _, err := db.Find(&results).OrderBy(test.fieldName).Sum(test.sumResult, test.fieldName); err != nil {
+			t.Errorf("Testing %s quicksum with same orderbyfield specified.  Got error: %s", test.name, err)
+		}
+
+		// Compare result to accumulator
+		result = test.convertBack(test.sumResult)
+		if result != test.acc {
+			t.Errorf("Testing %s quicksum with same orderbyfield specified. Expected %v, got %v", test.name, test.acc, result)
+		}
+
+		// REVERSE SPECIFIED
+		resetResults()
+		if _, err := db.Find(&results).Reverse().Sum(test.sumResult, test.fieldName); err != nil {
+			t.Errorf("Testing %s quicksum with reverse specified.  Got error: %s", test.name, err)
+		}
+
+		// Compare result to accumulator
+		result = test.convertBack(test.sumResult)
+		if result != test.acc {
+			t.Errorf("Testing %s quicksum with same reverse specified. Expected %v, got %v", test.name, test.acc, result)
+		}
+
+		// REVERSE AND ORDER BY SPECIFIED
+		resetResults()
+		if _, err := db.Find(&results).OrderBy(test.fieldName).Reverse().Sum(test.sumResult, test.fieldName); err != nil {
+			t.Errorf("Testing %s quicksum with reverse and orderbyfield specified.  Got error: %s", test.name, err)
+		}
+
+		// Compare result to accumulator
+		result = test.convertBack(test.sumResult)
+		if result != test.acc {
+			t.Errorf("Testing %s quicksum with reverse and orderbyfield specified. Expected %v, got %v", test.name, test.acc, result)
+		}
+
+		// DIFFERENT ORDER BY SPECIFIED
+		resetResults()
+		if _, err := db.Find(&results).OrderBy("stringfield").Sum(test.sumResult, test.fieldName); err != nil {
+			t.Errorf("Testing %s quicksum with different orderbyfield specified.  Got error: %s", test.name, err)
+		}
+
+		// Compare result to accumulator
+		result = test.convertBack(test.sumResult)
+		if result != test.acc {
+			t.Errorf("Testing %s quicksum with different orderbyfield specified. Expected %v, got %v", test.name, test.acc, result)
 		}
 	}
 }

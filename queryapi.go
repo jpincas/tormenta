@@ -8,64 +8,118 @@ import (
 	"github.com/jpincas/gouuidv6"
 )
 
-// User API
-
-type QueryOptions struct {
-	First, Reverse bool
-	Limit, Offset  int
-	Start, End     interface{}
-	From, To       time.Time
-	IndexName      string
-	IndexParams    []interface{}
-}
+// QUERY INITIATORS
 
 // Find is the basic way to kick off a Query
 func (db DB) Find(entities interface{}) *Query {
-	return db.newQuery(entities, false)
-}
-
-// Query is another way of specifying a Query, using a struct of options instead of method chaining
-func (db DB) Query(entities interface{}, options QueryOptions) *Query {
-	q := db.newQuery(entities, options.First)
-
-	// Overwrite limit if this is not a first-only search
-	if !options.First {
-		q.limit = options.Limit
-	}
-
-	if options.Offset > 0 {
-		q.Offset(options.Offset)
-	}
-
-	// Apply reverse if speficied
-	// Default is false, so can be left off
-	q.reverse = options.Reverse
-
-	// Apply date range if specified
-	if !options.From.IsZero() {
-		q.From(options.From)
-	}
-
-	if !options.To.IsZero() {
-		q.To(options.To)
-	}
-
-	// Apply index if required
-	// Use 'match' for 1 param, 'range' for 2
-	if options.IndexName != "" {
-		if len(options.IndexParams) == 1 {
-			q.Match(options.IndexName, options.IndexParams[0])
-		} else if len(options.IndexParams) == 2 {
-			q.Range(options.IndexName, options.IndexParams[0], options.IndexParams[1])
-		}
-	}
-
-	return q
+	return db.newQuery(entities)
 }
 
 // First kicks off a DB Query returning the first entity that matches the criteria
 func (db DB) First(entity interface{}) *Query {
-	return db.newQuery(entity, true)
+	q := db.newQuery(entity)
+	q.limit = 1
+	q.single = true
+	return q
+}
+
+// Debug turns on helpful debugging information for the query
+func (q *Query) Debug() *Query {
+	q.debug = true
+	return q
+}
+
+// CONTEXT SETTING
+
+// SetContext allows a context to be passed through the query
+func (q *Query) SetContext(key string, val interface{}) *Query {
+	q.ctx[key] = val
+	return q
+}
+
+// FILTER APPLICATION
+
+// Match adds an exact-match index search to a query
+func (q *Query) Match(indexName string, param interface{}) *Query {
+	// For a single parameter 'exact match' search, it is non sensical to pass nil
+	// Set the error and return the query unchanged
+	if param == nil {
+		q.err = errors.New(ErrNilInputMatchIndexQuery)
+		return q
+	}
+
+	// If we are matching a string, lower-case it
+	switch param.(type) {
+	case string:
+		param = strings.ToLower(param.(string))
+	}
+
+	// Create the filter and add it on
+	q.addFilter(filter{
+		start:     param,
+		end:       param,
+		indexName: toIndexName(indexName),
+	})
+
+	return q
+}
+
+// Range adds a range-match index search to a query
+func (q *Query) Range(indexName string, start, end interface{}) *Query {
+	// For an index range search,
+	// it is non-sensical to pass two nils
+	// Set the error and return the query unchanged
+	if start == nil && end == nil {
+		q.err = errors.New(ErrNilInputsRangeIndexQuery)
+		return q
+	}
+
+	// Create the filter and add it on
+	q.addFilter(filter{
+		start:     start,
+		end:       end,
+		indexName: toIndexName(indexName),
+	})
+
+	return q
+}
+
+// StartsWith allows for string prefix filtering
+func (q *Query) StartsWith(indexName string, s string) *Query {
+	// Blank string is not valid
+	if s == "" {
+		q.err = errors.New(ErrBlankInputStartsWithQuery)
+		return q
+	}
+
+	// Create the filter and add it on
+	q.addFilter(filter{
+		start:             s,
+		end:               s,
+		isStartsWithQuery: true,
+		indexName:         toIndexName(indexName),
+	})
+
+	return q
+}
+
+// GLOBAL QUERY MODIFIERS
+
+// Sets the query to return filter results combined in a logical OR way instead of AND.
+// It doesn't matter where in the chain, you put it - all filters will be combined in an OR
+// fashion if it appears just once.  Having said that, if you are combining two filters, it
+// reads nicely to put the Or() in the middle, e.g.
+// .Range("myint", 1, 10).Or().StartsWith("mystring", "test"),
+func (q *Query) Or() *Query {
+	q.idsCombinator = union
+	return q
+}
+
+// Sets the query to return filter results combined in a logical AND way.  This is the default,
+// so this should rarely be necessary.  Mainly useful for the query parser.
+func (q *Query) And() *Query {
+	q.idsCombinator = intersection
+	return q
 }
 
 // Limit limits the number of results a Query will return to n.
@@ -95,87 +149,27 @@ func (q *Query) Reverse() *Query {
 	return q
 }
 
-func (q *Query) SetContext(key string, val interface{}) *Query {
-	q.ctx[key] = val
+// UnReverse unsets reverse on a query. Not expected to be particularly useful but needed by the string to query builder
+func (q *Query) UnReverse() *Query {
+	q.reverse = false
 	return q
 }
 
-// Match adds an exact-match index search to a query
-func (q *Query) Match(indexName string, param interface{}) *Query {
-	// For a single parameter 'exact match' search, it is non sensical to pass nil
-	// Set the error and return the query unchanged
-	if param == nil {
-		q.err = errors.New(ErrNilInputMatchIndexQuery)
-		return q
-	}
-
-	// If we are matching a string, lower-case it
-	switch param.(type) {
-	case string:
-		param = strings.ToLower(param.(string))
-	}
-
-	q.start = param
-	q.end = param
-	q.isIndexQuery = true
-	q.indexName = []byte(strings.ToLower(indexName))
-	return q
-}
-
-// Range adds a range-match index search to a query
-func (q *Query) Range(indexName string, start, end interface{}) *Query {
-	// For an index range search,
-	// it is non-sensical to pass two nils
-	// Set the error and return the query unchanged
-	if start == nil && end == nil {
-		q.err = errors.New(ErrNilInputsRangeIndexQuery)
-		return q
-	}
-	q.start = start
-	q.end = end
-	q.isIndexQuery = true
-	q.indexName = []byte(indexName)
-	return q
-}
-
-// OrderBy specifies an index by which to order results.  Note that this cannot be combined with
-// other index-based queries like 'Range' or 'Match', where the index used for that query will necessarily
-// determine order; nor can it be used with combined queries (and/or) which are always ordered by date.
+// OrderBy specifies an index by which to order results..
 func (q *Query) OrderBy(indexName string) *Query {
-	q.start = nil
-	q.end = nil
-	q.isIndexQuery = true
-	q.indexName = []byte(indexName)
-	return q
-}
-
-func (q *Query) StartsWith(indexName string, s string) *Query {
-	// Blank string is not valid
-	if s == "" {
-		q.err = errors.New(ErrBlankInputStartsWithQuery)
-		return q
-	}
-	q.start = s
-	q.end = s
-	q.isIndexQuery = true
-	q.isStartsWithQuery = true
-	q.indexName = []byte(indexName)
+	q.orderByIndexName = toIndexName(indexName)
 	return q
 }
 
 // From adds a lower boundary to the date range of the Query
 func (q *Query) From(t time.Time) *Query {
-	// Subtract 1 nanosecond form the specified time
-	// Leads to an inclusive date search
-	t = t.Add(-1 * time.Nanosecond)
-
-	q.from = gouuidv6.NewFromTime(t)
+	q.from = fromUUID(t)
 	return q
 }
 
 // To adds an upper bound to the date range of the Query
 func (q *Query) To(t time.Time) *Query {
-	q.to = gouuidv6.NewFromTime(t)
+	q.to = toUUID(t)
 	return q
 }
 
@@ -186,6 +180,8 @@ func (q *Query) ManualFromToSet(from, to gouuidv6.UUID) *Query {
 	q.to = to
 	return q
 }
+
+// QUERY EXECUTORS
 
 // Run actually executes the Query
 func (q *Query) Run() (int, error) {
@@ -198,48 +194,10 @@ func (q *Query) Count() (int, error) {
 	return q.execute()
 }
 
-// QuickSum produces a sum aggregation using the index only, which is much faster
-// than accessing every record, but requires an single index query, so is therefore
-// incompatible with complex multiple-index queries
-func (q *Query) QuickSum(a interface{}) (int, error) {
-	if !q.isIndexQuery || len(q.indexName) == 0 {
-		return 0, errors.New("Quicksum must use an index Query")
-	}
-
-	q.aggTarget = a
-	q.isQuickSumQuery = true
+// Sum produces a sum aggregation using the index only, which is much faster
+// than accessing every record
+func (q *Query) Sum(a interface{}, indexName string) (int, error) {
+	q.sumTarget = a
+	q.sumIndexName = toIndexName(indexName)
 	return q.execute()
-}
-
-// Sum takes a slightly sifferent approach to aggregation - you might call it 'slow sum'.
-// It doesn't use index keys, instead it partially unserialises each record in the results set
-// - only unserialising the single required field for the aggregation (so its not too slow).
-// For simplicity of code, API and to reduce reflection, the result returned is a float64,
-// but Sum() will work on any number that is parsable from JSON as a float - so just convert to
-// your required number type after the result is in.
-// Sum() expects you to specify the path to the number of interest in your JSON using a string of field
-// names representing the nested JSON path.  It's fairly intuitive,
-// but see the docs for json parser (https://github.com/buger/jsonparser) for full details
-func (q *Query) Sum(jsonPath []string) (float64, int, error) {
-	var sum float64
-	q.aggTarget = &sum
-	q.slowSumPath = jsonPath
-	n, err := q.execute()
-	return sum, n, err
-}
-
-// Query Combination
-
-// Or takes any number of queries and combines their results (as IDs) in a logical OR manner,
-// returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
-// can be run, or combined further
-func (db DB) Or(entities interface{}, queries ...*Query) *Query {
-	return queryCombine(db, entities, union, queries...)
-}
-
-// Or takes any number of queries and combines their results (as IDs) in a logical AND manner,
-// returning one query, marked as executed, with union of IDs returned by the query.  The resulting query
-// can be run, or combined further
-func (db DB) And(entities interface{}, queries ...*Query) *Query {
-	return queryCombine(db, entities, intersection, queries...)
 }
