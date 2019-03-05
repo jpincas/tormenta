@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	dateFormat1 = "2006-01-02"
+
 	// Symbols used in specifying query key:value pairs
 	// INSIDE a url param e.g. query=myKey:myValue,anotherKey:anotherValue
 	whereValueSeparator  = ":"
@@ -96,7 +98,7 @@ func (q *Query) Parse(ignoreLimitOffset bool, s string) error {
 	}
 
 	// From / To
-	const dateFormat1 = "2006-01-02"
+
 	fromString := values.Get(queryStringFrom)
 	toString := values.Get(queryStringTo)
 
@@ -275,17 +277,34 @@ type queryComponent struct {
 }
 
 func (q Query) String() string {
+	components := []queryComponent{}
 
-	isOr := isOr(q.idsCombinator)
+	if !q.from.IsNil() {
+		components = append(components, queryComponent{queryStringFrom, q.from.Time().Format(dateFormat1)})
+	}
 
-	components := []queryComponent{
-		{queryStringLimit, q.limit},
-		{queryStringOffset, q.offset},
-		{queryStringReverse, q.reverse},
-		{queryStringOr, isOr},
-		{queryStringFrom, q.from.Time()},
-		{queryStringTo, q.to.Time()},
-		{queryStringOrderBy, string(q.orderByIndexName)},
+	if !q.to.IsNil() {
+		components = append(components, queryComponent{queryStringTo, q.to.Time().Format(dateFormat1)})
+	}
+
+	if q.limit > 0 {
+		components = append(components, queryComponent{queryStringLimit, q.limit})
+	}
+
+	if q.offset > 0 {
+		components = append(components, queryComponent{queryStringOffset, q.offset})
+	}
+
+	if len(q.orderByIndexName) > 0 {
+		components = append(components, queryComponent{queryStringOrderBy, string(q.orderByIndexName)})
+	}
+
+	if q.reverse {
+		components = append(components, queryComponent{queryStringReverse, q.reverse})
+	}
+
+	if isOr := isOr(q.idsCombinator); isOr {
+		components = append(components, queryComponent{queryStringOr, isOr})
 	}
 
 	var componentStrings []string
@@ -294,26 +313,39 @@ func (q Query) String() string {
 	}
 
 	for _, filter := range q.filters {
-		componentStrings = append(componentStrings, fmt.Sprintf("%s=%s", queryStringWhere, filter.String()))
+		componentStrings = append(componentStrings, fmt.Sprintf("WHERE %s", filter.String()))
 	}
 
-	builtQuery := strings.Join(componentStrings, "&")
+	builtQuery := strings.Join(componentStrings, " | ")
 
-	return fmt.Sprintf("/%s?%s", string(q.keyRoot), builtQuery)
+	output := []string{string(q.keyRoot)}
+	if builtQuery != "" {
+		output = append(output, builtQuery)
+	}
+
+	return strings.Join(output, " | ")
 }
 
 func (f filter) String() string {
 	components := []queryComponent{
-		{queryStringStart, f.start},
-		{queryStringEnd, f.end},
 		{queryStringIndex, string(f.indexName)},
-		{queryStringStartsWith, f.isStartsWithQuery},
+	}
+
+	if f.start != f.end {
+		components = append(components, queryComponent{queryStringStart, f.start}, queryComponent{queryStringEnd, f.end})
+	} else {
+		if f.isStartsWithQuery {
+			components = append(components, queryComponent{queryStringStartsWith, f.start})
+
+		} else {
+			components = append(components, queryComponent{queryStringMatch, f.start})
+		}
 	}
 
 	var componentStrings []string
 	for _, component := range components {
-		componentStrings = append(componentStrings, fmt.Sprintf("%s%s%v", component.key, whereValueSeparator, component.value))
+		componentStrings = append(componentStrings, fmt.Sprintf("%s=%v", component.key, component.value))
 	}
 
-	return strings.Join(componentStrings, whereClauseSeparator)
+	return strings.Join(componentStrings, "; ")
 }

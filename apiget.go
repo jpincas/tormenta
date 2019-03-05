@@ -17,6 +17,7 @@ func (db DB) Get(entity Record, ids ...gouuidv6.UUID) (bool, error) {
 func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
 	txn := db.KV.NewTransaction(false)
 	defer txn.Discard()
+
 	return db.get(txn, entity, ctx, ids...)
 }
 
