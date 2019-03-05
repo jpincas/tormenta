@@ -191,7 +191,7 @@ func (q *Query) execute() (int, error) {
 
 	finalIDList, err := q.queryIDs(txn)
 	if err != nil {
-		q.DebugLog(t, 0, err)
+		q.debugLog(t, 0, err)
 		return 0, err
 	}
 
@@ -199,7 +199,7 @@ func (q *Query) execute() (int, error) {
 	if len(q.orderByIndexName) > 0 {
 		indexKind, err := fieldKind(q.target, string(q.orderByIndexName))
 		if err != nil {
-			q.DebugLog(t, 0, err)
+			q.debugLog(t, 0, err)
 			return 0, err
 		}
 
@@ -229,7 +229,7 @@ func (q *Query) execute() (int, error) {
 
 	// For count-only, there's nothing more to do
 	if q.countOnly {
-		q.DebugLog(t, len(finalIDList), nil)
+		q.debugLog(t, len(finalIDList), nil)
 		return len(finalIDList), nil
 	}
 
@@ -243,7 +243,7 @@ func (q *Query) execute() (int, error) {
 
 			indexKind, err := fieldKind(q.target, string(q.sumIndexName))
 			if err != nil {
-				q.DebugLog(t, 0, err)
+				q.debugLog(t, 0, err)
 				return 0, err
 			}
 
@@ -264,7 +264,7 @@ func (q *Query) execute() (int, error) {
 
 		// Now, whether the quicksum was on the same index as order,
 		// or any other index, we will have the result in the target, so we can return now
-		q.DebugLog(t, len(finalIDList), nil)
+		q.debugLog(t, len(finalIDList), nil)
 		return len(finalIDList), nil
 	}
 
@@ -273,7 +273,7 @@ func (q *Query) execute() (int, error) {
 		// For 'first' queries, we should check that there is at least 1 record found
 		// before trying to set it
 		if len(finalIDList) == 0 {
-			q.DebugLog(t, 0, nil)
+			q.debugLog(t, 0, nil)
 			return 0, nil
 		}
 
@@ -282,26 +282,26 @@ func (q *Query) execute() (int, error) {
 		record := newRecord(q.target)
 		id := finalIDList[0]
 		if found, err := q.db.get(txn, record, q.ctx, id); err != nil {
-			q.DebugLog(t, 0, err)
+			q.debugLog(t, 0, err)
 			return 0, err
 		} else if !found {
 			err := fmt.Errorf("Could not retrieve record with id: %v", id)
-			q.DebugLog(t, 0, err)
+			q.debugLog(t, 0, err)
 			return 0, err
 		}
 
 		setSingleResultOntoTarget(q.target, record)
-		q.DebugLog(t, 1, nil)
+		q.debugLog(t, 1, nil)
 		return 1, nil
 	}
 
 	// Otherwise we just get the records and return
 	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, finalIDList...)
 	if err != nil {
-		q.DebugLog(t, 0, err)
+		q.debugLog(t, 0, err)
 		return 0, err
 	}
 
-	q.DebugLog(t, n, nil)
+	q.debugLog(t, n, nil)
 	return n, nil
 }
