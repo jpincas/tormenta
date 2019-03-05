@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	dateFormat1 = "2006-01-02"
+	DateFormat = "2006-01-02"
 
 	// Symbols used in specifying query key:value pairs
 	// INSIDE a url param e.g. query=myKey:myValue,anotherKey:anotherValue
@@ -105,7 +105,7 @@ func (q *Query) Parse(ignoreLimitOffset bool, s string) error {
 	var toValue, fromValue time.Time
 
 	if fromString != "" {
-		fromValue, err = time.Parse(dateFormat1, fromString)
+		fromValue, err = time.Parse(DateFormat, fromString)
 		if err != nil {
 			return errors.New(ErrBadFromFormat)
 		}
@@ -113,7 +113,7 @@ func (q *Query) Parse(ignoreLimitOffset bool, s string) error {
 	}
 
 	if toString != "" {
-		toValue, err = time.Parse(dateFormat1, toString)
+		toValue, err = time.Parse(DateFormat, toString)
 		if err != nil {
 			return errors.New(ErrBadToFormat)
 		}
@@ -280,11 +280,11 @@ func (q Query) String() string {
 	components := []queryComponent{}
 
 	if !q.from.IsNil() {
-		components = append(components, queryComponent{queryStringFrom, q.from.Time().Format(dateFormat1)})
+		components = append(components, queryComponent{queryStringFrom, q.from.Time().Format(DateFormat)})
 	}
 
 	if !q.to.IsNil() {
-		components = append(components, queryComponent{queryStringTo, q.to.Time().Format(dateFormat1)})
+		components = append(components, queryComponent{queryStringTo, q.to.Time().Format(DateFormat)})
 	}
 
 	if q.limit > 0 {

@@ -117,6 +117,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"integer - negatives - span neg and pos 2", "AnotherIntField", -10, 5, 16, nil},
 
 		// Defined Int
+		{"defined integer - string input - parse error", "DefinedIntField", 1, "not an int", 0, errors.New("parse error")},
 		{"defined integer - no range", "DefinedIntField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"defined integer - from 1", "DefinedIntField", 1, nil, 49, nil},
 		{"defined integer - from 2", "DefinedIntField", 2, nil, 48, nil},
@@ -137,6 +138,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"defined integer - negatives - span neg and pos 2", "DefinedIntField", -10, 5, 16, nil},
 
 		// Defined Int16
+		{"defined integer 16 - string input - parse error", "DefinedInt16Field", 1, "not an int", 0, errors.New("parse error")},
 		{"defined integer 16 - no range", "DefinedInt16Field", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"defined integer 16 - from 1", "DefinedInt16Field", 1, nil, 49, nil},
 		{"defined integer 16 - from 2", "DefinedInt16Field", 2, nil, 48, nil},
@@ -157,6 +159,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"defined integer 16 - negatives - span neg and pos 2", "DefinedInt16Field", -10, 5, 16, nil},
 
 		// Uint
+		{"unsigned integer - string input - parse error", "UintField", 1, "not an int", 0, errors.New("parse error")},
 		{"unsigned integer - no range", "UintField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"unsigned integer - from 1", "UintField", 1, nil, 100, nil},
 		{"unsigned integer - from 2", "UintField", 2, nil, 99, nil},
@@ -168,12 +171,15 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"unsigned integer - to 50", "UintField", nil, 50, 50, nil},
 
 		// Date - just encoded as an int64 so should be no problem
+		{"date - string input - parse error", "DateField", "impossible to parse", "impossible to parse", 0, errors.New("parse error")},
 		{"date - no range", "DateField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"date - all", "DateField", dateWithYear(0), nil, 100, nil},
 		{"date - first 2", "DateField", dateWithYear(0), dateWithYear(1), 2, nil},
+		{"date - first 2 minus 1 - string input", "DateField", dateWithYear(0).Format(tormenta.DateFormat), dateWithYear(1).Format(tormenta.DateFormat), 1, nil}, // loss of inclusive range due to fidelity loss on string input
 		{"date - random range", "DateField", dateWithYear(10), dateWithYear(20), 11, nil},
 
 		// String
+		{"string - int input - but no parse error as they are converted to strings", "StringField", 1, 2, 0, nil},
 		{"string - no range", "StringField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"string", "StringField", "customer", nil, 100, nil},
 		{"string - from A", "StringField", "customer-A", nil, 100, nil},
@@ -185,6 +191,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		// Float
 		// Note that we've always used the decimal point, so
 		// the range values will be interpreted as floats not ints
+		{"float - string input - parse error", "FloatField", 1, "not a float", 0, errors.New("parse error")},
 		{"float - no range", "FloatField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"float - 0 to nil", "FloatField", 0, nil, 100, nil},
 		{"float - 0.99 to nil", "FloatField", 0.99, nil, 100, nil},
@@ -214,6 +221,7 @@ func Test_IndexQuery_Range(t *testing.T) {
 		{"float- negatives - span neg and pos 2", "AnotherFloatField", -20.00, 30.00, 51, nil},
 
 		// Defined Float
+		{"defined float - string input - parse error", "DefinedFloatField", 1, "not a float", 0, errors.New("parse error")},
 		{"defined float - no range", "DefinedFloatField", nil, nil, 0, errors.New(tormenta.ErrNilInputsRangeIndexQuery)},
 		{"defined float - 0 to nil", "DefinedFloatField", 0.00, nil, 50, nil},
 		{"defined float - 0.99 to nil", "DefinedFloatField", 0.99, nil, 49, nil},

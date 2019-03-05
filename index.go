@@ -3,6 +3,7 @@ package tormenta
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -283,10 +284,22 @@ func interfaceToBytesWithOverride(value interface{}, typeOverride reflect.Kind) 
 		return buf.Bytes(), err
 
 	case reflect.Struct:
+		i := reflect.ValueOf(value).Interface()
 		// time.Time is a struct, so we encode/decode as int64 (unix seconds)
-		if t, ok := reflect.ValueOf(value).Interface().(time.Time); ok {
+		if t, ok := i.(time.Time); ok {
 			binary.Write(buf, binary.BigEndian, t.Unix())
 			return flipInt(buf.Bytes()), nil
+		} else if s, ok := i.(string); ok {
+			// if its a string, we try to decode to a time
+			t, err := time.Parse(DateFormat, s)
+			if err != nil {
+				return nil, err
+			}
+
+			binary.Write(buf, binary.BigEndian, t.Unix())
+			return flipInt(buf.Bytes()), nil
+		} else {
+			return nil, errors.New("Unable to parse date")
 		}
 	}
 
