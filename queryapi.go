@@ -11,12 +11,12 @@ import (
 // QUERY INITIATORS
 
 // Find is the basic way to kick off a Query
-func (db DB) Find(entities interface{}) *Query {
+func (db *DB) Find(entities interface{}) *Query {
 	return db.newQuery(entities)
 }
 
 // First kicks off a DB Query returning the first entity that matches the criteria
-func (db DB) First(entity interface{}) *Query {
+func (db *DB) First(entity interface{}) *Query {
 	q := db.newQuery(entity)
 	q.limit = 1
 	q.single = true
@@ -200,6 +200,10 @@ func (q *Query) ManualFromToSet(from, to gouuidv6.UUID) *Query {
 	q.from = from
 	q.to = to
 	return q
+}
+
+func (q *Query) Preload(relationsToLoad []string) {
+	q.preloads = relationsToLoad
 }
 
 // QUERY EXECUTORS

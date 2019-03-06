@@ -10,7 +10,7 @@ import (
 
 type Query struct {
 	// Connection to BadgerDB
-	db DB
+	db *DB
 
 	// The entity type being searched
 	keyRoot []byte
@@ -62,6 +62,8 @@ type Query struct {
 	prepared bool
 
 	debug bool
+
+	preloads []string
 }
 
 func (q Query) Compare(cq Query) bool {
@@ -79,7 +81,7 @@ func toUUID(t time.Time) gouuidv6.UUID {
 	return gouuidv6.NewFromTime(t)
 }
 
-func (db DB) newQuery(target interface{}) *Query {
+func (db *DB) newQuery(target interface{}) *Query {
 	// Create the base Query
 	q := &Query{
 		db:      db,
@@ -290,12 +292,19 @@ func (q *Query) execute() (int, error) {
 			return 0, err
 		}
 
+		if len(q.preloads) > 0 {
+			loadByID(q.db, txn, q.preloads, record)
+		}
+
 		setSingleResultOntoTarget(q.target, record)
+
 		q.debugLog(t, 1, nil)
 		return 1, nil
 	}
 
 	// Otherwise we just get the records and return
+	// IF required, we take advantage of the fact that `getIDsWithContext` has a list of
+	// Records to apply preloads
 	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, finalIDList...)
 	if err != nil {
 		q.debugLog(t, 0, err)
