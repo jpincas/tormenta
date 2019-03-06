@@ -31,6 +31,7 @@ const (
 	queryStringStart      = "start"
 	queryStringEnd        = "end"
 	queryStringIndex      = "index"
+	queryStringPreloads   = "preloads"
 
 	// Error messages
 	ErrBadFormatQueryValue            = "Bad format for query value"
@@ -305,6 +306,10 @@ func (q Query) String() string {
 
 	if isOr := isOr(q.idsCombinator); isOr {
 		components = append(components, queryComponent{queryStringOr, isOr})
+	}
+
+	if len(q.preloads) > 0 {
+		components = append(components, queryComponent{queryStringPreloads, fmt.Sprint(q.preloads)})
 	}
 
 	var componentStrings []string

@@ -47,6 +47,11 @@ func (q Query) debugLog(start time.Time, noResults int, err error) {
 		return
 	}
 
-	msg := color.Sprintf("@{!}FIND@{|} @y[%s]@{|} returned @c%v@{|} result(s) in @g%s", q, noResults, time.Since(start))
+	verb := "returned"
+	if q.countOnly {
+		verb = "counted"
+	}
+
+	msg := color.Sprintf("@{!}QUERY@{|} @y[%s]@{|} %s @c%v@{|} result(s) in @g%s", q, verb, noResults, time.Since(start))
 	fmt.Println(msg)
 }
