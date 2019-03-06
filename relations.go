@@ -127,7 +127,7 @@ func LoadByQuery(db *DB, fieldName string, queryModifier QueryModifier, entities
 		return errorsList[0]
 	}
 
-	db.getIDsWithContext(txn, target, noCTX, allIDsToGet...)
+	db.getIDsWithContext(txn, target, noCTX, noPreloads, allIDsToGet...)
 
 	// Once we have all the results,
 	// we build up a map of results keyed by ID
@@ -203,7 +203,7 @@ func loadByID(db *DB, txn *badger.Txn, relationsToLoad []string, entities ...Rec
 			recordMap, err := getRelatedField(db, txn, thisPath[0], entities...)
 
 			// If there is more than one component to the path,
-			// call HasOne recursively, passing in the rest of the path
+			// call loadByID recursively, passing in the rest of the path
 			// (joined back up with the separator, and passed a single
 			// member of a slice)
 			// and the entities that came back above
@@ -214,7 +214,7 @@ func loadByID(db *DB, txn *badger.Txn, relationsToLoad []string, entities ...Rec
 				}
 
 				if err := loadByID(db, txn, reJoinFieldPath(path[1:]), nestedEntities...); err != nil {
-					log.Println("error in nested HasOne")
+					log.Println("error in nested relation loading")
 					// TODO: need to work out way of signaling this at top level
 				}
 			}
@@ -405,7 +405,7 @@ func getRelatedField(db *DB, txn *badger.Txn, fieldName string, entities ...Reco
 	// relations
 
 	results := newSlice(typeToGet, len(ids))
-	if _, err := db.getIDsWithContext(txn, results, noCTX, ids...); err != nil {
+	if _, err := db.getIDsWithContext(txn, results, noCTX, noPreloads, ids...); err != nil {
 		return recordMap, err
 	}
 

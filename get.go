@@ -13,17 +13,20 @@ const (
 	ErrNoID = "Cannot get entity %s - ID is nil"
 )
 
-var noCTX = make(map[string]interface{})
+var (
+	noPreloads = []string{}
+	noCTX      = make(map[string]interface{})
+)
 
 // Get retrieves an entity, either according to the ID set on the entity,
 // or using a separately specified ID (optional, takes priority)
-func (db DB) Get(entity Record, ids ...gouuidv6.UUID) (bool, error) {
+func (db *DB) Get(entity Record, ids ...gouuidv6.UUID) (bool, error) {
 	return db.GetWithContext(entity, noCTX, ids...)
 }
 
 // GetWithContext retrieves an entity, either according to the ID set on the entity,
 // or using a separately specified ID (optional, takes priority), and allows the passing of a non-empty context.
-func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
+func (db *DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
 	t := time.Now()
 
 	txn := db.KV.NewTransaction(false)
@@ -42,17 +45,17 @@ func (db DB) GetWithContext(entity Record, ctx map[string]interface{}, ids ...go
 	return ok, err
 }
 
-func (db DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
+func (db *DB) GetIDs(target interface{}, ids ...gouuidv6.UUID) (int, error) {
 	return db.GetIDsWithContext(target, noCTX, ids...)
 }
 
-func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
+func (db *DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
 	t := time.Now()
 
 	txn := db.KV.NewTransaction(false)
 	defer txn.Discard()
 
-	n, err := db.getIDsWithContext(txn, target, ctx, ids...)
+	n, err := db.getIDsWithContext(txn, target, ctx, noPreloads, ids...)
 
 	if db.Options.DebugMode {
 		debugLogGet(target, t, n, err, ids...)
@@ -61,7 +64,7 @@ func (db DB) GetIDsWithContext(target interface{}, ctx map[string]interface{}, i
 	return n, err
 }
 
-func (db DB) get(txn *badger.Txn, entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
+func (db *DB) get(txn *badger.Txn, entity Record, ctx map[string]interface{}, ids ...gouuidv6.UUID) (bool, error) {
 	// If an override id has been specified, set it on the entity
 	if len(ids) > 0 {
 		entity.SetID(ids[0])
@@ -95,7 +98,7 @@ type getResult struct {
 	err    error
 }
 
-func (db DB) getIDsWithContext(txn *badger.Txn, target interface{}, ctx map[string]interface{}, ids ...gouuidv6.UUID) (int, error) {
+func (db *DB) getIDsWithContext(txn *badger.Txn, target interface{}, ctx map[string]interface{}, preloads []string, ids ...gouuidv6.UUID) (int, error) {
 	ch := make(chan getResult)
 	defer close(ch)
 	var wg sync.WaitGroup
@@ -145,6 +148,12 @@ func (db DB) getIDsWithContext(txn *badger.Txn, target interface{}, ctx map[stri
 
 	if len(errorsList) > 0 {
 		return 0, errorsList[0]
+	}
+
+	// Apply preloads here whilst we have a []Record,
+	// order is not important
+	if len(preloads) > 0 {
+		loadByID(db, txn, preloads, resultsList...)
 	}
 
 	return sortToOriginalIDsOrder(target, resultsList, ids), nil

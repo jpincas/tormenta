@@ -202,8 +202,9 @@ func (q *Query) ManualFromToSet(from, to gouuidv6.UUID) *Query {
 	return q
 }
 
-func (q *Query) Preload(relationsToLoad []string) {
+func (q *Query) PreloadByID(relationsToLoad []string) *Query {
 	q.preloads = relationsToLoad
+	return q
 }
 
 // QUERY EXECUTORS

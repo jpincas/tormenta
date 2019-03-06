@@ -305,7 +305,7 @@ func (q *Query) execute() (int, error) {
 	// Otherwise we just get the records and return
 	// IF required, we take advantage of the fact that `getIDsWithContext` has a list of
 	// Records to apply preloads
-	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, finalIDList...)
+	n, err := q.db.getIDsWithContext(txn, q.target, q.ctx, q.preloads, finalIDList...)
 	if err != nil {
 		q.debugLog(t, 0, err)
 		return 0, err
