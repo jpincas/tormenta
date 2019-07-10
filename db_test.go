@@ -11,15 +11,16 @@ func Test_Open_ValidDirectory(t *testing.T) {
 
 	// Create a connection to a test DB
 	db, err := OpenWithOptions(dir, DefaultOptions)
-	defer db.Close()
 
 	if err != nil {
-		t.Errorf("%s. Failed to open connection with error %v", testName, err)
+		t.Fatalf("%s. Failed to open connection with error %v", testName, err)
 	}
 
 	if db == nil {
-		t.Errorf("%s. Failed to open connection. DB is nil", testName)
+		t.Fatalf("%s. Failed to open connection. DB is nil", testName)
 	}
+
+	defer db.Close()
 
 	// Check the directory exists
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
